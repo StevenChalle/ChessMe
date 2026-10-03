@@ -7,7 +7,7 @@ import { defineConfig } from 'vite'
 import { VitePWA } from 'vite-plugin-pwa'
 
 // https://vite.dev/config/
-export default defineConfig({
+export default defineConfig(({ mode }) => ({
   plugins: [
     // Must come before react(): generates src/routeTree.gen.ts from src/routes/
     tanstackRouter({ target: 'react', autoCodeSplitting: true }),
@@ -16,9 +16,11 @@ export default defineConfig({
     VitePWA({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.svg'],
+      // Lets you install a separate "ChessMe (dev)" app from `make dev` that follows HMR.
+      devOptions: { enabled: true, suppressWarnings: true },
       manifest: {
-        name: 'ChessMe',
-        short_name: 'ChessMe',
+        name: mode === 'development' ? 'ChessMe (dev)' : 'ChessMe',
+        short_name: mode === 'development' ? 'ChessMe dev' : 'ChessMe',
         description: 'Explore tes parties et statistiques Lichess.',
         lang: 'fr',
         theme_color: '#161512',
@@ -58,4 +60,4 @@ export default defineConfig({
     environment: 'jsdom',
     setupFiles: ['./src/test/setup.ts'],
   },
-})
+}))
