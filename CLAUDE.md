@@ -62,3 +62,4 @@ src/
 - Licence : chessground et chessops sont sous GPL-3, le projet doit donc rester open source (GPL-compatible).
 - Stockfish multi-thread exige les en-têtes COOP/COEP : à configurer à la fois dans Vite et chez l'hébergeur le jour où on l'ajoute (voir docs/decisions.md).
 - pnpm 11 refuse par défaut les versions publiées très récemment : c'est voulu, ne pas forcer.
+- **Déploiement** : Render, configuré dans `render.yaml`. Un push sur `main` redéploie le site une fois la CI verte. On travaille sur `develop` et on ne merge sur `main` que ce qui doit partir en ligne.

@@ -5,6 +5,7 @@
 - [x] Squelette : Vite, React, TanStack, Tailwind/shadcn, thème sombre Lichess, PWA, CI
 - [x] Recherche de joueur et page profil (classements par cadence)
 - [x] Profil croisé Lichess + Chess.com : vue d'ensemble combinée, plus un onglet par plateforme
+- [x] Configuration du déploiement Render (`render.yaml`)
 - [x] Un pseudo par plateforme (comptes aux noms différents), avec recopie rapide
 
 ## V1 : à cadrer
@@ -22,5 +23,4 @@
 - Entraînement sur ses propres erreurs (rejouer les positions perdues ou les gaffes)
 - Import des parties Chess.com (archives mensuelles)
 - Mémoriser les comptes liés (profil « moi » dans Dexie)
-- Déploiement sur Render
 - Backend, si comptes ou synchro entre appareils

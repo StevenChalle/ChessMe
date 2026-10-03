@@ -48,9 +48,18 @@ Le but est de pouvoir épingler l'application sur le bureau du PC ou l'écran d'
 
 Limite connue : sur iOS, le stockage d'une PWA peut être effacé si l'application n'est pas utilisée pendant plusieurs semaines. Ce n'est pas grave, car les parties se réimportent depuis Lichess.
 
-### Hébergement : Render (site statique), à faire plus tard
+### Hébergement : Render (site statique)
 
-Le compte Render existe déjà. C'est un site statique : commande de build `pnpm build`, dossier publié `dist`, et une règle de réécriture `/* → /index.html` pour le routing côté client. Le jour où Stockfish multi-thread arrivera, ajouter les en-têtes `Cross-Origin-Opener-Policy: same-origin` et `Cross-Origin-Embedder-Policy: credentialless` (dans les paramètres du site Render et dans `server.headers` de Vite).
+Le compte Render existe déjà. La configuration est versionnée dans [`render.yaml`](../render.yaml) (un Blueprint Render) :
+
+- branche `main`, avec `autoDeployTrigger: checksPass` : chaque push sur `main` redéploie le site, **mais seulement une fois la CI GitHub verte** ;
+- build : `corepack pnpm install --frozen-lockfile && corepack pnpm build`. corepack utilise le pnpm épinglé dans `packageManager`, et Node 24 est fixé par `.node-version` ;
+- dossier publié : `dist`, avec une réécriture `/* → /index.html` pour le routing côté client (les fichiers existants sont servis tels quels) ;
+- en-têtes : cache permanent pour `/assets/*` (noms de fichiers hachés), `no-cache` pour `sw.js` et `index.html` afin que les PWA installées reçoivent les mises à jour, plus `nosniff` et `Referrer-Policy`.
+
+Pour Stockfish multi-thread, il faudra ajouter dans `render.yaml` (et dans `server.headers` de Vite) les en-têtes `Cross-Origin-Opener-Policy: same-origin` et `Cross-Origin-Embedder-Policy: credentialless`.
+
+Workflow git : on développe sur `develop`, et un merge sur `main` met le site en ligne.
 
 ### Design : thème sombre de Lichess
 

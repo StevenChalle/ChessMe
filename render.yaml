@@ -1,0 +1,40 @@
+# Render Blueprint: https://render.com/docs/blueprint-spec
+# Static site rebuilt on every push to main, once GitHub CI is green.
+services:
+  - type: web
+    runtime: static
+    name: chessme
+    branch: main
+    autoDeployTrigger: checksPass
+    # corepack runs the pnpm version pinned in package.json ("packageManager")
+    buildCommand: corepack pnpm install --frozen-lockfile && corepack pnpm build
+    staticPublishPath: ./dist
+    envVars:
+      - key: COREPACK_ENABLE_DOWNLOAD_PROMPT
+        value: '0'
+    routes:
+      # Client-side routing: unknown paths serve the app (existing files are served as is)
+      - type: rewrite
+        source: /*
+        destination: /index.html
+    headers:
+      # Hashed build assets never change
+      - path: /assets/*
+        name: Cache-Control
+        value: public, max-age=31536000, immutable
+      # The service worker and the HTML must always be revalidated so updates reach installed apps
+      - path: /sw.js
+        name: Cache-Control
+        value: no-cache
+      - path: /index.html
+        name: Cache-Control
+        value: no-cache
+      - path: /*
+        name: X-Content-Type-Options
+        value: nosniff
+      - path: /*
+        name: Referrer-Policy
+        value: strict-origin-when-cross-origin
+      # When multi-threaded Stockfish lands, add:
+      #   Cross-Origin-Opener-Policy: same-origin
+      #   Cross-Origin-Embedder-Policy: credentialless
