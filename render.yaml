@@ -29,6 +29,10 @@ services:
       - path: /index.html
         name: Cache-Control
         value: no-cache
+      # Render serves .webmanifest as binary/octet-stream by default
+      - path: /manifest.webmanifest
+        name: Content-Type
+        value: application/manifest+json
       - path: /*
         name: X-Content-Type-Options
         value: nosniff

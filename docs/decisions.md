@@ -50,7 +50,7 @@ Limite connue : sur iOS, le stockage d'une PWA peut être effacé si l'applicati
 
 ### Hébergement : Render (site statique)
 
-Le compte Render existe déjà. La configuration est versionnée dans [`render.yaml`](../render.yaml) (un Blueprint Render) :
+Site en ligne : https://chessme-k8py.onrender.com/. La configuration est versionnée dans [`render.yaml`](../render.yaml) (un Blueprint Render) :
 
 - branche `main`, avec `autoDeployTrigger: checksPass` : chaque push sur `main` redéploie le site, **mais seulement une fois la CI GitHub verte** ;
 - build : `corepack pnpm install --frozen-lockfile && corepack pnpm build`. corepack utilise le pnpm épinglé dans `packageManager`, et Node 24 est fixé par `.node-version` ;
