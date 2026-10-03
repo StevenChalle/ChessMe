@@ -46,15 +46,24 @@ export type LichessUser = {
   count?: {
     all: number
     rated: number
+    ai?: number
     win: number
     loss: number
     draw: number
+    import?: number
+  }
+  /** Seconds */
+  playTime?: {
+    total: number
+    tv: number
   }
   profile?: {
+    /** ISO 3166 code, or Lichess-specific values like "_earth" */
     flag?: string
     location?: string
     bio?: string
     realName?: string
+    fideRating?: number
   }
   url?: string
 }

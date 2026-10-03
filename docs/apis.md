@@ -21,15 +21,20 @@
 
 **Synchro** : un import complet au départ, puis `since = createdAt de la dernière partie + 1`.
 
-**Comptes fermés ou bannis** : `disabled: true` ou `tosViolation: true`, avec des données parfois absentes.
+**Comptes fermés ou bannis** : `disabled: true` ou `tosViolation: true`. Un compte fermé ne renvoie presque que `{id, username, disabled}` (exemple : `hikaru`).
 
-## Chess.com : Published-Data API (plus tard)
+## Chess.com : Published-Data API
 
 - Lecture seule, sans authentification, données publiques.
 - `GET https://api.chess.com/pub/player/{username}` (profil), `/stats` (état **actuel** seulement, pas d'historique), `/games/archives` (liste des mois), `/games/{YYYY}/{MM}` (ou `/pgn`).
 - Toute la carrière est accessible, mois par mois. La courbe d'Elo doit être reconstruite à partir des parties.
 - Données en cache, donc avec quelques heures de retard. **Faire les requêtes en série** (le parallèle provoque des 429).
 - Synchro : ne récupérer à nouveau que le mois en cours.
+- CORS : `access-control-allow-origin: *`. Le navigateur interdit de définir le `User-Agent` : on reste donc strictement en série.
+- Les pseudos sont **redirigés en 301 vers leur version en minuscules** : le client met le pseudo en minuscules avant d'appeler l'API. La casse d'affichage se trouve dans l'URL du profil (`url`).
+- Joueur inconnu : 404 avec `{"code":0,"message":"User ... not found."}`. Sans `User-Agent`, `curl` reçoit un 403, mais pas le navigateur.
+- `/stats` : `chess_{bullet,blitz,rapid,daily}` et `chess960_daily`, chacun avec `last` (Elo actuel), `best` (meilleur Elo et partie associée) et `record` (V/N/D). S'y ajoutent `tactics`, `puzzle_rush` et `fide` (déclaratif). Il n'y a pas de cadence « classique ».
+- `status` : `basic`, `premium`, `staff`, `closed` ou `closed:fair_play_violations`.
 
 ## Moteur
 

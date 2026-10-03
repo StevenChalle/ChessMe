@@ -1,6 +1,6 @@
 # ChessMe
 
-Explore les statistiques et les parties d'un joueur Lichess. Application web installable (PWA), qui stocke tout dans le navigateur.
+Explore les statistiques et les parties d'un joueur sur Lichess et Chess.com. Application web installable (PWA), qui stocke tout dans le navigateur.
 
 ```bash
 make dev     # serveur de dev

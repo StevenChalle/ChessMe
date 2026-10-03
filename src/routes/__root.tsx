@@ -1,8 +1,16 @@
 import type { QueryClient } from '@tanstack/react-query'
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools'
-import { createRootRouteWithContext, Link, Outlet } from '@tanstack/react-router'
+import {
+  createRootRouteWithContext,
+  Link,
+  Outlet,
+  useLocation,
+  useSearch,
+} from '@tanstack/react-router'
 import { TanStackRouterDevtools } from '@tanstack/react-router-devtools'
-import { PlayerSearch } from '@/components/PlayerSearch'
+import { Search } from 'lucide-react'
+import { AccountSearchForm } from '@/features/player/components/AccountSearchForm'
+import { validatePlayerSearch } from '@/features/player/search'
 
 type RouterContext = {
   queryClient: QueryClient
@@ -14,15 +22,19 @@ export const Route = createRootRouteWithContext<RouterContext>()({
 })
 
 function RootLayout() {
+  const isHome = useLocation({ select: (location) => location.pathname === '/' })
+
   return (
     <div className="flex min-h-dvh flex-col">
       <header className="mx-auto flex h-14 w-full max-w-6xl items-center gap-6 px-4">
         <Link to="/" className="text-2xl font-medium tracking-tight text-font-clear">
           ChessMe
         </Link>
-        <div className="ml-auto">
-          <PlayerSearch />
-        </div>
+        {!isHome && (
+          <div className="ml-auto">
+            <HeaderSearch />
+          </div>
+        )}
       </header>
       <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-6">
         <Outlet />
@@ -34,5 +46,28 @@ function RootLayout() {
         </>
       )}
     </div>
+  )
+}
+
+/** Compact two-field search on wide screens, prefilled with the accounts currently shown. */
+function HeaderSearch() {
+  const current = validatePlayerSearch(useSearch({ strict: false }))
+  return (
+    <>
+      <AccountSearchForm
+        // Reset the fields whenever the linked accounts in the URL change.
+        key={`${current.lichess ?? ''}|${current.chesscom ?? ''}`}
+        initial={current}
+        variant="compact"
+        className="hidden md:flex"
+      />
+      <Link
+        to="/"
+        aria-label="Nouvelle recherche"
+        className="text-muted-foreground hover:text-font-clear md:hidden"
+      >
+        <Search className="size-5" />
+      </Link>
+    </>
   )
 }

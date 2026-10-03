@@ -1,18 +1,17 @@
-import { queryOptions } from '@tanstack/react-query'
-import { fetchUser, LichessError } from './client'
+import { queryOptions, skipToken } from '@tanstack/react-query'
+import { orNullIfNotFound, shouldRetry } from '@/lib/http'
+import { fetchUser } from './client'
 
 export const lichessKeys = {
   user: (username: string) => ['lichess', 'user', username.toLowerCase()] as const,
 }
 
-export function userQueryOptions(username: string) {
+/** Resolves to null when the account does not exist. Disabled without a username. */
+export function lichessUserQueryOptions(username: string | undefined) {
   return queryOptions({
-    queryKey: lichessKeys.user(username),
-    queryFn: ({ signal }) => fetchUser(username, signal),
+    queryKey: lichessKeys.user(username ?? ''),
+    queryFn: username ? ({ signal }) => orNullIfNotFound(fetchUser(username, signal)) : skipToken,
     staleTime: 5 * 60_000,
-    // Retrying a 404 or a 429 is pointless (and Lichess dislikes the latter).
-    retry: (failureCount, error) =>
-      !(error instanceof LichessError && (error.isNotFound || error.isRateLimited)) &&
-      failureCount < 2,
+    retry: shouldRetry,
   })
 }

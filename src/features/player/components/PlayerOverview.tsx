@@ -1,0 +1,85 @@
+import { formatMonthYear, formatNumber, formatRelative } from '@/lib/format'
+import type { PlayerUsernames } from '../search'
+import { earliestJoin, latestActivity, SOURCE_LABELS, sumRecords, totalGames } from '../summary'
+import { usePlayerAccounts } from '../usePlayerAccounts'
+import { AccountCard } from './AccountCard'
+import { CurrentRatings } from './CurrentRatings'
+import { GamesByCategory } from './GamesByCategory'
+import { Panel, StatTile } from './Panel'
+import { ResultBar } from './ResultBar'
+import { SourceLabel } from './SourceBadge'
+
+export function PlayerOverview({ usernames }: { usernames: PlayerUsernames }) {
+  const { states, linked, accounts: allAccounts } = usePlayerAccounts(usernames)
+  // Closed accounts expose no stats: keep them out of the combined figures.
+  const accounts = allAccounts.filter((account) => !account.closed)
+  const withRecord = accounts.filter((account) => account.record)
+  const record = sumRecords(withRecord.map((account) => account.record))
+  const oldest = earliestJoin(accounts)
+  const latest = latestActivity(accounts)
+
+  return (
+    <div className="space-y-4">
+      <div className="grid gap-4 md:grid-cols-2">
+        {/* Always show both platforms, so a missing link stays visible */}
+        <AccountCard source="lichess" state={states.lichess} />
+        <AccountCard source="chesscom" state={states.chesscom} />
+      </div>
+
+      {accounts.length > 0 && (
+        <>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+            <StatTile
+              label="Parties jouées"
+              value={formatNumber(totalGames(record))}
+              hint={
+                withRecord.length > 1 &&
+                withRecord
+                  .map(
+                    (account) =>
+                      `${SOURCE_LABELS[account.source]} ${formatNumber(totalGames(account.record!))}`,
+                  )
+                  .join(' · ')
+              }
+            />
+            <StatTile
+              label="Joue depuis"
+              value={oldest?.joinedAt ? formatMonthYear(oldest.joinedAt) : '—'}
+              hint={oldest && accounts.length > 1 && `sur ${SOURCE_LABELS[oldest.source]}`}
+            />
+            <StatTile
+              label="Dernière activité"
+              value={latest?.lastSeenAt ? formatRelative(latest.lastSeenAt) : '—'}
+              hint={latest && accounts.length > 1 && `sur ${SOURCE_LABELS[latest.source]}`}
+            />
+          </div>
+
+          <div className="grid gap-4 lg:grid-cols-2">
+            <CurrentRatings accounts={accounts} sources={linked} />
+            <div className="space-y-4">
+              <Panel
+                title="Bilan global"
+                aside={withRecord.length > 1 && 'Toutes parties, les deux sites'}
+              >
+                <ResultBar record={record} />
+                {withRecord.length > 1 && (
+                  <div className="mt-4 space-y-3 border-t pt-3">
+                    {withRecord.map((account) => (
+                      <div key={account.source} className="space-y-1.5">
+                        <div className="text-xs">
+                          <SourceLabel source={account.source} />
+                        </div>
+                        <ResultBar record={account.record!} compact />
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </Panel>
+              <GamesByCategory accounts={accounts} />
+            </div>
+          </div>
+        </>
+      )}
+    </div>
+  )
+}

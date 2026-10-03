@@ -48,6 +48,8 @@
   --color-zebra: var(--lc-bg-zebra);
   --color-font-dim: var(--lc-font-dim);
   --color-font-clear: var(--lc-font-clear);
+  --color-lichess: var(--lc-source-lichess);
+  --color-chesscom: var(--lc-source-chesscom);
 
   --radius-sm: calc(var(--radius) * 0.6);
   --radius-md: calc(var(--radius) * 0.8);
@@ -77,6 +79,9 @@
   --lc-good: #629924;
   --lc-bad: #cc3333;
   --lc-brag: #bf811d;
+  /* Source identity colors (bars, dots): one per platform */
+  --lc-source-lichess: #3692e7;
+  --lc-source-chesscom: #81b64c;
 
   /* shadcn semantic tokens */
   --background: var(--lc-bg);
