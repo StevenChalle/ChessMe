@@ -1,0 +1,125 @@
+@import 'tailwindcss';
+@import 'tw-animate-css';
+@import 'shadcn/tailwind.css';
+@import '@fontsource-variable/noto-sans';
+
+/*
+ * Theme: inspired by Lichess's dark theme.
+ * Raw Lichess palette lives in --lc-* tokens; shadcn semantic tokens map onto it.
+ * Change colors here, never hard-code hex values in components.
+ * See docs/design.md.
+ */
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --font-sans: 'Noto Sans Variable', 'Noto Sans', system-ui, sans-serif;
+  --font-heading: var(--font-sans);
+
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+
+  /* Chess-specific semantics: bg-good, text-bad, text-brag... */
+  --color-good: var(--lc-good);
+  --color-bad: var(--lc-bad);
+  --color-brag: var(--lc-brag);
+  --color-highlight: var(--lc-accent);
+  --color-zebra: var(--lc-bg-zebra);
+  --color-font-dim: var(--lc-font-dim);
+  --color-font-clear: var(--lc-font-clear);
+
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+  --radius-2xl: calc(var(--radius) * 1.8);
+  --radius-3xl: calc(var(--radius) * 2.2);
+  --radius-4xl: calc(var(--radius) * 2.6);
+}
+
+:root {
+  color-scheme: dark;
+
+  /* Lichess dark palette */
+  --lc-bg: #161512;
+  --lc-bg-top: #2e2a24;
+  --lc-bg-box: #262421;
+  --lc-bg-zebra: #2b2926;
+  --lc-bg-popup: #3c3934;
+  --lc-border: #404040;
+  --lc-font: #bababa;
+  --lc-font-dim: #999999;
+  --lc-font-clear: #dddddd;
+  --lc-primary: #3692e7;
+  --lc-secondary: #629924;
+  --lc-accent: #d85000;
+  --lc-good: #629924;
+  --lc-bad: #cc3333;
+  --lc-brag: #bf811d;
+
+  /* shadcn semantic tokens */
+  --background: var(--lc-bg);
+  --foreground: var(--lc-font);
+  --card: var(--lc-bg-box);
+  --card-foreground: var(--lc-font);
+  --popover: var(--lc-bg-popup);
+  --popover-foreground: var(--lc-font-clear);
+  --primary: var(--lc-primary);
+  --primary-foreground: #ffffff;
+  --secondary: var(--lc-bg-popup);
+  --secondary-foreground: var(--lc-font-clear);
+  --muted: var(--lc-bg-zebra);
+  --muted-foreground: var(--lc-font-dim);
+  --accent: var(--lc-bg-popup);
+  --accent-foreground: var(--lc-font-clear);
+  --destructive: var(--lc-bad);
+  --border: var(--lc-border);
+  --input: var(--lc-border);
+  --ring: var(--lc-primary);
+  --chart-1: var(--lc-primary);
+  --chart-2: var(--lc-secondary);
+  --chart-3: var(--lc-accent);
+  --chart-4: var(--lc-brag);
+  --chart-5: #8e44ad;
+  --radius: 0.25rem;
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  html {
+    @apply font-sans;
+  }
+  body {
+    @apply min-h-dvh text-foreground antialiased;
+    /* Lichess-style warm gradient at the top of the page */
+    background: linear-gradient(to bottom, var(--lc-bg-top), var(--lc-bg) 116px) no-repeat
+      var(--lc-bg);
+  }
+  button:not(:disabled),
+  [role='button']:not(:disabled) {
+    cursor: pointer;
+  }
+}
