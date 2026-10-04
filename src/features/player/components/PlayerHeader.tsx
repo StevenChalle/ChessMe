@@ -1,4 +1,4 @@
-import { ReviewButton } from '@/features/review/components/ReviewButton'
+import { ReviewButtons } from '@/features/review/components/ReviewButtons'
 import { countryName } from '@/lib/format'
 import { m } from '@/paraglide/messages'
 import { SOURCE_LABELS, type AccountSummary } from '../summary'
@@ -58,7 +58,7 @@ export function PlayerHeader({ accounts }: { accounts: AccountSummary[] }) {
           </p>
         </div>
       </div>
-      {reviewable.length > 0 && <ReviewButton accounts={reviewable} />}
+      {reviewable.length > 0 && <ReviewButtons accounts={reviewable} />}
     </div>
   )
 }

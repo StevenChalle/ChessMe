@@ -13,6 +13,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as PlayerRouteRouteImport } from './routes/player/route'
 import { Route as PlayerIndexRouteImport } from './routes/player/index'
 import { Route as PlayerChesscomRouteImport } from './routes/player/chesscom'
+import { Route as PlayerHistoryRouteImport } from './routes/player/history'
 import { Route as PlayerLichessRouteImport } from './routes/player/lichess'
 
 const IndexRoute = IndexRouteImport.update({
@@ -35,6 +36,11 @@ const PlayerChesscomRoute = PlayerChesscomRouteImport.update({
   path: '/chesscom',
   getParentRoute: () => PlayerRouteRoute,
 } as any)
+const PlayerHistoryRoute = PlayerHistoryRouteImport.update({
+  id: '/history',
+  path: '/history',
+  getParentRoute: () => PlayerRouteRoute,
+} as any)
 const PlayerLichessRoute = PlayerLichessRouteImport.update({
   id: '/lichess',
   path: '/lichess',
@@ -45,12 +51,14 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/player': typeof PlayerRouteRouteWithChildren
   '/player/chesscom': typeof PlayerChesscomRoute
+  '/player/history': typeof PlayerHistoryRoute
   '/player/lichess': typeof PlayerLichessRoute
   '/player/': typeof PlayerIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/player/chesscom': typeof PlayerChesscomRoute
+  '/player/history': typeof PlayerHistoryRoute
   '/player/lichess': typeof PlayerLichessRoute
   '/player': typeof PlayerIndexRoute
 }
@@ -59,20 +67,28 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/player': typeof PlayerRouteRouteWithChildren
   '/player/chesscom': typeof PlayerChesscomRoute
+  '/player/history': typeof PlayerHistoryRoute
   '/player/lichess': typeof PlayerLichessRoute
   '/player/': typeof PlayerIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
-    '/' | '/player' | '/player/chesscom' | '/player/lichess' | '/player/'
+    | '/'
+    | '/player'
+    | '/player/chesscom'
+    | '/player/history'
+    | '/player/lichess'
+    | '/player/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/player/chesscom' | '/player/lichess' | '/player'
+  to:
+    '/' | '/player/chesscom' | '/player/history' | '/player/lichess' | '/player'
   id:
     | '__root__'
     | '/'
     | '/player'
     | '/player/chesscom'
+    | '/player/history'
     | '/player/lichess'
     | '/player/'
   fileRoutesById: FileRoutesById
@@ -112,6 +128,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PlayerChesscomRouteImport
       parentRoute: typeof PlayerRouteRoute
     }
+    '/player/history': {
+      id: '/player/history'
+      path: '/history'
+      fullPath: '/player/history'
+      preLoaderRoute: typeof PlayerHistoryRouteImport
+      parentRoute: typeof PlayerRouteRoute
+    }
     '/player/lichess': {
       id: '/player/lichess'
       path: '/lichess'
@@ -124,12 +147,14 @@ declare module '@tanstack/react-router' {
 
 interface PlayerRouteRouteChildren {
   PlayerChesscomRoute: typeof PlayerChesscomRoute
+  PlayerHistoryRoute: typeof PlayerHistoryRoute
   PlayerLichessRoute: typeof PlayerLichessRoute
   PlayerIndexRoute: typeof PlayerIndexRoute
 }
 
 const PlayerRouteRouteChildren: PlayerRouteRouteChildren = {
   PlayerChesscomRoute: PlayerChesscomRoute,
+  PlayerHistoryRoute: PlayerHistoryRoute,
   PlayerLichessRoute: PlayerLichessRoute,
   PlayerIndexRoute: PlayerIndexRoute,
 }

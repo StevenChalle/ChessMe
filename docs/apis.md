@@ -13,6 +13,7 @@
 | `GET /api/user/{username}/rating-history` | historique Elo complet                                                                                                                                                    |
 | `GET /api/games/user/{username}`          | export des parties en flux (`Accept: application/x-ndjson`). Paramètres : `since`, `until`, `max`, `perfType`, `color`, `moves`, `evals`, `opening`, `clocks`, `accuracy` |
 | `GET /api/cloud-eval?fen=...&multiPv=3`   | évaluations en cache uniquement (404 si la position est inconnue)                                                                                                         |
+| `/analysis/<FEN>?color=white\|black`      | plateau d'analyse sur une position quelconque (espaces du FEN remplacés par `_`), pour un lien sortant                                                                    |
 | `explorer.lichess.ovh`                    | opening explorer                                                                                                                                                          |
 | `tablebase.lichess.ovh`                   | tablebases jusqu'à 7 pièces                                                                                                                                               |
 | https://database.lichess.org              | exports mensuels de toutes les parties, sous licence CC0                                                                                                                  |
@@ -23,6 +24,8 @@
 - `players.{white,black}.analysis` : `{ inaccuracy, mistake, blunder, acpl, accuracy }`. Avec `division=true` : `division: { middle, end }` (demi-coups).
 - Aucun moyen de demander une analyse serveur par l'API.
 - Le 2026-10-04, `GET /api/games/user/{username}` renvoyait 404 depuis `curl` et depuis un Chromium headless (alors que `/game/export/{id}` répondait), mais **fonctionne depuis un navigateur normal**, y compris dans l'app : un filtrage côté Lichess des clients automatisés, ou de l'IP de test.
+
+**Export paginé** (historique) : `max=30&moves=false&until=<ms>`, où `until` est une borne sur la date de **début** (`createdAt`) ; la page suivante part de `min(createdAt) − 1`. Sans `perfType`, l'export comprend toutes les variantes et les parties amicales. Chaque joueur a `rating` (avant la partie) et `ratingDiff` (parties classées).
 
 **Débit** : environ 20 parties/s sans token. **Une seule requête à la fois.** En cas de 429, attendre 60 s avant de réessayer.
 
@@ -43,6 +46,7 @@
 - `/stats` : `chess_{bullet,blitz,rapid,daily}` et `chess960_daily`, chacun avec `last` (Elo actuel), `best` (meilleur Elo et partie associée) et `record` (V/N/D). S'y ajoutent `tactics`, `puzzle_rush` et `fide` (déclaratif). Il n'y a pas de cadence « classique ».
 - `status` : `basic`, `premium`, `staff`, `closed` ou `closed:fair_play_violations`.
 - Parties d'un mois : `pgn` (avec `[%clk]`), `time_control` (`"180+2"`, `"600"`, `"1/86400"` pour le daily), `time_class`, `rules` (`chess`, `chess960`…), `rated`, `end_time`, `white`/`black` (`username`, `rating`, `result`). **Aucune évaluation par coup** : seulement `accuracies: { white, black }` quand une Game Review existe (fréquent mais pas garanti).
+- `white.rating` / `black.rating` dans une partie : l'Elo **après** la partie ; aucune variation n'est fournie (à calculer avec la partie précédente de la même cadence).
 - `result` : `win` pour le gagnant ; nulles = `agreed`, `repetition`, `stalemate`, `insufficient`, `50move`, `timevsinsufficient` ; le reste est une défaite (`checkmated`, `resigned`, `timeout`, `abandoned`…).
 
 ## Moteur

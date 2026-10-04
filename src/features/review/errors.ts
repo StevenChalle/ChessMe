@@ -2,22 +2,37 @@ import type { Color } from 'chessops'
 import type { EngineScore } from '@/lib/engine/uci'
 
 /**
- * What counts as an error ("mistake"). See docs/decisions.md, "Notion d'erreur".
+ * Errors and valid moves are judged in winning chances, not raw centipawns: losing half a pawn
+ * matters in a balanced position, much less when the game is already decided. See
+ * docs/decisions.md, "Notion d'erreur" and "Notion de coup valide".
  *
- * For each move of the reviewed player, compare the evaluation before and after it, both from
- * that player's side, in centipawns:
- *   loss = before − after
- *   error ⇔ loss ≥ 100 cp, unless the game stays decided: before and after both ≥ +400 cp
- *           (still winning) or both ≤ −400 cp (already lost).
- * Mates count as ±10 000 cp, so missing a mate or walking into one is an error unless the game
- * stays decided on the same side.
+ * winChance(cp) = 50 + 50 × (2 / (1 + e^(−0.00368208 × cp)) − 1), in % (Lichess's model).
+ * drop = winChance(before) − winChance(after), both from the moving player's side.
+ *
+ *   error ⇔ drop ≥ 10      (about 1.1 pawns from equality)
+ *   valid ⇔ drop < 5       (about half a pawn from equality; compared to the engine's best move)
+ *
+ * Mates count as ±10 000 cp, i.e. 100 % or 0 %.
  */
 
-/** Minimum evaluation drop for a move to be an error: one pawn. */
-export const ERROR_MIN_LOSS_CP = 100
+/** Minimum drop in winning chances (%) for a move to be an error. */
+export const ERROR_MIN_DROP = 10
 
-/** Beyond ±4 pawns, a game is decided: drops that stay on the same side do not count. */
-export const DECIDED_CP = 400
+/** Maximum drop in winning chances (%), compared to the best move, for a move to be valid. */
+export const VALID_MAX_DROP = 5
+
+/** Slope of Lichess's centipawns to winning chances curve. */
+const WIN_CHANCE_SLOPE = 0.00368208
+
+/** Winning chances (0 to 100 %) of the side whose evaluation this is. */
+export function winChance(cp: number): number {
+  return 50 + 50 * (2 / (1 + Math.exp(-WIN_CHANCE_SLOPE * cp)) - 1)
+}
+
+/** Winning chances lost by going from `fromCp` to `toCp` (negative when they grow). */
+export function winChanceDrop(fromCp: number, toCp: number): number {
+  return winChance(fromCp) - winChance(toCp)
+}
 
 /** Mate scores, in centipawns. */
 export const MATE_CP = 10_000
@@ -42,12 +57,9 @@ export function forColor(whiteCp: number, color: Color): number {
   return color === 'white' ? whiteCp : -whiteCp
 }
 
-/** The rule above, on evaluations from the moving player's side. */
+/** Evaluations from the moving player's side, before and after the move. */
 export function isError(beforeCp: number, afterCp: number): boolean {
-  if (beforeCp - afterCp < ERROR_MIN_LOSS_CP) return false
-  const stillWinning = beforeCp >= DECIDED_CP && afterCp >= DECIDED_CP
-  const alreadyLost = beforeCp <= -DECIDED_CP && afterCp <= -DECIDED_CP
-  return !stillWinning && !alreadyLost
+  return winChanceDrop(beforeCp, afterCp) >= ERROR_MIN_DROP
 }
 
 export type PlayerMove = {
@@ -78,4 +90,9 @@ export function playerMoves(whiteCps: number[], turns: Color[], color: Color): P
 export function countErrors(whiteCps: number[], turns: Color[], color: Color): number {
   return playerMoves(whiteCps, turns, color).filter((move) => isError(move.beforeCp, move.afterCp))
     .length
+}
+
+/** From the player's side: `bestCp` after the best move, `afterCp` after the tried one. */
+export function isValidMove(bestCp: number, afterCp: number): boolean {
+  return winChanceDrop(bestCp, afterCp) < VALID_MAX_DROP
 }

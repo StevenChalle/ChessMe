@@ -6,13 +6,20 @@ describe('replay', () => {
   it('returns the starting position then one per move', () => {
     const positions = replay(['e4', 'e5', 'Nf3'])
     expect(positions).toHaveLength(4)
-    expect(positions[0]).toEqual({
+    expect(positions[0]).toMatchObject({
       fen: 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1',
       turn: 'white',
       finalCp: undefined,
     })
     expect(positions[3]!.turn).toBe('black')
     expect(positions[3]!.fen).toBe('rnbqkbnr/pppp1ppp/8/4p3/4P3/5N2/PPPP1PPP/RNBQKB1R b KQkq - 1 2')
+  })
+
+  it('remembers the move leading to each position, castling as the king move', () => {
+    const positions = replay(['e4', 'e5', 'Nf3', 'Nc6', 'Bc4', 'Nf6', 'O-O'])
+    expect(positions[0]!.move).toBeUndefined()
+    expect(positions[1]!.move).toEqual({ uci: 'e2e4', san: 'e4' })
+    expect(positions.at(-1)!.move).toEqual({ uci: 'e1g1', san: 'O-O' })
   })
 
   it('scores checkmate exactly', () => {

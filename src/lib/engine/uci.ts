@@ -12,6 +12,8 @@ export type InfoLine = {
   score?: EngineScore
   /** Lower or upper bound from an aspiration window: not a final score. */
   bound?: boolean
+  /** First move of the principal variation (UCI) */
+  pv?: string
 }
 
 const NUMBER_FIELDS = ['depth', 'multipv', 'nodes'] as const
@@ -22,8 +24,12 @@ export function parseInfo(line: string): InfoLine | undefined {
   const info: InfoLine = {}
   for (let i = 1; i < tokens.length; i++) {
     const token = tokens[i]!
-    // The principal variation runs to the end of the line.
-    if (token === 'pv' || token === 'string') break
+    // The principal variation runs to the end of the line: only its first move matters here.
+    if (token === 'pv') {
+      if (tokens[i + 1]) info.pv = tokens[i + 1]
+      break
+    }
+    if (token === 'string') break
     if ((NUMBER_FIELDS as readonly string[]).includes(token)) {
       info[token as (typeof NUMBER_FIELDS)[number]] = Number(tokens[++i])
     } else if (token === 'score') {

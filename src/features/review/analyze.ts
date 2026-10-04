@@ -1,9 +1,10 @@
+import type { Color } from 'chessops'
 import { fetchRecentGames as fetchChessComGames } from '@/lib/chesscom/client'
 import { defaultPoolSize, EnginePool } from '@/lib/engine/pool'
 import type { Stockfish } from '@/lib/engine/stockfish'
 import type { ApiSource } from '@/lib/http'
 import { fetchRecentGames as fetchLichessGames } from '@/lib/lichess/client'
-import { countErrors, fromSideToMove, playerMoves, toCp } from './errors'
+import { fromSideToMove, isError, playerMoves, toCp, winChanceDrop } from './errors'
 import {
   fromChessComGame,
   fromLichessGame,
@@ -14,6 +15,7 @@ import {
 import { replay, type GamePosition } from './positions'
 import { remainingSeconds, type AnalysisPass, type ReviewProgress } from './progress'
 
+/** Games reviewed by default; the last game alone can be reviewed too (count 1). */
 export const REVIEW_GAME_COUNT = 10
 
 /**
@@ -22,12 +24,31 @@ export const REVIEW_GAME_COUNT = 10
  */
 export const QUICK_NODES = 100_000
 export const DEEP_NODES = 1_000_000
-/** A move losing this much in the quick pass gets a deep look (margin below the error rule). */
-export const DEEP_CHECK_MIN_LOSS_CP = 60
+/**
+ * A move losing this much winning chances (%) in the quick pass gets a deep look
+ * (margin below the error rule, ERROR_MIN_DROP).
+ */
+export const DEEP_CHECK_MIN_DROP = 6
 
 export type ReviewAccount = { source: ApiSource; username: string }
 
-export type ReviewedGame = ReviewGame & { errors: number }
+/** One error of the reviewed player (see errors.ts), with what is needed to replay it. */
+export type Mistake = {
+  /** Unique across games: `${source}-${gameId}-${ply}` */
+  id: string
+  game: Pick<ReviewGame, 'source' | 'url' | 'playedAt' | 'opponent'>
+  color: Color
+  /** Position before the error */
+  fen: string
+  /** The opponent's move that led to it (UCI), to highlight on the board */
+  lastMove?: string
+  played: { uci: string; san: string }
+  /** From the player's side */
+  beforeCp: number
+  afterCp: number
+}
+
+export type ReviewedGame = ReviewGame & { mistakes: Mistake[] }
 
 export type ReviewOutcome = {
   /** Newest first */
@@ -48,17 +69,12 @@ type Work = {
 /** Positions of one game to evaluate in a pass. */
 type Job = { work: Work; indexes: number[] }
 
-async function fetchGames({ source, username }: ReviewAccount, signal: AbortSignal) {
+async function fetchGames({ source, username }: ReviewAccount, count: number, signal: AbortSignal) {
   if (source === 'lichess') {
-    const games = await fetchLichessGames(username, REVIEW_GAME_COUNT, signal)
+    const games = await fetchLichessGames(username, count, signal)
     return games.flatMap((game) => fromLichessGame(game, username) ?? [])
   }
-  const games = await fetchChessComGames(
-    username,
-    REVIEW_GAME_COUNT,
-    isReviewableChessComGame,
-    signal,
-  )
+  const games = await fetchChessComGames(username, count, isReviewableChessComGame, signal)
   return games.flatMap((game) => fromChessComGame(game, username) ?? [])
 }
 
@@ -82,7 +98,7 @@ function deepCheckPositions(work: Work): number[] {
   const turns = work.positions.map((position) => position.turn)
   const indexes = new Set<number>()
   for (const move of playerMoves(work.cps as number[], turns, work.game.color)) {
-    if (move.beforeCp - move.afterCp < DEEP_CHECK_MIN_LOSS_CP) continue
+    if (winChanceDrop(move.beforeCp, move.afterCp) < DEEP_CHECK_MIN_DROP) continue
     for (const index of [move.ply, move.ply + 1]) {
       if (work.byEngine.has(index)) indexes.add(index)
     }
@@ -91,14 +107,27 @@ function deepCheckPositions(work: Work): number[] {
 }
 
 function finish(works: Work[]): ReviewedGame[] {
-  return works.map(({ game, positions, cps }) => ({
-    ...game,
-    errors: countErrors(
-      cps as number[],
-      positions.map((position) => position.turn),
-      game.color,
-    ),
-  }))
+  return works.map(({ game, positions, cps }) => {
+    const turns = positions.map((position) => position.turn)
+    const mistakes = playerMoves(cps as number[], turns, game.color)
+      .filter((move) => isError(move.beforeCp, move.afterCp))
+      .map(({ ply, beforeCp, afterCp }) => ({
+        id: `${game.source}-${game.id}-${ply}`,
+        game: {
+          source: game.source,
+          url: game.url,
+          playedAt: game.playedAt,
+          opponent: game.opponent,
+        },
+        color: game.color,
+        fen: positions[ply]!.fen,
+        lastMove: positions[ply]!.move?.uci,
+        played: positions[ply + 1]!.move!,
+        beforeCp,
+        afterCp,
+      }))
+    return { ...game, mistakes }
+  })
 }
 
 async function evaluate(engine: Stockfish, position: GamePosition, nodes: number) {
@@ -116,11 +145,20 @@ export async function reviewRecentGames(
   {
     signal,
     onProgress,
+    count = REVIEW_GAME_COUNT,
     poolSize = defaultPoolSize(),
-  }: { signal: AbortSignal; onProgress: (progress: ReviewProgress) => void; poolSize?: number },
+  }: {
+    signal: AbortSignal
+    onProgress: (progress: ReviewProgress) => void
+    /** How many of the latest games, all platforms together */
+    count?: number
+    poolSize?: number
+  },
 ): Promise<ReviewOutcome> {
   onProgress({ phase: 'fetching' })
-  const fetched = await Promise.allSettled(accounts.map((account) => fetchGames(account, signal)))
+  const fetched = await Promise.allSettled(
+    accounts.map((account) => fetchGames(account, count, signal)),
+  )
   signal.throwIfAborted()
   const failures = fetched.flatMap((result, index) =>
     result.status === 'rejected'
@@ -129,7 +167,7 @@ export async function reviewRecentGames(
   )
   const games = latestGames(
     fetched.flatMap((result) => (result.status === 'fulfilled' ? result.value : [])),
-    REVIEW_GAME_COUNT,
+    count,
   )
 
   const works = games.map(prepare)

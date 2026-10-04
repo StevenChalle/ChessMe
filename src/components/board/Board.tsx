@@ -32,8 +32,14 @@ export function Board({ config, className }: BoardProps) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
+  const fenRef = useRef(config?.fen)
   useEffect(() => {
-    if (config) apiRef.current?.set(config)
+    const api = apiRef.current
+    if (!config || !api) return
+    api.set(config)
+    // A new position: drop any piece still selected in the previous one (and its stale dests).
+    if (config.fen !== fenRef.current) api.cancelMove()
+    fenRef.current = config.fen
   }, [config])
 
   return (

@@ -91,6 +91,29 @@ export function formatDuration(seconds: number): string {
   return minutesFormat().format(Math.ceil(seconds / 60))
 }
 
+const signedTenthsFormat = cachedPerLocale(
+  (locale) =>
+    new Intl.NumberFormat(locale, {
+      minimumFractionDigits: 1,
+      maximumFractionDigits: 1,
+      signDisplay: 'exceptZero',
+    }),
+)
+
+const signedFormat = cachedPerLocale(
+  (locale) => new Intl.NumberFormat(locale, { signDisplay: 'exceptZero' }),
+)
+
+/** Whole number, signed except zero: "+8", "-12", "0" */
+export function formatSigned(value: number): string {
+  return signedFormat().format(value)
+}
+
+/** One decimal, always signed except zero: "+1.5" / "+1,5", "−0.3", "0.0" */
+export function formatSignedTenths(value: number): string {
+  return signedTenthsFormat().format(value)
+}
+
 /** Stopwatch: "0:07", "1:42", "12:05" */
 export function formatClock(seconds: number): string {
   const whole = Math.floor(seconds)

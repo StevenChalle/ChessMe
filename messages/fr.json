@@ -91,9 +91,12 @@
   "recent_remove": "Retirer {names} des recherches récentes",
   "dialog_close": "Fermer",
   "review_button": "Analyser les 10 dernières parties",
+  "review_button_last": "Analyser la dernière partie",
   "review_title": "10 dernières parties",
-  "review_description": "Parties classées des comptes liés, vérifiées par Stockfish. Une erreur est un coup qui perd au moins un pion, sauf si la partie reste jouée d'avance (au-delà de ±4 du même côté).",
+  "review_title_last": "Dernière partie",
+  "review_description": "Parties classées des comptes liés, vérifiées par Stockfish. Une erreur est un coup qui fait perdre au moins 10 % de chances de gain : environ un pion dans une position équilibrée, davantage quand la partie est décidée.",
   "review_step_fetch": "Récupérer les dernières parties",
+  "review_step_fetch_last": "Récupérer la dernière partie",
   "review_step_fetch_hint": "Parties classées de chaque compte lié",
   "review_step_quick": "Analyse rapide de chaque position",
   "review_step_quick_hint": "Repère les coups suspects",
@@ -127,5 +130,71 @@
   "result_loss": "Défaite",
   "played_white": "Avec les blancs",
   "played_black": "Avec les noirs",
-  "time_control_days": "{days} j"
+  "time_control_days": "{days} j",
+  "training_start": "Rejouer mes erreurs ({count})",
+  "training_progress": "Erreur {current} / {total}",
+  "training_remaining": [
+    {
+      "declarations": ["input count", "input formatted", "local countPlural = count: plural"],
+      "selectors": ["countPlural"],
+      "match": {
+        "countPlural=one": "{formatted} restante",
+        "countPlural=other": "{formatted} restantes"
+      }
+    }
+  ],
+  "training_retry": "Réessayer",
+  "training_show_solution": "Voir la solution",
+  "training_next": "Position suivante",
+  "training_see_summary": "Voir le bilan",
+  "training_quit": "Quitter",
+  "training_summary_title": "Bilan",
+  "training_first_try": "Trouvées du premier coup",
+  "training_after_retries": "Trouvées après plusieurs essais",
+  "training_revealed": "Solution affichée",
+  "training_finish": "Terminer",
+  "training_engine_failed": "Impossible de démarrer Stockfish. Quittez et réessayez.",
+  "training_white_to_play": "Trait aux blancs",
+  "training_black_to_play": "Trait aux noirs",
+  "training_find_move": "Trouvez mieux que le coup de votre partie.",
+  "training_checking": "Voyons voir…",
+  "training_wrong_title": "Pas tout à fait",
+  "training_wrong_hint": "Ce coup concède trop. Regardez encore.",
+  "training_solved_title": "Bien joué !",
+  "training_solved_best": "C'est le coup du moteur.",
+  "training_revealed_title": "La solution",
+  "training_your_move": "Votre coup",
+  "training_best_move": "Meilleur coup",
+  "training_game_move": "Dans votre partie",
+  "training_view_game": "Voir la partie",
+  "training_position_eval": "Évaluation de la position",
+  "training_delta_title": "Écart avec la position ({eval})",
+  "training_explore": "Essayer un autre coup",
+  "training_explore_hint": "Essayez un coup pour voir ce qu'il donne.",
+  "training_analyse_lichess": "Analyser sur Lichess",
+  "training_valid_moves": [
+    {
+      "declarations": ["input count", "input formatted", "local countPlural = count: plural"],
+      "selectors": ["countPlural"],
+      "match": {
+        "countPlural=one": "{formatted} coup valide",
+        "countPlural=other": "{formatted} coups valides"
+      }
+    }
+  ],
+  "training_valid_moves_more": "{formatted}+ coups valides",
+  "training_valid_moves_title": "Coups acceptés",
+  "training_valid_moves_more_hint": "Parmi les {count} meilleurs coups du moteur : d'autres peuvent l'être aussi.",
+  "training_best_tag": "meilleur",
+  "training_wrong_game_move": "C'est le coup joué dans votre partie : il concède trop.",
+  "variant_from_position": "Position personnalisée",
+  "tab_history": "Parties",
+  "history_update": "Mettre à jour",
+  "history_previous": "Parties plus récentes",
+  "history_next": "Parties plus anciennes",
+  "history_range": "Parties {from} à {to}",
+  "history_col_rating": "Elo",
+  "history_casual": "Amicale",
+  "history_no_games": "Aucune partie trouvée.",
+  "history_failed": "Impossible de charger les parties."
 }

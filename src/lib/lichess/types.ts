@@ -45,7 +45,10 @@ export type LichessMoveAnalysis = {
 
 export type LichessGamePlayer = {
   user?: { id: string; name: string; title?: string }
+  /** Before the game */
   rating?: number
+  /** Rating won or lost in this game (rated games) */
+  ratingDiff?: number
   /** Stockfish level when playing the computer */
   aiLevel?: number
   /** Only when the game was analysed */

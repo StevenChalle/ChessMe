@@ -38,7 +38,14 @@ function StepIcon({ status }: { status: StepStatus }) {
  * Every step of the review, visible from the start: done steps are checked with a summary,
  * the current one shows its progress, upcoming ones are dimmed.
  */
-export function ReviewSteps({ progress }: { progress: ReviewProgress }) {
+export function ReviewSteps({
+  progress,
+  single,
+}: {
+  progress: ReviewProgress
+  /** Reviewing the last game only */
+  single?: boolean
+}) {
   return (
     <ol className="space-y-3">
       {REVIEW_STEPS.map((step) => {
@@ -56,7 +63,11 @@ export function ReviewSteps({ progress }: { progress: ReviewProgress }) {
                   status === 'upcoming' ? 'text-muted-foreground' : 'text-font-clear',
                 )}
               >
-                <span>{STEP_LABELS[step].title()}</span>
+                <span>
+                  {single && step === 'fetch'
+                    ? m.review_step_fetch_last()
+                    : STEP_LABELS[step].title()}
+                </span>
                 {summary && <span className="text-muted-foreground tabular-nums">{summary}</span>}
               </p>
               <p className="text-xs text-muted-foreground">{STEP_LABELS[step].hint()}</p>

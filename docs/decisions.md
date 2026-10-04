@@ -119,33 +119,35 @@ Un bouton sur le profil ouvre une modale : récupération des 10 dernières part
 
 ### Notion d'erreur
 
-Définie dans `src/features/review/errors.ts` (constantes nommées, testées). **Toute évolution de cette règle doit être reportée ici.**
+Définie dans `src/features/review/errors.ts` (`isError`, `ERROR_MIN_DROP`, testée). **Toute évolution de cette règle doit être reportée ici.**
 
-Pour chaque coup du joueur, on compare l'évaluation **avant** et **après** le coup, toutes deux du point de vue du joueur, en centipions :
+**Révisée le 2026-10-04** : d'abord « perte ≥ 1 pion, sauf partie décidée (au-delà de ±4 du même côté) ». Cette clause créait une marche brutale à ±4 (à +4,1, un coup qui restait à +4 passait quelle que soit la perte). On raisonne désormais en **chances de gain**, comme Lichess.
+
+Pour chaque coup du joueur, évaluations avant et après, de son point de vue, converties en chances de gain :
 
 ```
-perte = avant − après
-erreur ⇔ perte ≥ 100 cp
-         ET NON (avant ≥ +400 ET après ≥ +400)   ← toujours gagné
-         ET NON (avant ≤ −400 ET après ≤ −400)   ← déjà perdu
+gain%(cp) = 50 + 50 × (2 / (1 + e^(−0,00368208 × cp)) − 1)     (modèle de Lichess)
+perte = gain%(avant) − gain%(après)
+erreur ⇔ perte ≥ 10 points
 ```
 
-- **1 pion (100 cp)** : le seuil d'une vraie erreur, compréhensible sans connaître les modèles de probabilité de gain.
-- **Partie jouée d'avance (au-delà de ±4)** : passer de +8 à +6 ou de −5 à −8 ne change pas l'issue, donc ce n'est pas compté. Dès qu'un des deux côtés repasse sous les 4 pions (+4,5 → +3), la perte compte.
-- **Mats** : un mat vaut ±10 000 cp. Rater un mat (mat en 3 → +2) ou tomber dans un mat est une erreur, sauf si la partie reste gagnée ou perdue du même côté.
+- **10 points** ≈ 1,1 pion depuis l'équilibre (0 → −1,2), mais bien plus en position décidée : de +6 à +4,5 (−6 points) ou de −5 à −8, ce n'est pas une erreur, car l'issue ne change guère. La tolérance grandit progressivement, sans marche.
+- **Mats** : un mat vaut ±10 000 cp, soit 100 % ou 0 %. Rater un mat en restant écrasant (+9) n'est pas une erreur ; le rater en retombant à +3, si.
 - **Positions finales** (mat, pat, matériel insuffisant) : évaluées exactement par chessops, sans moteur.
-- Il n'y a qu'un niveau (« erreur ») pour l'instant : pas de distinction imprécision / erreur / gaffe. Les flags `judgment` de Lichess (Inaccuracy, Mistake, Blunder) sont **ignorés** : seul notre seuil compte, pour que les deux plateformes soient comptées pareil.
-- Écarté pour l'instant : le modèle « chances de gain » de Lichess (chute de X % de probabilité de gain). Plus juste mais moins intuitif. À reconsidérer si les comptes semblent faux en pratique.
+- Un seul niveau (« erreur ») : pas de distinction imprécision / erreur / gaffe. Pour mémoire, Lichess compte une imprécision à 10 points, une erreur à 20, une gaffe à 30. Les flags `judgment` de Lichess sont **ignorés** : seul notre seuil compte, pour que les deux plateformes soient comptées pareil.
+- La passe profonde de l'analyse réexamine les coups qui perdent au moins **6 points** en passe rapide (`DEEP_CHECK_MIN_DROP`, marge sous le seuil).
 
 ### Moteur
 
 - **Stockfish 19 lite, mono-thread** (paquet npm `stockfish`, GPL-3, environ 1,8 Mo) : pas de `SharedArrayBuffer`, donc **pas d'en-têtes COOP/COEP** et rien ne casse côté hébergement. Le plugin `stockfishEngine` de `vite.config.ts` sert `node_modules/stockfish/bin/` sous `/engine/` en dev et le copie dans `dist/engine/` au build. Hors du précache PWA : téléchargé au premier usage puis mis en cache (CacheFirst).
 - **Parallélisme : plusieurs moteurs mono-thread** (`hardwareConcurrency − 1`, entre 1 et 4), un par Web Worker, chacun sur des parties entières. Pour une analyse en lot, c'est plus rapide qu'un moteur multi-thread, et sans contrainte d'en-têtes. Le multi-thread reste une piste pour un futur plateau d'analyse en direct.
-- **Deux passes, budget en nœuds** (pas en temps, pour un résultat identique sur tous les appareils) : 100 000 nœuds sur chaque position sans évaluation, puis 1 000 000 nœuds sur les positions autour des coups du joueur qui perdent au moins 60 cp en première passe (marge sous le seuil de 100).
+- **Deux passes, budget en nœuds** (pas en temps, pour un résultat identique sur tous les appareils) : 100 000 nœuds sur chaque position sans évaluation, puis 1 000 000 nœuds sur les positions autour des coups du joueur qui perdent au moins 6 points de chances de gain en première passe (marge sous le seuil d'erreur de 10).
 - **Évaluations Lichess réutilisées** quand la partie a été analysée par Lichess : pas de moteur pour ces positions.
 - `pnpm` 11 bloque le `postinstall` du paquet (il crée seulement des alias `stockfish.js`) : refusé dans `pnpm-workspace.yaml`.
 
 ### Périmètre et comportement
+
+- **Deux boutons sur le profil** : « Analyser les 10 dernières parties » et « Analyser la dernière partie ». Même modale, même pipeline, paramétré par le nombre de parties (`count`, 10 ou 1) : la table n'a alors qu'une ligne, et l'entraînement ne porte que sur cette partie.
 
 - Parties **classées, variante standard** (Chess960 et variantes exclus), toutes cadences, y compris les parties très courtes. Les parties Lichess annulées (`aborted`, `noStart`) sont exclues : elles n'ont pas été jouées.
 - On prend les 10 plus récentes de chaque plateforme, puis les 10 plus récentes au total (date de fin de partie). Chess.com : archives mensuelles parcourues à rebours, en série, jusqu'à 10 parties.
@@ -157,3 +159,57 @@ erreur ⇔ perte ≥ 100 cp
 - Temps restant **de l'étape en cours** = nœuds restants de la passe / débit mesuré depuis le début de l'analyse (nœuds par seconde), affiché après 3 s de mesure.
 
 **Mesure** (PC 20 cœurs, donc 4 Workers, Chromium headless) : environ 1 minute pour 10 parties de blitz de Hikaru, soit à peu près 980 positions dont une centaine en passe profonde, sans aucune analyse Lichess réutilisable. Reste à mesurer sur mobile.
+
+---
+
+## 2026-10-04 : rejouer ses erreurs
+
+Depuis la table des résultats, le bouton « Rejouer mes erreurs (N) » lance un entraînement (sur les 10 dernières parties, ou sur la dernière seule selon le bouton choisi sur le profil) : chaque erreur détectée (voir « Notion d'erreur ») réapparaît sur un échiquier jouable, **dans un ordre aléatoire**, toutes parties confondues. Code : `src/features/training/`.
+
+### Notion de coup valide
+
+Définie dans `src/features/review/errors.ts` (`isValidMove`, `VALID_MAX_DROP`, testée). **Toute évolution de cette règle doit être reportée ici.**
+
+**Révisée le 2026-10-04** : d'abord « perte < 0,5 pion par rapport au meilleur coup, ou position qui reste ≥ +4 ». Même problème de marche que pour les erreurs : un coup passant de +6 à +4,5 était accepté. Passée en chances de gain, avec le même modèle que les erreurs.
+
+Évaluations du point de vue du joueur : `meilleur` = après le meilleur coup du moteur, `après` = après le coup proposé.
+
+```
+valide ⇔ gain%(meilleur) − gain%(après) < 5 points
+```
+
+- **5 points** ≈ un demi-pion depuis l'équilibre (0 → −0,5 accepté, 0 → −0,6 refusé), plus tolérant quand la partie est décidée : +4 → +3,3 accepté, +4 → +3 refusé, +10 → +7,5 accepté, mat → +10 accepté, mat → +5 refusé.
+- Paire cohérente avec les erreurs : **valide sous 5 points, erreur à partir de 10**, et une zone grise entre les deux (coup ni bon ni fautif).
+- **Le coup joué dans la partie est toujours refusé**, même si la nouvelle recherche le trouvait limite. Un coup qui termine la partie (mat, pat) est évalué exactement par chessops.
+- **Évaluations comparables** : la référence est une recherche MultiPV 5 (1,5 M nœuds partagés). Un coup du top 5 est jugé sur sa ligne. Un coup hors du top 5 est évalué depuis la même position de départ, en restreignant la recherche à ce coup (`searchmoves`), avec le budget d'une ligne (300 k nœuds). Avant, il était évalué à part, depuis la position d'après et avec un autre budget : un décalage de profondeur pouvait fausser la comparaison.
+- L'écart affiché sous chaque coup reste en pions (`+2,0 → +1,4 (−0,6)`), plus parlant ; sa couleur (vert / rouge) suit cette règle.
+
+### Déroulé
+
+- **Mode puzzle** : avant l'essai, on ne montre que la position (orientation du joueur, trait, dernier coup adverse surligné). Le coup joué en partie n'est révélé qu'après, avec l'adversaire, la date et un lien.
+- Coup refusé : « {coup} n'est pas assez bon », avec **Réessayer** ou **Voir la solution**. Coup validé : « Bon coup ! », plus le meilleur coup s'il était différent. Flèches : meilleur coup en vert, coup de la partie en rouge, coup du joueur en bleu.
+- **Essayer un autre coup** : une fois la position trouvée (ou la solution affichée), un bouton permet de jouer d'autres coups pour voir ce qu'ils donnent. Le résultat de la position est figé au premier verdict (`outcome` dans le reducer) : explorer ne change jamais le bilan, et « Position suivante » reste disponible pendant l'exploration, même après un essai raté.
+- **Évaluations affichées** après chaque essai, du point de vue du joueur, sous forme de transition : `+4,1 → -5,2 (-9,4)`, soit l'évaluation de la position (celle du meilleur coup), l'évaluation après le coup, puis l'écart (vert si le coup serait valide, rouge sinon). Même présentation pour le coup essayé, le meilleur coup et le coup de la partie (ce dernier reprend l'évaluation de l'analyse). Les mats s'affichent `+#` / `-#`, sans écart. **L'évaluation de la position reste affichée sous la consigne** dès le premier verdict (jamais avant : ce serait un indice).
+- **Cache temporaire** des évaluations par coup essayé (dans le `Coach`, vidé à la sortie de l'entraînement) : rejouer le même mauvais coup ne relance pas Stockfish.
+- **Ressenti** : le trait en grand, puis un bloc de retour teinté avec icône (« Pas tout à fait » en rouge, « Bien joué ! » en vert, « La solution » en bleu) qui apparaît en fondu, et un liseré de la même couleur autour de l'échiquier. Seules les informations utiles restent : pas d'adversaire ni de date, juste un lien « Voir la partie ».
+- Indicateur « Erreur 3 / 29 · 27 restantes ». Bilan final : totaux seulement (trouvées du premier coup, après plusieurs essais, solution affichée), puis **Terminer** revient à la table. **Quitter** est possible à tout moment.
+- **Coups valides (top 5 du moteur)** : la recherche de référence d'une position est en MultiPV 5 (`REFERENCE_LINES`, budget `REFERENCE_NODES` = 1,5 M nœuds partagés entre les lignes). Les coups valides sont les lignes qui passent `isValidMove`, sauf le coup de la partie, plus tout coup valide trouvé par le joueur hors de ce top 5. Si les 5 lignes sont toutes valides, on affiche « 5+ coups valides ». Le compte apparaît quand la solution est connue (coup trouvé ou solution demandée) ; la liste s'ouvre au survol (souris) ou au toucher. Bonus : jouer l'un de ces 5 coups donne un verdict instantané, sans recherche. Écarté : évaluer tous les coups légaux (liste exacte, mais budget dilué et recherche bien plus longue).
+- **Itération complète uniquement** : une recherche arrêtée en cours d'itération mélange deux profondeurs dans les lignes MultiPV (un même coup peut alors apparaître deux fois). `Stockfish.evaluate` ne garde que la dernière itération complète (`completeLines`), et le meilleur coup est pris dans cette même itération.
+- **Lien « Analyser sur Lichess »** dès le premier verdict : l'outil d'analyse de Lichess sur la position du problème, quelle que soit la plateforme de la partie (voir apis.md).
+- **Moteur** : un seul Stockfish pendant l'entraînement (`Coach`), recherches en file, une à la fois. La recherche de référence d'une position démarre dès son affichage, pendant que le joueur réfléchit : si le joueur joue le meilleur coup, la réponse est immédiate, sinon environ 1 s (PC) pour évaluer son coup.
+- **Promotions** : toujours en dame (v1), chessground n'ayant pas de sélecteur de pièce.
+- Toujours sans persistance : fermer la modale perd l'analyse et l'entraînement.
+- **Une seule recherche à la fois par moteur, garanti à deux niveaux** : envoyer une position pendant une recherche fait planter le WASM (`RuntimeError: unreachable`). `Stockfish` refuse donc toute commande pendant une requête en cours, et le `Coach` abandonne les recherches mises en file avant un `terminate()` (compteur de génération). Le cas s'est produit en dev : le StrictMode de React monte, démonte et remonte l'entraînement, et une recherche orpheline démarrait sur le nouveau moteur en même temps que la suivante. Tester aussi en `pnpm dev`, pas seulement sur le build.
+- `Board.tsx` annule la sélection en cours quand la position change : sinon chessground garde la pièce sélectionnée (et ses destinations) de la position précédente.
+
+---
+
+## 2026-10-04 : historique des parties
+
+Un onglet **Parties** sur le profil (`/player/history`) liste toutes les parties des comptes liés, de la plus récente à la plus ancienne, toutes plateformes, cadences et variantes confondues (parties amicales comprises). Code : `src/features/history/`.
+
+- **Pas de stockage** (choix de l'utilisateur) : rien n'est enregistré, les parties sont récupérées à la demande. **Pages de 30**, avec boutons « plus récentes » / « plus anciennes ». Une page déjà vue ne refait pas de requête (cache TanStack Query, `useInfiniteQuery`). **Mettre à jour** repart de la première page (`resetQueries`).
+- **Fusion par date** (`feed.ts`, testé avec de faux clients) : chaque plateforme a un curseur et un tampon de parties récupérées mais pas encore affichées. Lichess : export paginé par `until` (date de début), 30 parties par requête, sans les coups. Chess.com : archives mensuelles, de la plus récente à la plus ancienne. Une page prend les 30 parties les plus récentes des deux tampons, en les remplissant au besoin. Une plateforme en échec est signalée et la liste continue avec l'autre.
+- **Colonne Elo** (au lieu du nombre d'erreurs) : l'Elo du joueur après la partie et la variation. Lichess donne la variation (`ratingDiff`) et l'Elo d'avant ; Chess.com donne l'Elo d'après mais pas la variation, calculée par différence avec la partie précédente de la même cadence et variante (`withChessComRatingDiffs`), sur tout ce qui est déjà chargé, tampon compris. La toute première partie connue d'une cadence n'a donc pas de variation. Les parties amicales affichent « Amicale ».
+- **Normalisation partagée** (`src/features/games/normalize.ts`) : le résumé d'une partie (`GameSummary` : plateforme, date, cadence, variante, couleur, Elo, adversaire, résultat) sert à la fois à l'analyse et à l'historique, et la table (`GamesTable`) est la même, avec une dernière colonne au choix (erreurs ou Elo).
+- Limite connue : Lichess pagine sur la date de **début** et la liste est triée sur la date de **fin** ; une partie par correspondance très longue peut apparaître un peu plus loin que sa date de fin.

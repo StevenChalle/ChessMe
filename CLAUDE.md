@@ -2,6 +2,7 @@
 
 Application web (PWA installable) pour explorer les stats et les parties d'un joueur sur Lichess et Chess.com. Projet perso, prototype qui évolue vite. 100 % navigateur, local-first, sans backend.
 
+- Vision produit (réflexions en cours, rien de définitif) : [docs/vision.md](docs/vision.md)
 - Décisions et justifications : [docs/decisions.md](docs/decisions.md). **À mettre à jour à chaque nouveau choix structurant.**
 - Design (thème sombre Lichess) : [docs/design.md](docs/design.md)
 - APIs Lichess / Chess.com, limites de débit : [docs/apis.md](docs/apis.md)
@@ -37,7 +38,10 @@ src/
   components/         # composants applicatifs partagés (board/, PlayerSearch…)
   features/<nom>/     # code propre à une fonctionnalité (import, stats, training…), à créer au besoin
   features/player/    # profil croisé : summary.ts (normalisation), search.ts (paramètres ?lichess=&chesscom=), hook, composants
-  features/review/    # analyse des dernières parties : errors.ts (définition d'une erreur), analyze.ts (deux passes)
+  features/games/     # résumé commun d'une partie (normalize.ts) et table des parties (GamesTable)
+  features/history/   # onglet Parties : feed.ts (fusion paginée Lichess + Chess.com), queries.ts
+  features/review/    # analyse des dernières parties : errors.ts (erreur, coup valide), analyze.ts (deux passes)
+  features/training/  # rejouer ses erreurs : session.ts (reducer), coach.ts (Stockfish), moves.ts (FEN/UCI)
   lib/lichess/        # client HTTP, types, queryOptions de l'API Lichess
   lib/chesscom/       # idem pour l'API Chess.com
   lib/engine/         # Stockfish WASM : protocole UCI, Worker, pool de moteurs

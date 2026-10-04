@@ -2,14 +2,8 @@ import { describe, expect, it } from 'vitest'
 import type { ChessComGame } from '@/lib/chesscom/types'
 import type { LichessGame } from '@/lib/lichess/types'
 import { MATE_CP } from './errors'
-import {
-  fromChessComGame,
-  fromLichessGame,
-  latestGames,
-  parseChessComTimeControl,
-  timeControlLabel,
-  type ReviewGame,
-} from './games'
+import { parseChessComTimeControl, timeControlLabel } from '@/features/games/normalize'
+import { fromChessComGame, fromLichessGame, latestGames, type ReviewGame } from './games'
 
 function lichessGame(overrides: Partial<LichessGame> = {}): LichessGame {
   return {

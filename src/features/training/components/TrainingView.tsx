@@ -1,0 +1,178 @@
+import type { Config } from '@lichess-org/chessground/config'
+import type { DrawShape } from '@lichess-org/chessground/draw'
+import type { Key } from '@lichess-org/chessground/types'
+import { useEffect, useMemo, useReducer, useState } from 'react'
+import { Board } from '@/components/board/Board'
+import { Button } from '@/components/ui/button'
+import type { Mistake } from '@/features/review/analyze'
+import { Progress } from '@/components/ui/progress'
+import { formatNumber } from '@/lib/format'
+import { cn } from '@/lib/utils'
+import { m } from '@/paraglide/messages'
+import { Coach, validMovesOf } from '../coach'
+import {
+  boardMoveToUci,
+  isCheck,
+  legalDests,
+  moveSquares,
+  play,
+  positionFromFen,
+  sameMove,
+} from '../moves'
+import { currentPuzzle, startTraining, trainingReducer, type TrainingState } from '../session'
+import { PuzzlePanel } from './PuzzlePanel'
+import { TrainingSummary } from './TrainingSummary'
+
+const squares = (uci: string) => moveSquares(uci) as [Key, Key]
+const arrow = (uci: string, brush: string): DrawShape => {
+  const [orig, dest] = squares(uci)
+  return { orig, dest, brush }
+}
+
+/**
+ * What the board shows. Before the position is solved, the player's tried move stays on the
+ * board. Once solved with another move than the best, or once the solution is shown, the board
+ * goes back to the position with arrows: best move (green), the game's move (red), theirs (blue).
+ */
+function boardView(state: TrainingState, puzzle: Mistake) {
+  const { status, tried, best } = state
+  const triedIsBest = Boolean(tried && best && sameMove(puzzle.fen, tried, best))
+  const showsTried =
+    tried !== undefined &&
+    (status === 'checking' || status === 'wrong' || (status === 'solved' && (triedIsBest || !best)))
+  if (showsTried) return { fen: play(puzzle.fen, tried).fen, lastMove: tried, shapes: [] }
+
+  const shapes: DrawShape[] = []
+  if (status === 'solved' || status === 'revealed') {
+    shapes.push(arrow(puzzle.played.uci, 'red'))
+    if (tried) shapes.push(arrow(tried, 'blue'))
+    if (best) shapes.push(arrow(best, 'green'))
+  }
+  return { fen: puzzle.fen, lastMove: puzzle.lastMove, shapes }
+}
+
+/** Replays the player's errors one by one, in random order, then shows a summary. */
+export function TrainingView({ mistakes, onExit }: { mistakes: Mistake[]; onExit: () => void }) {
+  const [state, dispatch] = useReducer(trainingReducer, mistakes, (all) => startTraining(all))
+  const [engineFailed, setEngineFailed] = useState(false)
+  const [coach] = useState(() => new Coach())
+  const puzzle = currentPuzzle(state)
+
+  // One engine for the whole training, stopped when leaving it (or closing the dialog).
+  useEffect(() => {
+    coach.activate()
+    return () => coach.terminate()
+  }, [coach])
+
+  // Look for the best move while the player thinks.
+  useEffect(() => {
+    if (!puzzle) return
+    let active = true
+    coach.reference(puzzle).then(
+      (reference) => {
+        const valid = validMovesOf(reference, puzzle)
+        dispatch({
+          type: 'best',
+          puzzleId: puzzle.id,
+          uci: reference.bestMove,
+          cp: reference.bestCp,
+          validMoves: valid.moves,
+          validCapped: valid.capped,
+        })
+      },
+      () => {
+        if (active) setEngineFailed(true)
+      },
+    )
+    return () => {
+      active = false
+    }
+  }, [coach, puzzle])
+
+  const config = useMemo((): Config | undefined => {
+    if (!puzzle) return undefined
+    const { fen, lastMove, shapes } = boardView(state, puzzle)
+    const thinking = state.status === 'thinking'
+    const turn = positionFromFen(fen).turn
+    return {
+      fen,
+      orientation: puzzle.color,
+      turnColor: turn,
+      check: isCheck(fen) ? turn : false,
+      lastMove: lastMove ? squares(lastMove) : undefined,
+      movable: {
+        free: false,
+        color: thinking ? puzzle.color : undefined,
+        dests: thinking ? legalDests(fen) : new Map(),
+        events: {
+          after: (orig, dest) => {
+            const uci = boardMoveToUci(puzzle.fen, orig, dest)
+            dispatch({ type: 'try', uci })
+            coach.check(puzzle, uci).then(
+              ({ valid, afterCp }) =>
+                dispatch({ type: 'verdict', puzzleId: puzzle.id, valid, afterCp }),
+              () => setEngineFailed(true),
+            )
+          },
+        },
+      },
+      premovable: { enabled: false },
+      drawable: { autoShapes: shapes },
+    }
+  }, [coach, state, puzzle])
+
+  if (!puzzle || !config) {
+    return <TrainingSummary results={state.results} onFinish={onExit} />
+  }
+
+  const remaining = state.puzzles.length - state.index
+  // The board's frame echoes the outcome of the try.
+  const frame =
+    state.status === 'solved'
+      ? 'ring-good'
+      : state.status === 'wrong'
+        ? 'ring-bad'
+        : state.status === 'revealed'
+          ? 'ring-primary'
+          : 'ring-transparent'
+  return (
+    <div className="grid gap-6 md:grid-cols-[minmax(0,1fr)_20rem]">
+      <Board
+        config={config}
+        className={cn(
+          'mx-auto max-w-[min(100%,32rem)] rounded-sm ring-4 transition-shadow duration-200',
+          frame,
+        )}
+      />
+      <div className="flex flex-col gap-5">
+        <div className="space-y-2">
+          <p className="flex items-baseline justify-between gap-2 tabular-nums">
+            <span className="font-medium text-font-clear">
+              {m.training_progress({
+                current: formatNumber(state.index + 1),
+                total: formatNumber(state.puzzles.length),
+              })}
+            </span>
+            <span className="text-sm text-muted-foreground">
+              {m.training_remaining({ count: remaining, formatted: formatNumber(remaining) })}
+            </span>
+          </p>
+          <Progress value={(state.index / state.puzzles.length) * 100} />
+        </div>
+        {engineFailed ? (
+          <p className="text-bad">{m.training_engine_failed()}</p>
+        ) : (
+          <PuzzlePanel state={state} puzzle={puzzle} dispatch={dispatch} />
+        )}
+        <Button
+          variant="ghost"
+          size="sm"
+          className="mt-auto self-start text-muted-foreground"
+          onClick={onExit}
+        >
+          {m.training_quit()}
+        </Button>
+      </div>
+    </div>
+  )
+}

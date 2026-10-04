@@ -26,6 +26,9 @@ export function PlayerTabs({
       <Link to="/player" search={true} activeOptions={{ exact: true }} className={TAB_CLASS}>
         {m.tab_overview()}
       </Link>
+      <Link to="/player/history" search={true} className={TAB_CLASS}>
+        {m.tab_history()}
+      </Link>
       {linked.map((source) => {
         const unavailable = states[source].status === 'missing' || states[source].status === 'error'
         return (
