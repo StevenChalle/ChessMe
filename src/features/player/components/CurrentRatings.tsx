@@ -1,4 +1,6 @@
 import type { ApiSource } from '@/lib/http'
+import { m } from '@/paraglide/messages'
+import { categoryLabel } from '../sources'
 import { CATEGORIES, type AccountSummary } from '../summary'
 import { Panel } from './Panel'
 import { SourceLabel } from './SourceBadge'
@@ -15,17 +17,17 @@ export function CurrentRatings({
   sources: ApiSource[]
 }) {
   const bySource = new Map(accounts.map((account) => [account.source, account]))
-  const rows = CATEGORIES.filter(({ key }) => accounts.some((account) => account.categories[key]))
+  const rows = CATEGORIES.filter((key) => accounts.some((account) => account.categories[key]))
 
   return (
-    <Panel title="Elo actuel" aside="Systèmes différents, non comparables">
+    <Panel title={m.current_ratings()} aside={m.ratings_not_comparable()}>
       {rows.length === 0 ? (
-        <p className="text-sm text-muted-foreground">Aucune partie classée.</p>
+        <p className="text-sm text-muted-foreground">{m.no_rated_games()}</p>
       ) : (
         <table className="w-full text-sm tabular-nums">
           <thead>
             <tr className="text-xs text-muted-foreground">
-              <th className="pb-2 text-left font-normal">Cadence</th>
+              <th className="pb-2 text-left font-normal">{m.time_control()}</th>
               {sources.map((source) => (
                 <th key={source} className="pb-2 text-right font-normal">
                   <SourceLabel source={source} />
@@ -34,9 +36,9 @@ export function CurrentRatings({
             </tr>
           </thead>
           <tbody>
-            {rows.map(({ key, label }) => (
+            {rows.map((key) => (
               <tr key={key} className="even:bg-zebra">
-                <td className="py-1.5 pl-1">{label}</td>
+                <td className="py-1.5 pl-1">{categoryLabel(key)}</td>
                 {sources.map((source) => {
                   const stats = bySource.get(source)?.categories[key]
                   return (

@@ -1,7 +1,7 @@
 {
   "$schema": "./node_modules/oxlint/configuration_schema.json",
   "plugins": ["react", "typescript", "oxc", "import", "vitest"],
-  "ignorePatterns": ["dist", "dev-dist", "src/routeTree.gen.ts"],
+  "ignorePatterns": ["dist", "dev-dist", "src/routeTree.gen.ts", "src/paraglide"],
   "rules": {
     "react/rules-of-hooks": "error",
     "react/exhaustive-deps": "warn",

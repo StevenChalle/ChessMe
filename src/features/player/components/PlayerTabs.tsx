@@ -1,6 +1,7 @@
 import { Link } from '@tanstack/react-router'
 import type { ApiSource } from '@/lib/http'
 import { cn } from '@/lib/utils'
+import { m } from '@/paraglide/messages'
 import type { SourceState } from '../usePlayerAccounts'
 import { SourceDot } from './SourceBadge'
 
@@ -21,9 +22,9 @@ export function PlayerTabs({
   states: Record<ApiSource, SourceState<unknown>>
 }) {
   return (
-    <nav className="flex gap-6 border-b" aria-label="Sections du profil">
+    <nav className="flex gap-6 border-b" aria-label={m.tabs_label()}>
       <Link to="/player" search={true} activeOptions={{ exact: true }} className={TAB_CLASS}>
-        Vue d’ensemble
+        {m.tab_overview()}
       </Link>
       {linked.map((source) => {
         const unavailable = states[source].status === 'missing' || states[source].status === 'error'

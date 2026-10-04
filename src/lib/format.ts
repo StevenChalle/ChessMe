@@ -1,31 +1,59 @@
-const LOCALE = 'fr-FR'
+import { m } from '@/paraglide/messages'
+import { getLocale } from '@/paraglide/runtime'
 
-const numberFormat = new Intl.NumberFormat(LOCALE)
-const percentFormat = new Intl.NumberFormat(LOCALE, { style: 'percent', maximumFractionDigits: 0 })
-const monthYearFormat = new Intl.DateTimeFormat(LOCALE, { month: 'long', year: 'numeric' })
-const dateFormat = new Intl.DateTimeFormat(LOCALE, { dateStyle: 'medium' })
-const relativeFormat = new Intl.RelativeTimeFormat(LOCALE, { numeric: 'auto' })
-const regionNames = new Intl.DisplayNames([LOCALE], { type: 'region' })
+/**
+ * Locale-aware formatting helpers. Formatters follow the current UI locale
+ * and are cached per locale (Intl constructors are relatively expensive).
+ */
 
-export function formatNumber(value: number): string {
-  return numberFormat.format(value)
+function cachedPerLocale<T>(create: (locale: string) => T): () => T {
+  const cache = new Map<string, T>()
+  return () => {
+    const locale = getLocale()
+    let formatter = cache.get(locale)
+    if (!formatter) {
+      formatter = create(locale)
+      cache.set(locale, formatter)
+    }
+    return formatter
+  }
 }
 
-/** "1 partie", "2 parties", "1 234 parties" */
-export function formatCount(value: number, singular: string, plural = `${singular}s`): string {
-  return `${formatNumber(value)} ${Math.abs(value) < 2 ? singular : plural}`
+const numberFormat = cachedPerLocale((locale) => new Intl.NumberFormat(locale))
+const percentFormat = cachedPerLocale(
+  (locale) => new Intl.NumberFormat(locale, { style: 'percent', maximumFractionDigits: 0 }),
+)
+const monthYearFormat = cachedPerLocale(
+  (locale) => new Intl.DateTimeFormat(locale, { month: 'long', year: 'numeric' }),
+)
+const dateFormat = cachedPerLocale(
+  (locale) => new Intl.DateTimeFormat(locale, { dateStyle: 'medium' }),
+)
+const relativeFormat = cachedPerLocale(
+  (locale) => new Intl.RelativeTimeFormat(locale, { numeric: 'auto' }),
+)
+const regionNames = cachedPerLocale((locale) => new Intl.DisplayNames([locale], { type: 'region' }))
+const orList = cachedPerLocale((locale) => new Intl.ListFormat(locale, { type: 'disjunction' }))
+
+export function formatNumber(value: number): string {
+  return numberFormat().format(value)
+}
+
+/** "1 game" / "1 234 parties", with the locale's plural rules */
+export function formatGameCount(count: number): string {
+  return m.games_count({ count, formatted: formatNumber(count) })
 }
 
 export function formatPercent(ratio: number): string {
-  return percentFormat.format(ratio)
+  return percentFormat().format(ratio)
 }
 
 export function formatMonthYear(date: Date): string {
-  return monthYearFormat.format(date)
+  return monthYearFormat().format(date)
 }
 
 export function formatDate(date: Date): string {
-  return dateFormat.format(date)
+  return dateFormat().format(date)
 }
 
 const RELATIVE_UNITS: [Intl.RelativeTimeFormatUnit, number][] = [
@@ -40,19 +68,24 @@ const RELATIVE_UNITS: [Intl.RelativeTimeFormatUnit, number][] = [
 export function formatRelative(date: Date, now: Date = new Date()): string {
   const seconds = (date.getTime() - now.getTime()) / 1000
   for (const [unit, size] of RELATIVE_UNITS) {
-    if (Math.abs(seconds) >= size) return relativeFormat.format(Math.round(seconds / size), unit)
+    if (Math.abs(seconds) >= size) return relativeFormat().format(Math.round(seconds / size), unit)
   }
-  return 'à l’instant'
+  return m.just_now()
 }
 
-/** Hours, rounded: "1 234 h" */
+/** Hours, rounded: "1,234 h" / "1 234 h" */
 export function formatHours(seconds: number): string {
   return `${formatNumber(Math.round(seconds / 3600))} h`
 }
 
-/** "FR" → "France". Returns undefined for codes that are not countries. */
+/** "a", "a or b", "a, b, or c" */
+export function formatOrList(items: string[]): string {
+  return orList().format(items)
+}
+
+/** "FR" → "France" / "France". Returns undefined for codes that are not countries. */
 export function countryName(code: string | undefined): string | undefined {
   if (!code || !/^[A-Z]{2}$/.test(code)) return undefined
-  const name = regionNames.of(code)
+  const name = regionNames().of(code)
   return name && name !== code ? name : undefined
 }

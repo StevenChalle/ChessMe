@@ -1,4 +1,5 @@
 import { formatMonthYear, formatNumber, formatRelative } from '@/lib/format'
+import { m } from '@/paraglide/messages'
 import type { PlayerUsernames } from '../search'
 import { earliestJoin, latestActivity, SOURCE_LABELS, sumRecords, totalGames } from '../summary'
 import { usePlayerAccounts } from '../usePlayerAccounts'
@@ -30,7 +31,7 @@ export function PlayerOverview({ usernames }: { usernames: PlayerUsernames }) {
         <>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
             <StatTile
-              label="Parties jouées"
+              label={m.games_played()}
               value={formatNumber(totalGames(record))}
               hint={
                 withRecord.length > 1 &&
@@ -43,14 +44,22 @@ export function PlayerOverview({ usernames }: { usernames: PlayerUsernames }) {
               }
             />
             <StatTile
-              label="Joue depuis"
+              label={m.playing_since()}
               value={oldest?.joinedAt ? formatMonthYear(oldest.joinedAt) : '—'}
-              hint={oldest && accounts.length > 1 && `sur ${SOURCE_LABELS[oldest.source]}`}
+              hint={
+                oldest &&
+                accounts.length > 1 &&
+                m.on_platform({ platform: SOURCE_LABELS[oldest.source] })
+              }
             />
             <StatTile
-              label="Dernière activité"
+              label={m.last_activity()}
               value={latest?.lastSeenAt ? formatRelative(latest.lastSeenAt) : '—'}
-              hint={latest && accounts.length > 1 && `sur ${SOURCE_LABELS[latest.source]}`}
+              hint={
+                latest &&
+                accounts.length > 1 &&
+                m.on_platform({ platform: SOURCE_LABELS[latest.source] })
+              }
             />
           </div>
 
@@ -58,8 +67,8 @@ export function PlayerOverview({ usernames }: { usernames: PlayerUsernames }) {
             <CurrentRatings accounts={accounts} sources={linked} />
             <div className="space-y-4">
               <Panel
-                title="Bilan global"
-                aside={withRecord.length > 1 && 'Toutes parties, les deux sites'}
+                title={m.overall_record()}
+                aside={withRecord.length > 1 && m.all_games_both_sites()}
               >
                 <ResultBar record={record} />
                 {withRecord.length > 1 && (

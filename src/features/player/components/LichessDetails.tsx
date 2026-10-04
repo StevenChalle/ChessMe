@@ -1,27 +1,31 @@
-import { formatCount, formatHours, formatNumber } from '@/lib/format'
+import { formatGameCount, formatHours, formatNumber } from '@/lib/format'
 import type { LichessUser, PerfKey } from '@/lib/lichess/types'
+import { m } from '@/paraglide/messages'
 import type { PlayerUsernames } from '../search'
 import { usePlayerAccounts } from '../usePlayerAccounts'
 import { Panel, StatTile } from './Panel'
 import { ResultBar } from './ResultBar'
 import { SourceStatus } from './SourceStatus'
 
-const RATED_PERFS: { key: PerfKey; label: string }[] = [
-  { key: 'ultraBullet', label: 'UltraBullet' },
-  { key: 'bullet', label: 'Bullet' },
-  { key: 'blitz', label: 'Blitz' },
-  { key: 'rapid', label: 'Rapide' },
-  { key: 'classical', label: 'Classique' },
-  { key: 'correspondence', label: 'Correspondance' },
-  { key: 'chess960', label: 'Chess960' },
-  { key: 'kingOfTheHill', label: 'Roi de la colline' },
-  { key: 'threeCheck', label: 'Trois échecs' },
-  { key: 'antichess', label: 'Antichess' },
-  { key: 'atomic', label: 'Atomique' },
-  { key: 'horde', label: 'Horde' },
-  { key: 'racingKings', label: 'Course de rois' },
-  { key: 'crazyhouse', label: 'Crazyhouse' },
-  { key: 'puzzle', label: 'Problèmes' },
+// Labels are functions: they are evaluated at render time, in the current locale.
+const brand = (name: string) => () => name
+
+const RATED_PERFS: { key: PerfKey; label: () => string }[] = [
+  { key: 'ultraBullet', label: brand('UltraBullet') },
+  { key: 'bullet', label: m.category_bullet },
+  { key: 'blitz', label: m.category_blitz },
+  { key: 'rapid', label: m.category_rapid },
+  { key: 'classical', label: m.category_classical },
+  { key: 'correspondence', label: m.category_daily },
+  { key: 'chess960', label: brand('Chess960') },
+  { key: 'kingOfTheHill', label: m.perf_king_of_the_hill },
+  { key: 'threeCheck', label: m.perf_three_check },
+  { key: 'antichess', label: brand('Antichess') },
+  { key: 'atomic', label: m.perf_atomic },
+  { key: 'horde', label: brand('Horde') },
+  { key: 'racingKings', label: m.perf_racing_kings },
+  { key: 'crazyhouse', label: brand('Crazyhouse') },
+  { key: 'puzzle', label: m.perf_puzzles },
 ]
 
 const PUZZLE_MODES: { key: PerfKey; label: string }[] = [
@@ -39,7 +43,7 @@ export function LichessDetails({ usernames }: { usernames: PlayerUsernames }) {
 }
 
 function LichessUserDetails({ user }: { user: LichessUser }) {
-  if (user.disabled) return <p className="text-bad">Ce compte Lichess est fermé.</p>
+  if (user.disabled) return <p className="text-bad">{m.lichess_closed()}</p>
 
   const perfs = RATED_PERFS.filter(({ key }) => user.perfs?.[key]?.games)
   const puzzleModes = PUZZLE_MODES.filter(({ key }) => user.perfs?.[key]?.runs)
@@ -47,35 +51,31 @@ function LichessUserDetails({ user }: { user: LichessUser }) {
 
   return (
     <div className="space-y-4">
-      {user.tosViolation && (
-        <p className="text-sm text-bad">
-          Ce compte a enfreint les conditions d’utilisation de Lichess.
-        </p>
-      )}
+      {user.tosViolation && <p className="text-sm text-bad">{m.lichess_tos()}</p>}
 
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-        <StatTile label="Parties" value={formatNumber(count?.all ?? 0)} />
-        <StatTile label="Classées" value={formatNumber(count?.rated ?? 0)} />
-        <StatTile label="Temps de jeu" value={playTime ? formatHours(playTime.total) : '—'} />
-        <StatTile label="Elo FIDE déclaré" value={profile?.fideRating ?? '—'} />
+        <StatTile label={m.games()} value={formatNumber(count?.all ?? 0)} />
+        <StatTile label={m.rated()} value={formatNumber(count?.rated ?? 0)} />
+        <StatTile label={m.play_time()} value={playTime ? formatHours(playTime.total) : '—'} />
+        <StatTile label={m.fide_declared()} value={profile?.fideRating ?? '—'} />
       </div>
 
       {count && (
-        <Panel title="Bilan" aside="Toutes parties confondues">
+        <Panel title={m.record()} aside={m.all_games()}>
           <ResultBar record={count} />
         </Panel>
       )}
 
-      <Panel title="Classements">
+      <Panel title={m.ratings()}>
         {perfs.length === 0 ? (
-          <p className="text-sm text-muted-foreground">Aucune partie classée.</p>
+          <p className="text-sm text-muted-foreground">{m.no_rated_games()}</p>
         ) : (
           <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
             {perfs.map(({ key, label }) => {
               const perf = user.perfs![key]!
               return (
                 <li key={key} className="rounded-md bg-muted p-3">
-                  <div className="text-xs text-muted-foreground">{label}</div>
+                  <div className="text-xs text-muted-foreground">{label()}</div>
                   <div className="text-xl font-medium text-font-clear tabular-nums">
                     {perf.rating}
                     {perf.prov && <span className="text-muted-foreground">?</span>}
@@ -89,7 +89,7 @@ function LichessUserDetails({ user }: { user: LichessUser }) {
                     ) : null}
                   </div>
                   <div className="text-xs text-muted-foreground tabular-nums">
-                    {formatCount(perf.games ?? 0, 'partie')}
+                    {formatGameCount(perf.games ?? 0)}
                   </div>
                 </li>
               )
@@ -99,7 +99,7 @@ function LichessUserDetails({ user }: { user: LichessUser }) {
       </Panel>
 
       {puzzleModes.length > 0 && (
-        <Panel title="Records de problèmes">
+        <Panel title={m.puzzle_records()}>
           <dl className="grid grid-cols-3 gap-3 text-sm">
             {puzzleModes.map(({ key, label }) => (
               <div key={key}>
@@ -114,7 +114,7 @@ function LichessUserDetails({ user }: { user: LichessUser }) {
       )}
 
       {(profile?.bio || profile?.realName || profile?.location) && (
-        <Panel title="Profil">
+        <Panel title={m.profile()}>
           {profile.realName && <p className="text-font-clear">{profile.realName}</p>}
           {profile.location && <p className="text-sm text-muted-foreground">{profile.location}</p>}
           {profile.bio && <p className="mt-2 text-sm whitespace-pre-line">{profile.bio}</p>}

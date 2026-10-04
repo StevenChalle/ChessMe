@@ -25,12 +25,13 @@ pnpm uniquement (pas npm ni yarn). Node ≥ 24.
 
 ## Stack
 
-Vite + React 19 + TypeScript (strict, `noUncheckedIndexedAccess`) · TanStack Router (routes sous forme de fichiers) + TanStack Query · Tailwind v4 + shadcn/ui (Radix, icônes Lucide) · `@lichess-org/chessground` (plateau) + chessops (règles, PGN) · Dexie (IndexedDB) · ECharts · vite-plugin-pwa · Vitest + Testing Library · oxlint + Prettier.
+Vite + React 19 + TypeScript (strict, `noUncheckedIndexedAccess`) · Paraglide JS (i18n) · TanStack Router (routes sous forme de fichiers) + TanStack Query · Tailwind v4 + shadcn/ui (Radix, icônes Lucide) · `@lichess-org/chessground` (plateau) + chessops (règles, PGN) · Dexie (IndexedDB) · ECharts · vite-plugin-pwa · Vitest + Testing Library · oxlint + Prettier.
 
 ## Organisation du code
 
 ```
 src/
+  paraglide/          # GÉNÉRÉ par Paraglide depuis messages/*.json (git-ignoré, ne pas éditer)
   routes/             # une route par fichier (TanStack Router), routeTree.gen.ts est généré automatiquement
   components/ui/      # composants shadcn, générés par la CLI, modifiables
   components/         # composants applicatifs partagés (board/, PlayerSearch…)
@@ -42,11 +43,13 @@ src/
   lib/format.ts       # formats fr-FR (nombres, dates, pays…)
   lib/                # utilitaires transverses
   test/setup.ts       # setup Vitest (jest-dom, fake-indexeddb)
+messages/en.json, fr.json  # traductions (source de vérité)
+project.inlang/       # configuration Paraglide (langues, langue de base)
 ```
 
 ## Conventions
 
-- **Code, identifiants et commentaires en anglais. Interface utilisateur en français.**
+- **Code, identifiants et commentaires en anglais. Interface utilisateur bilingue anglais / français** (voir ci-dessous).
 - Imports avec l'alias `@/` (correspond à `src/`).
 - Prettier : pas de point-virgule, guillemets simples, 100 colonnes. Les classes Tailwind sont triées automatiquement.
 - Tests à côté du code (`foo.test.ts`). Tester en priorité la logique pure : parsing, calculs de stats, synchro.
@@ -55,6 +58,18 @@ src/
 - Données persistantes (parties importées) : Dexie. Données distantes éphémères : TanStack Query. Ne pas dupliquer l'une dans l'autre.
 - **Couleurs : uniquement via les tokens** (`bg-card`, `text-muted-foreground`, `text-good`, `text-brag`…) définis dans `src/index.css`. Jamais de code hexadécimal dans un composant.
 - chessground gère lui-même son DOM : passer par le wrapper `components/board/Board.tsx`, sans le manipuler depuis React.
+
+## Internationalisation (obligatoire)
+
+L'interface existe en **anglais (langue par défaut) et en français**. Le choix de l'utilisateur est enregistré dans le `localStorage` (clé `PARAGLIDE_LOCALE`) ; sans choix enregistré, l'app est en anglais. Le sélecteur EN / FR est dans l'en-tête, et changer de langue recharge la page.
+
+- **Aucun texte visible en dur dans les composants** : tout passe par `m.<clé>()` (`import { m } from '@/paraglide/messages'`). Cela vaut aussi pour `title`, `aria-label`, `placeholder` et les messages d'erreur.
+- **Chaque nouvelle clé est ajoutée en même temps dans `messages/en.json` et `messages/fr.json`.** Une clé absente d'une langue retombe sur l'anglais, sans erreur : vérifier les deux fichiers.
+- Clés en `snake_case`, paramètres nommés : `"view_on": "View on {platform}"`. Pluriels avec `declarations` / `match` (exemple : `games_count`).
+- Les libellés définis au niveau du module sont des **fonctions** (`label: m.category_blitz`), appelées au rendu. Jamais `m.x()` au niveau du module.
+- Les noms de marques ne se traduisent pas (Lichess, Chess.com, Puzzle Storm, Daily…).
+- Nombres, dates, pays, listes : `lib/format.ts`, qui suit la langue courante. Ne pas créer d'`Intl.*` avec une locale codée en dur.
+- `src/paraglide/` est régénéré par le plugin Vite (dev, build, tests) et par `pnpm i18n` (lancé par `pnpm typecheck`).
 
 ## Règles à respecter
 

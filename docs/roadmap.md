@@ -7,6 +7,7 @@
 - [x] Profil croisé Lichess + Chess.com : vue d'ensemble combinée, plus un onglet par plateforme
 - [x] Configuration du déploiement Render (`render.yaml`)
 - [x] Un pseudo par plateforme (comptes aux noms différents), avec recopie rapide
+- [x] Interface bilingue anglais (par défaut) / français, choix mémorisé
 
 ## V1 : à cadrer
 

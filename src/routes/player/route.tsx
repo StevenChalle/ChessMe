@@ -4,7 +4,9 @@ import { PlayerTabs } from '@/features/player/components/PlayerTabs'
 import { hasAnyUsername, validatePlayerSearch } from '@/features/player/search'
 import { usePlayerAccounts } from '@/features/player/usePlayerAccounts'
 import { chessComPlayerQueryOptions } from '@/lib/chesscom/queries'
+import { formatOrList } from '@/lib/format'
 import { lichessUserQueryOptions } from '@/lib/lichess/queries'
+import { m } from '@/paraglide/messages'
 
 /** /player?lichess=<name>&chesscom=<name>: either or both, names may differ. */
 export const Route = createFileRoute('/player')({
@@ -17,7 +19,7 @@ export const Route = createFileRoute('/player')({
       deps.chesscom && queryClient.prefetchQuery(chessComPlayerQueryOptions(deps.chesscom)),
     ]),
   component: PlayerLayout,
-  pendingComponent: () => <p className="text-muted-foreground">Recherche des comptes…</p>,
+  pendingComponent: () => <p className="text-muted-foreground">{m.player_loading()}</p>,
 })
 
 function PlayerLayout() {
@@ -25,16 +27,12 @@ function PlayerLayout() {
   const { states, linked, accounts, noAccount } = usePlayerAccounts(usernames)
 
   if (!hasAnyUsername(usernames)) {
-    return (
-      <p className="text-muted-foreground">
-        Renseigne au moins un pseudo pour lancer la recherche.
-      </p>
-    )
+    return <p className="text-muted-foreground">{m.player_need_username()}</p>
   }
 
   if (noAccount) {
-    const names = linked.map((source) => `« ${usernames[source]} »`).join(' ni ')
-    return <p className="text-muted-foreground">Aucun compte trouvé pour {names}.</p>
+    const names = formatOrList(linked.map((source) => m.quoted({ text: usernames[source]! })))
+    return <p className="text-muted-foreground">{m.player_not_found({ names })}</p>
   }
 
   return (

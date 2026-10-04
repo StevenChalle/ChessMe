@@ -9,13 +9,7 @@ import type { LichessUser, PerfKey } from '@/lib/lichess/types'
 
 export type Category = 'bullet' | 'blitz' | 'rapid' | 'classical' | 'daily'
 
-export const CATEGORIES: { key: Category; label: string }[] = [
-  { key: 'bullet', label: 'Bullet' },
-  { key: 'blitz', label: 'Blitz' },
-  { key: 'rapid', label: 'Rapide' },
-  { key: 'classical', label: 'Classique' },
-  { key: 'daily', label: 'Correspondance' },
-]
+export const CATEGORIES: Category[] = ['bullet', 'blitz', 'rapid', 'classical', 'daily']
 
 export const SOURCE_LABELS: Record<ApiSource, string> = {
   lichess: 'Lichess',
@@ -61,7 +55,7 @@ const LICHESS_PERFS: Record<Category, PerfKey> = {
 
 export function fromLichess(user: LichessUser): AccountSummary {
   const categories: AccountSummary['categories'] = {}
-  for (const { key } of CATEGORIES) {
+  for (const key of CATEGORIES) {
     const perf = user.perfs?.[LICHESS_PERFS[key]]
     // Lichess reports a default 1500? rating for unplayed perfs: ignore them.
     if (perf?.games) {
@@ -104,7 +98,7 @@ function recordTotal(record: ChessComRecord | undefined): number {
 
 export function fromChessCom({ profile, stats }: ChessComPlayer): AccountSummary {
   const categories: AccountSummary['categories'] = {}
-  for (const { key } of CATEGORIES) {
+  for (const key of CATEGORIES) {
     const statsKey = CHESSCOM_CATEGORIES[key]
     const category = statsKey && stats[statsKey]
     if (category?.last) {
@@ -163,21 +157,19 @@ export function latestActivity(accounts: AccountSummary[]): AccountSummary | und
 
 export type CategoryGames = {
   category: Category
-  label: string
   bySource: { source: ApiSource; games: number }[]
   total: number
 }
 
 /** Rated games per category, split by source, most played first. Empty categories are dropped. */
 export function gamesByCategory(accounts: AccountSummary[]): CategoryGames[] {
-  return CATEGORIES.map(({ key, label }) => {
+  return CATEGORIES.map((key) => {
     const bySource = accounts.map((account) => ({
       source: account.source,
       games: account.categories[key]?.games ?? 0,
     }))
     return {
       category: key,
-      label,
       bySource,
       total: bySource.reduce((sum, { games }) => sum + games, 0),
     }

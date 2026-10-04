@@ -9,8 +9,10 @@ import {
 } from '@tanstack/react-router'
 import { TanStackRouterDevtools } from '@tanstack/react-router-devtools'
 import { Search } from 'lucide-react'
+import { LanguageSwitcher } from '@/components/LanguageSwitcher'
 import { AccountSearchForm } from '@/features/player/components/AccountSearchForm'
 import { validatePlayerSearch } from '@/features/player/search'
+import { m } from '@/paraglide/messages'
 
 type RouterContext = {
   queryClient: QueryClient
@@ -18,7 +20,7 @@ type RouterContext = {
 
 export const Route = createRootRouteWithContext<RouterContext>()({
   component: RootLayout,
-  notFoundComponent: () => <p className="p-8 text-muted-foreground">Page introuvable.</p>,
+  notFoundComponent: () => <p className="p-8 text-muted-foreground">{m.not_found()}</p>,
 })
 
 function RootLayout() {
@@ -30,11 +32,10 @@ function RootLayout() {
         <Link to="/" className="text-2xl font-medium tracking-tight text-font-clear">
           ChessMe
         </Link>
-        {!isHome && (
-          <div className="ml-auto">
-            <HeaderSearch />
-          </div>
-        )}
+        <div className="ml-auto flex items-center gap-4">
+          {!isHome && <HeaderSearch />}
+          <LanguageSwitcher />
+        </div>
       </header>
       <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-6">
         <Outlet />
@@ -63,7 +64,7 @@ function HeaderSearch() {
       />
       <Link
         to="/"
-        aria-label="Nouvelle recherche"
+        aria-label={m.new_search()}
         className="text-muted-foreground hover:text-font-clear md:hidden"
       >
         <Search className="size-5" />

@@ -4,6 +4,7 @@ import { useId, useState, type FormEvent, type ReactNode } from 'react'
 import { Button } from '@/components/ui/button'
 import type { ApiSource } from '@/lib/http'
 import { cn } from '@/lib/utils'
+import { m } from '@/paraglide/messages'
 import { cleanUsername, copySource, otherSource, type PlayerUsernames } from '../search'
 import { SOURCE_LABELS } from '../summary'
 import { SourceDot } from './SourceBadge'
@@ -66,12 +67,12 @@ export function AccountSearchForm({
       size="xs"
       disabled={!canCopyInto('chesscom')}
       onClick={() => copyInto('chesscom')}
-      title="Même pseudo que sur Lichess"
-      aria-label="Utiliser le pseudo Lichess pour Chess.com"
+      title={m.search_copy_title({ from: SOURCE_LABELS.lichess })}
+      aria-label={m.search_copy_label({ from: SOURCE_LABELS.lichess, to: SOURCE_LABELS.chesscom })}
       className="text-muted-foreground"
     >
       <ArrowDown />
-      Même pseudo
+      {m.search_same_username()}
     </Button>
   )
 
@@ -94,13 +95,13 @@ export function AccountSearchForm({
           onClick={() => to && copyInto(to)}
           title={
             from && to
-              ? `Même pseudo sur ${SOURCE_LABELS[to]} que sur ${SOURCE_LABELS[from]}`
-              : 'Même pseudo sur les deux sites'
+              ? m.search_copy_title_to({ from: SOURCE_LABELS[from], to: SOURCE_LABELS[to] })
+              : m.search_copy_title_any()
           }
           aria-label={
             from && to
-              ? `Utiliser le pseudo ${SOURCE_LABELS[from]} pour ${SOURCE_LABELS[to]}`
-              : 'Utiliser le même pseudo sur les deux sites'
+              ? m.search_copy_label({ from: SOURCE_LABELS[from], to: SOURCE_LABELS[to] })
+              : m.search_copy_title_any()
           }
           className="text-muted-foreground"
         >
@@ -112,7 +113,7 @@ export function AccountSearchForm({
           variant="ghost"
           size="icon-sm"
           disabled={!canSubmit}
-          aria-label="Rechercher"
+          aria-label={m.search_submit()}
         >
           <Search />
         </Button>
@@ -137,9 +138,9 @@ export function AccountSearchForm({
       <div className="flex items-center gap-3 pt-1">
         <Button type="submit" size="lg" disabled={!canSubmit}>
           <Search />
-          Rechercher
+          {m.search_submit()}
         </Button>
-        <span className="text-xs text-muted-foreground">Un seul compte suffit.</span>
+        <span className="text-xs text-muted-foreground">{m.search_one_is_enough()}</span>
       </div>
     </form>
   )
@@ -168,8 +169,8 @@ function UsernameInput({
       id={id}
       value={value}
       onChange={(event) => onChange(source, event.target.value)}
-      placeholder={compact ? label : `Pseudo ${label}`}
-      aria-label={compact ? `Pseudo ${label}` : undefined}
+      placeholder={compact ? label : m.search_username_placeholder({ platform: label })}
+      aria-label={compact ? m.search_username_placeholder({ platform: label }) : undefined}
       autoFocus={autoFocus}
       spellCheck={false}
       autoComplete="off"

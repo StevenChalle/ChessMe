@@ -1,4 +1,5 @@
 import { countryName } from '@/lib/format'
+import { m } from '@/paraglide/messages'
 import { SOURCE_LABELS, type AccountSummary } from '../summary'
 import { SourceDot } from './SourceBadge'
 
@@ -27,7 +28,11 @@ export function PlayerHeader({ accounts }: { accounts: AccountSummary[] }) {
             <span
               key={account.source}
               className="text-brag"
-              title={sameTitle ? undefined : `Titre sur ${SOURCE_LABELS[account.source]}`}
+              title={
+                sameTitle
+                  ? undefined
+                  : m.player_title_on({ platform: SOURCE_LABELS[account.source] })
+              }
             >
               {account.title}
             </span>

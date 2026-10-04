@@ -1,5 +1,6 @@
 import { formatNumber } from '@/lib/format'
-import { SOURCE_COLOR_CLASS } from '../sources'
+import { m } from '@/paraglide/messages'
+import { categoryLabel, SOURCE_COLOR_CLASS } from '../sources'
 import { gamesByCategory, SOURCE_LABELS, type AccountSummary } from '../summary'
 import { Panel } from './Panel'
 import { SourceLabel } from './SourceBadge'
@@ -11,7 +12,7 @@ export function GamesByCategory({ accounts }: { accounts: AccountSummary[] }) {
 
   return (
     <Panel
-      title="Parties classées par cadence"
+      title={m.rated_games_by_time_control()}
       aside={
         accounts.length > 1 && (
           <span className="flex gap-3">
@@ -23,15 +24,15 @@ export function GamesByCategory({ accounts }: { accounts: AccountSummary[] }) {
       }
     >
       {rows.length === 0 ? (
-        <p className="text-sm text-muted-foreground">Aucune partie classée.</p>
+        <p className="text-sm text-muted-foreground">{m.no_rated_games()}</p>
       ) : (
         <ul className="space-y-2.5">
-          {rows.map(({ category, label, bySource, total }) => (
+          {rows.map(({ category, bySource, total }) => (
             <li
               key={category}
               className="grid grid-cols-[7rem_1fr_4rem] items-center gap-3 text-sm"
             >
-              <span>{label}</span>
+              <span>{categoryLabel(category)}</span>
               <div
                 className="flex h-2 overflow-hidden rounded-full"
                 style={{ width: `${(total / max) * 100}%` }}
@@ -41,7 +42,7 @@ export function GamesByCategory({ accounts }: { accounts: AccountSummary[] }) {
                     key={source}
                     className={SOURCE_COLOR_CLASS[source]}
                     style={{ width: `${(games / total) * 100}%` }}
-                    title={`${SOURCE_LABELS[source]} : ${formatNumber(games)}`}
+                    title={`${SOURCE_LABELS[source]}: ${formatNumber(games)}`}
                   />
                 ))}
               </div>

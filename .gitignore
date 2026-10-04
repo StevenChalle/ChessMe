@@ -25,3 +25,6 @@ dist-ssr
 
 # PWA dev service worker
 dev-dist
+
+# TanStack Router plugin temp files
+.tanstack

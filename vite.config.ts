@@ -1,4 +1,5 @@
 /// <reference types="vitest/config" />
+import { paraglideVitePlugin } from '@inlang/paraglide-js'
 import tailwindcss from '@tailwindcss/vite'
 import { tanstackRouter } from '@tanstack/router-plugin/vite'
 import react from '@vitejs/plugin-react'
@@ -13,6 +14,15 @@ export default defineConfig(({ mode }) => ({
     tanstackRouter({ target: 'react', autoCodeSplitting: true }),
     react(),
     tailwindcss(),
+    // Compiles messages/*.json into typed functions in src/paraglide (git-ignored).
+    // Keep the strategy in sync with the "i18n" script in package.json.
+    paraglideVitePlugin({
+      project: './project.inlang',
+      outdir: './src/paraglide',
+      // English by default; the user's choice is saved in localStorage.
+      strategy: ['localStorage', 'baseLocale'],
+      emitTsDeclarations: true,
+    }),
     VitePWA({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.svg'],
@@ -21,8 +31,8 @@ export default defineConfig(({ mode }) => ({
       manifest: {
         name: mode === 'development' ? 'ChessMe (dev)' : 'ChessMe',
         short_name: mode === 'development' ? 'ChessMe dev' : 'ChessMe',
-        description: 'Explore tes parties et statistiques Lichess.',
-        lang: 'fr',
+        description: 'Explore your Lichess and Chess.com stats and games.',
+        lang: 'en',
         theme_color: '#161512',
         background_color: '#161512',
         display: 'standalone',

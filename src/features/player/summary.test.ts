@@ -127,7 +127,6 @@ describe('combining accounts', () => {
     expect(gamesByCategory(accounts)).toEqual([
       {
         category: 'blitz',
-        label: 'Blitz',
         bySource: [
           { source: 'lichess', games: 120 },
           { source: 'chesscom', games: 60 },
@@ -136,7 +135,6 @@ describe('combining accounts', () => {
       },
       {
         category: 'bullet',
-        label: 'Bullet',
         bySource: [
           { source: 'lichess', games: 0 },
           { source: 'chesscom', games: 10 },
@@ -145,7 +143,6 @@ describe('combining accounts', () => {
       },
       {
         category: 'daily',
-        label: 'Correspondance',
         bySource: [
           { source: 'lichess', games: 3 },
           { source: 'chesscom', games: 0 },
