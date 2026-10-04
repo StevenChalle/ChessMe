@@ -9,6 +9,7 @@
 - [x] Un pseudo par plateforme (comptes aux noms différents), avec recopie rapide
 - [x] Interface bilingue anglais / français (langue du navigateur par défaut), choix mémorisé
 - [x] Recherches récentes sur l'accueil (3 dernières, cliquables)
+- [x] Page d'analyse à onglets (filtres, analyse, entraînement) à la place de la modale
 - [x] Analyse approfondie : filtres (plateformes, N dernières ou période, cadences, couleur, résultat, longueur), seuils réglables, récapitulatif avec estimation, pagination, rejeu par partie
 - [x] Analyse des 10 dernières parties avec Stockfish WASM : nombre d'erreurs par partie (sans cache)
 - [x] Rejouer ses erreurs sur un échiquier, dans un ordre aléatoire, avec bilan

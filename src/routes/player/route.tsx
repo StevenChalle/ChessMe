@@ -5,6 +5,8 @@ import { PlayerTabs } from '@/features/player/components/PlayerTabs'
 import { saveRecentSearch } from '@/features/player/recentSearches'
 import { hasAnyUsername, validatePlayerSearch } from '@/features/player/search'
 import { usePlayerAccounts } from '@/features/player/usePlayerAccounts'
+import { reviewableAccounts } from '@/features/review/accounts'
+import { ReviewButtons } from '@/features/review/components/ReviewButtons'
 import { chessComPlayerQueryOptions } from '@/lib/chesscom/queries'
 import { formatOrList } from '@/lib/format'
 import { lichessUserQueryOptions } from '@/lib/lichess/queries'
@@ -51,7 +53,14 @@ function PlayerLayout() {
 
   return (
     <div className="space-y-6">
-      <PlayerHeader accounts={accounts} />
+      <PlayerHeader
+        accounts={accounts}
+        actions={
+          reviewableAccounts(accounts).accounts.length > 0 && (
+            <ReviewButtons usernames={usernames} />
+          )
+        }
+      />
       <PlayerTabs linked={linked} states={states} />
       <Outlet />
     </div>

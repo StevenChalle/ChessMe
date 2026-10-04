@@ -1,4 +1,4 @@
-import { ArrowLeft, Play, TriangleAlert } from 'lucide-react'
+import { Play, TriangleAlert } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { SourceLabel } from '@/features/player/components/SourceBadge'
 import { categoryLabel, sourceErrorMessage } from '@/features/player/sources'
@@ -14,16 +14,14 @@ import { LARGE_REVIEW } from '../selection'
 
 const SOURCES: ApiSource[] = ['lichess', 'chesscom']
 
-/** What the search found, how long the analysis should take, and the button to launch it. */
+/** What the search found (shown under the filters), how long the analysis should take, and the button to launch it. */
 export function ReviewRecap({
   found: { games, failures },
   criteria,
-  onEdit,
   onLaunch,
 }: {
   found: FoundGames
   criteria: ReviewCriteria
-  onEdit: () => void
   onLaunch: () => void
 }) {
   // The estimate is for the device running the analysis: its kind and its engines.
@@ -94,18 +92,12 @@ export function ReviewRecap({
         </div>
       )}
 
-      <div className="flex flex-wrap gap-2">
-        <Button variant="outline" size="lg" onClick={onEdit}>
-          <ArrowLeft data-icon="inline-start" />
-          {m.recap_edit()}
+      {games.length > 0 && (
+        <Button size="lg" onClick={onLaunch}>
+          <Play data-icon="inline-start" />
+          {m.recap_launch()}
         </Button>
-        {games.length > 0 && (
-          <Button size="lg" onClick={onLaunch}>
-            <Play data-icon="inline-start" />
-            {m.recap_launch()}
-          </Button>
-        )}
-      </div>
+      )}
     </div>
   )
 }

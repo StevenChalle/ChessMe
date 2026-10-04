@@ -1,11 +1,24 @@
-import { ReviewButtons } from '@/features/review/components/ReviewButtons'
+import { Link } from '@tanstack/react-router'
+import type { ReactNode } from 'react'
 import { countryName } from '@/lib/format'
 import { m } from '@/paraglide/messages'
+import type { PlayerUsernames } from '../search'
 import { SOURCE_LABELS, type AccountSummary } from '../summary'
 import { SourceDot } from './SourceBadge'
 
-/** Name, titles, avatar and country, gathered from whichever accounts were found. */
-export function PlayerHeader({ accounts }: { accounts: AccountSummary[] }) {
+/**
+ * Name, titles, avatar and country, gathered from whichever accounts were found; `actions` on the
+ * right. With `profileLink`, the name leads back to the profile of these accounts.
+ */
+export function PlayerHeader({
+  accounts,
+  actions,
+  profileLink,
+}: {
+  accounts: AccountSummary[]
+  actions?: ReactNode
+  profileLink?: PlayerUsernames
+}) {
   const avatarUrl = accounts.find((account) => account.avatarUrl)?.avatarUrl
   const country = accounts.map((account) => countryName(account.countryCode)).find(Boolean)
   const titles = accounts.filter((account) => account.title)
@@ -17,16 +30,6 @@ export function PlayerHeader({ accounts }: { accounts: AccountSummary[] }) {
       (account) => account.username.toLowerCase() === accounts[0]!.username.toLowerCase(),
     )
   const [main, ...others] = accounts
-  // Closed accounts have no games to review.
-  const open = accounts.filter((account) => !account.closed)
-  const reviewable = open.map(({ source, username }) => ({ source, username }))
-  // Rated games per time control, shown as an indication in the advanced review.
-  const gameCounts = Object.fromEntries(
-    open.map(({ source, categories }) => [
-      source,
-      Object.fromEntries(Object.entries(categories).map(([key, stats]) => [key, stats.games])),
-    ]),
-  )
 
   return (
     <div className="flex flex-wrap items-center justify-between gap-4">
@@ -49,7 +52,13 @@ export function PlayerHeader({ accounts }: { accounts: AccountSummary[] }) {
                 {account.title}
               </span>
             ))}
-            {main?.username}
+            {profileLink ? (
+              <Link to="/player" search={profileLink} className="hover:text-primary">
+                {main?.username}
+              </Link>
+            ) : (
+              main?.username
+            )}
           </h1>
           <p className="flex flex-wrap items-center gap-x-3 text-sm text-muted-foreground">
             {country && <span>{country}</span>}
@@ -64,7 +73,7 @@ export function PlayerHeader({ accounts }: { accounts: AccountSummary[] }) {
           </p>
         </div>
       </div>
-      {reviewable.length > 0 && <ReviewButtons accounts={reviewable} gameCounts={gameCounts} />}
+      {actions}
     </div>
   )
 }

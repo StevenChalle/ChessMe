@@ -102,3 +102,30 @@ export function saveReviewSettings(settings: ReviewSettings) {
     // Not saved: the settings still apply to this review
   }
 }
+
+const sameItems = <T>(a: T[], b: T[]) =>
+  a.length === b.length && a.every((item) => b.includes(item))
+
+/** Same games and same rules (order of the chosen items does not matter). */
+export function sameSettings(a: ReviewSettings, b: ReviewSettings): boolean {
+  const { selection: x, criteria: c } = a
+  const { selection: y, criteria: d } = b
+  const sameScope =
+    x.scope.kind === 'latest' && y.scope.kind === 'latest'
+      ? x.scope.count === y.scope.count
+      : x.scope.kind === 'range' && y.scope.kind === 'range'
+        ? x.scope.from === y.scope.from &&
+          x.scope.to === y.scope.to &&
+          x.scope.preset === y.scope.preset
+        : false
+  return (
+    sameScope &&
+    sameItems(x.sources, y.sources) &&
+    sameItems(x.categories, y.categories) &&
+    sameItems(x.colors, y.colors) &&
+    sameItems(x.results, y.results) &&
+    x.minMoves === y.minMoves &&
+    c.errorMinDrop === d.errorMinDrop &&
+    c.validMaxDrop === d.validMaxDrop
+  )
+}

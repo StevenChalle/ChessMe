@@ -2,7 +2,7 @@ import { useEffect } from 'react'
 
 /**
  * While `active` (a long analysis is running): keeps the screen on when the browser allows it
- * (Screen Wake Lock), and asks before leaving the page, since nothing is saved yet.
+ * (Screen Wake Lock). Leaving the page is guarded elsewhere (the router's blocker).
  */
 export function useKeepAwake(active: boolean) {
   useEffect(() => {
@@ -24,16 +24,13 @@ export function useKeepAwake(active: boolean) {
     const onVisible = () => {
       if (document.visibilityState === 'visible') acquire()
     }
-    const onBeforeUnload = (event: BeforeUnloadEvent) => event.preventDefault()
 
     acquire()
     document.addEventListener('visibilitychange', onVisible)
-    window.addEventListener('beforeunload', onBeforeUnload)
     return () => {
       released = true
       void lock?.release()
       document.removeEventListener('visibilitychange', onVisible)
-      window.removeEventListener('beforeunload', onBeforeUnload)
     }
   }, [active])
 }

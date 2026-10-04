@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { DEFAULT_CRITERIA } from './criteria'
 import { defaultSelection } from './selection'
-import { parseReviewSettings } from './settings'
+import { parseReviewSettings, sameSettings } from './settings'
 
 const both = ['lichess', 'chesscom'] as const
 
@@ -66,5 +66,41 @@ describe('parseReviewSettings', () => {
     const raw = saved({ selection: { sources: ['lichess'] } })
     expect(parseReviewSettings(raw, ['chesscom']).selection.sources).toEqual(['chesscom'])
     expect(parseReviewSettings(raw, [...both]).selection.sources).toEqual(['lichess'])
+  })
+})
+
+describe('sameSettings', () => {
+  const base = { selection: defaultSelection(['lichess', 'chesscom']), criteria: DEFAULT_CRITERIA }
+
+  it('ignores the order of the chosen items', () => {
+    const reordered = {
+      ...base,
+      selection: { ...base.selection, sources: ['chesscom' as const, 'lichess' as const] },
+    }
+    expect(sameSettings(base, reordered)).toBe(true)
+  })
+
+  it('tells any change of games or rules', () => {
+    expect(sameSettings(base, { ...base, selection: { ...base.selection, minMoves: 5 } })).toBe(
+      false,
+    )
+    expect(
+      sameSettings(base, {
+        ...base,
+        selection: { ...base.selection, scope: { kind: 'latest', count: 11 } },
+      }),
+    ).toBe(false)
+    expect(
+      sameSettings(base, {
+        ...base,
+        selection: { ...base.selection, scope: { kind: 'range', from: 1, to: 2 } },
+      }),
+    ).toBe(false)
+    expect(sameSettings(base, { ...base, criteria: { errorMinDrop: 12, validMaxDrop: 5 } })).toBe(
+      false,
+    )
+    expect(
+      sameSettings(base, { ...base, selection: { ...base.selection, colors: ['white'] } }),
+    ).toBe(false)
   })
 })

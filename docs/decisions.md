@@ -307,3 +307,21 @@ Rien n'étant enregistré, fermer la modale pendant une recherche ou une analyse
 ### Réglages mémorisés
 
 Dans le `localStorage` (`chessme:review-settings`), avec une lecture tolérante (chaque champ invalide reprend sa valeur par défaut) et versionnée. Déclarés sur la page `/legal`, et effacés par « Supprimer mes données locales ».
+
+---
+
+## 2026-10-05 : l'analyse quitte la modale pour une page à onglets
+
+La modale enchaînait réglages, récapitulatif, progression, résultats et entraînement : le parcours devenait confus après les réglages. L'analyse a maintenant sa **page**, `/analysis?lichess=…&chesscom=…`, sur le squelette du profil. Remplace les parties « Déroulé » et « Protections pendant l'analyse » de l'entrée précédente, qui décrivaient la modale.
+
+- **En-tête** : celui du joueur, inchangé et à la même place. Le nom ramène au profil. À droite : « Analyser ma dernière partie » et « Rejouer mes erreurs (N) », à la place de « Analyse approfondie ». Dessous, le titre « Analyse approfondie », puis les onglets.
+- **Onglets** (routes `src/routes/analysis/`) :
+  - **Filtres et options** (`/analysis`), toujours présent. « Trouver les parties » affiche le récapitulatif sous les réglages, avec « Lancer l'analyse ». Modifier un réglage fait disparaître le récapitulatif : il faut relancer la recherche, pour ne pas analyser autre chose que ce qui est affiché.
+  - **Analyse** (`/analysis/run`), dès qu'une analyse existe : la progression, puis les résultats (pagination, rejeu par partie, chrono).
+  - **Entraînement** (`/analysis/training`), dès qu'un entraînement est lancé. On passe des résultats à l'entraînement et inversement sans perdre la session : `TrainingView` est rendu par la mise en page, masqué hors de son onglet. « Quitter » ferme la session (l'onglet disparaît) et ramène aux résultats.
+- **Bouton rapide** (profil ou page d'analyse) : même page, directement sur l'onglet Analyse, avec les filtres « dernière partie, seuils par défaut », visibles dans l'onglet Filtres mais **non mémorisés**. Depuis le profil, il passe par `?start=last`, retiré de l'adresse aussitôt l'analyse démarrée (un rechargement ne la relance pas). L'état « en cours » est posé dès le premier rendu : les effets des onglets passent avant celui de la mise en page, et l'onglet Analyse ne doit jamais croire qu'il n'y a rien.
+- **L'analyse continue** quand on revient aux filtres. Recherche, analyse et entraînement sont **indépendants** (`AnalysisSessionProvider`, `session.tsx`, avec un `AbortController` chacun) : on peut chercher d'autres parties pendant qu'une analyse tourne.
+- **« Revenir aux filtres de l'analyse en cours »** apparaît quand les réglages diffèrent de ceux de l'analyse en cours (`sameSettings`).
+- **Confirmations** (modales `ConfirmDialog` / `useConfirm`) : remplacer l'analyse en cours (ce qui arrête aussi son entraînement), arrêter l'entraînement en cours pour en lancer un autre, quitter la page pendant une analyse ou un entraînement (`useBlocker` de TanStack Router ; changer d'onglet n'est jamais bloqué ; fermer ou recharger l'onglet déclenche l'avertissement natif).
+- **Accès direct** à `/analysis/run` ou `/analysis/training` sans rien en mémoire (rechargement, lien partagé) : retour à l'onglet Filtres.
+- Le chrono utilise les heures de début et de fin stockées dans la session : il ne repart pas de zéro quand on change d'onglet.

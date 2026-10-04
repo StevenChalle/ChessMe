@@ -1,6 +1,6 @@
 import type { Color } from 'chessops'
 import { LoaderCircle, RotateCcw, Search } from 'lucide-react'
-import { useId, useState, type ReactNode } from 'react'
+import { useId, type ReactNode } from 'react'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Input } from '@/components/ui/input'
@@ -87,26 +87,27 @@ function Section({ title, children }: { title: string; children: ReactNode }) {
 }
 
 /**
- * Filters and thresholds of the advanced review. "Find games" hands them over (and they are
- * remembered for next time); nothing is fetched before.
+ * Filters and thresholds of the advanced review, controlled by the analysis session (they survive
+ * tab switches). "Find games" asks for the matching games; nothing is fetched before.
  */
 export function ReviewSetup({
   accounts,
   gameCounts,
-  initial,
+  value: { selection, criteria },
+  onChange,
   finding,
   onFind,
 }: {
   accounts: ReviewAccount[]
   gameCounts: GameCounts
-  initial: ReviewSettings
+  value: ReviewSettings
+  onChange: (settings: ReviewSettings) => void
   finding: boolean
-  onFind: (settings: ReviewSettings) => void
+  onFind: () => void
 }) {
-  const [selection, setSelection] = useState<GameSelection>(initial.selection)
-  const [criteria, setCriteria] = useState<ReviewCriteria>(initial.criteria)
   const update = (change: Partial<GameSelection>) =>
-    setSelection((current) => ({ ...current, ...change }))
+    onChange({ selection: { ...selection, ...change }, criteria })
+  const setCriteria = (next: ReviewCriteria) => onChange({ selection, criteria: next })
 
   const total = selection.sources.reduce(
     (sum, source) =>
@@ -125,7 +126,7 @@ export function ReviewSetup({
       className="space-y-6"
       onSubmit={(event) => {
         event.preventDefault()
-        if (valid && !finding) onFind({ selection, criteria })
+        if (valid && !finding) onFind()
       }}
     >
       <div className="grid gap-6 md:grid-cols-2">

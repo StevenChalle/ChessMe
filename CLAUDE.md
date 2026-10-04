@@ -38,6 +38,8 @@ src/
   components/         # composants applicatifs partagés (board/, PlayerSearch…)
   features/<nom>/     # code propre à une fonctionnalité (import, stats, training…), à créer au besoin
   features/player/    # profil croisé : summary.ts (normalisation), search.ts (paramètres ?lichess=&chesscom=), hook, composants
+  features/review/    # analyse : critères, sélection, recherche, estimation, session de la page /analysis (session.tsx)
+  routes/analysis/    # page d'analyse : onglets Filtres (index), Analyse (run), Entraînement (training)
   features/games/     # résumé commun d'une partie (normalize.ts) et table des parties (GamesTable)
   features/history/   # onglet Parties : feed.ts (fusion paginée Lichess + Chess.com), queries.ts
   features/review/    # analyse des dernières parties : errors.ts (erreur, coup valide), analyze.ts (deux passes)
