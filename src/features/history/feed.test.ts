@@ -78,6 +78,33 @@ describe('history feed', () => {
     expect(first.state.sources[0]!.buffer.map((game) => game.id)).toEqual(['l2', 'l1'])
   })
 
+  it('only lists rated standard games, like the review (no casual games, no variants)', async () => {
+    const lichess = [
+      lichessGame('casual', 40, { rated: false }),
+      lichessGame('960', 35, { variant: 'chess960' }),
+      lichessGame('l1', 30),
+    ]
+    const fetchers: FeedFetchers = {
+      lichessPage: async () => lichess,
+      chessComArchives: async () => ['m1', 'm2'],
+      // The newest month has nothing to keep: the feed moves on to the previous one.
+      chessComMonth: async (url: string) =>
+        url === 'm2'
+          ? [
+              { ...chessComGame('c-casual', 45, 1200), rated: false },
+              { ...chessComGame('c-960', 44, 1200), rules: 'chess960' },
+            ]
+          : [chessComGame('c1', 20, 1190)],
+    }
+    const state = startFeed([
+      { source: 'lichess', username: 'alice' },
+      { source: 'chesscom', username: 'alice' },
+    ])
+
+    const page = await nextPage(state, fetchers)
+    expect(page.games.map((game) => game.id)).toEqual(['l1', 'c1'])
+  })
+
   it('gives the rating change: Lichess directly, Chess.com from the previous game of the pool', async () => {
     const fetchers: FeedFetchers = {
       lichessPage: async () => [lichessGame('l1', 10)],

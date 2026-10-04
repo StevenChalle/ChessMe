@@ -16,10 +16,8 @@ import {
 } from '../feed'
 import { historyKeys, historyQueryOptions } from '../queries'
 
-/** "1532 (+8)": rating after the game, and the change when known. Casual games say so. */
+/** "1532 (+8)": rating after the game, and the change when known (only rated games are listed). */
 function RatingCell({ game }: { game: GameSummary }) {
-  if (!game.rated)
-    return <span className="text-xs text-muted-foreground">{m.history_casual()}</span>
   if (game.rating === undefined) return null
   const diff = game.ratingDiff
   return (

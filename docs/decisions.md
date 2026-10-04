@@ -207,11 +207,11 @@ valide ⇔ gain%(meilleur) − gain%(après) < 5 points
 
 ## 2026-10-04 : historique des parties
 
-Un onglet **Parties** sur le profil (`/player/history`) liste toutes les parties des comptes liés, de la plus récente à la plus ancienne, toutes plateformes, cadences et variantes confondues (parties amicales comprises). Code : `src/features/history/`.
+Un onglet **Parties** sur le profil (`/player/history`) liste les parties des comptes liés, de la plus récente à la plus ancienne, toutes plateformes et cadences confondues. Code : `src/features/history/`. (Au départ, il incluait aussi les parties amicales et les variantes : voir l'entrée suivante.)
 
 - **Pas de stockage** (choix de l'utilisateur) : rien n'est enregistré, les parties sont récupérées à la demande. **Pages de 30**, avec boutons « plus récentes » / « plus anciennes ». Une page déjà vue ne refait pas de requête (cache TanStack Query, `useInfiniteQuery`). **Mettre à jour** repart de la première page (`resetQueries`).
 - **Fusion par date** (`feed.ts`, testé avec de faux clients) : chaque plateforme a un curseur et un tampon de parties récupérées mais pas encore affichées. Lichess : export paginé par `until` (date de début), 30 parties par requête, sans les coups. Chess.com : archives mensuelles, de la plus récente à la plus ancienne. Une page prend les 30 parties les plus récentes des deux tampons, en les remplissant au besoin. Une plateforme en échec est signalée et la liste continue avec l'autre.
-- **Colonne Elo** (au lieu du nombre d'erreurs) : l'Elo du joueur après la partie et la variation. Lichess donne la variation (`ratingDiff`) et l'Elo d'avant ; Chess.com donne l'Elo d'après mais pas la variation, calculée par différence avec la partie précédente de la même cadence et variante (`withChessComRatingDiffs`), sur tout ce qui est déjà chargé, tampon compris. La toute première partie connue d'une cadence n'a donc pas de variation. Les parties amicales affichent « Amicale ».
+- **Colonne Elo** (au lieu du nombre d'erreurs) : l'Elo du joueur après la partie et la variation. Lichess donne la variation (`ratingDiff`) et l'Elo d'avant ; Chess.com donne l'Elo d'après mais pas la variation, calculée par différence avec la partie précédente de la même cadence et variante (`withChessComRatingDiffs`), sur tout ce qui est déjà chargé, tampon compris. La toute première partie connue d'une cadence n'a donc pas de variation.
 - **Normalisation partagée** (`src/features/games/normalize.ts`) : le résumé d'une partie (`GameSummary` : plateforme, date, cadence, variante, couleur, Elo, adversaire, résultat) sert à la fois à l'analyse et à l'historique, et la table (`GamesTable`) est la même, avec une dernière colonne au choix (erreurs ou Elo).
 - Limite connue : Lichess pagine sur la date de **début** et la liste est triée sur la date de **fin** ; une partie par correspondance très longue peut apparaître un peu plus loin que sa date de fin.
 
@@ -241,3 +241,14 @@ En vue d'un partage public :
   - **bouton « Supprimer mes données locales »** ;
   - **licence et crédits** : chessground et chessops, Stockfish, pièces cburnett, Noto Sans, API.
 - Si on ajoute un jour de la publicité ou de la mesure d'audience : bannière de consentement et politique de confidentialité à revoir entièrement.
+
+---
+
+## 2026-10-05 : l'historique liste les mêmes parties que la revue
+
+Constat : une partie amicale toute récente apparaissait dans l'historique, mais « Analyser ma dernière partie » prenait la partie classée d'avant, ce qui donnait l'impression d'un bug.
+
+- **Choix de l'utilisateur** : la revue reste limitée aux **parties classées en échecs standard**, et l'historique s'aligne dessus. Plus de parties amicales, ni de variantes (Chess960, partie depuis une position…), ni de parties contre l'ordinateur (toujours amicales sur Lichess).
+- **Une seule règle** : `isRatedStandardGame` (`src/features/games/normalize.ts`), utilisée par la revue (`fromLichessGame`) et par l'historique (`feed.ts`). Toute évolution du périmètre se fait là.
+- L'export Lichess de l'historique demande directement `rated=true` et `perfType` (cadences standard), comme la revue, pour ne pas télécharger des parties écartées ensuite. Côté Chess.com, le filtre est appliqué mois par mois, et un mois sans partie retenue fait passer au précédent.
+- Le libellé « Amicale » est supprimé, et le message vide devient « Aucune partie classée trouvée ».

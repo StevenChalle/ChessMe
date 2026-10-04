@@ -1,5 +1,6 @@
 import {
   byNewest,
+  isRatedStandardGame,
   summarizeChessComGame,
   summarizeLichessGame,
   type GameSummary,
@@ -10,7 +11,7 @@ import type { LichessGame } from '@/lib/lichess/types'
 
 /**
  * The game history of linked accounts, all platforms together, newest first, one page at a
- * time. Nothing is stored: each platform keeps a cursor (Lichess: a date; Chess.com: the monthly
+ * time. Same games as the review: rated standard chess only (isRatedStandardGame). Nothing is stored: each platform keeps a cursor (Lichess: a date; Chess.com: the monthly
  * archives left) and a buffer of games fetched but not shown yet, and pages are merged by date.
  */
 
@@ -61,12 +62,15 @@ export function startFeed(accounts: HistoryAccount[]): FeedState {
   }
 }
 
+const keep = (game: GameSummary | undefined): GameSummary[] =>
+  game && isRatedStandardGame(game) ? [game] : []
+
 /** Fills an empty buffer, fetching until some game shows up or the platform has no more. */
 async function refill(feed: SourceFeed, fetchers: FeedFetchers, signal?: AbortSignal) {
   while (feed.buffer.length === 0 && !feed.exhausted) {
     if (feed.source === 'lichess') {
       const raw = await fetchers.lichessPage(feed.username, HISTORY_PAGE_SIZE, feed.until, signal)
-      feed.buffer = raw.flatMap((game) => summarizeLichessGame(game, feed.username) ?? [])
+      feed.buffer = raw.flatMap((game) => keep(summarizeLichessGame(game, feed.username)))
       feed.buffer.sort(byNewest)
       if (raw.length > 0) feed.until = Math.min(...raw.map((game) => game.createdAt)) - 1
       feed.exhausted = raw.length < HISTORY_PAGE_SIZE
@@ -75,7 +79,7 @@ async function refill(feed: SourceFeed, fetchers: FeedFetchers, signal?: AbortSi
       const archive = feed.archives.pop()
       if (archive) {
         const month = await fetchers.chessComMonth(archive, signal)
-        feed.buffer = month.flatMap((game) => summarizeChessComGame(game, feed.username) ?? [])
+        feed.buffer = month.flatMap((game) => keep(summarizeChessComGame(game, feed.username)))
         feed.buffer.sort(byNewest)
       }
       feed.exhausted = feed.archives.length === 0

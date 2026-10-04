@@ -45,8 +45,8 @@ export function fetchRecentGames(
 }
 
 /**
- * One page of the game history, all games (casual and variants included), newest first,
- * without moves. `until` (Unix ms, exclusive upper bound on the start date) pages backwards.
+ * One page of the game history: rated standard games (like the review), newest first, without
+ * moves. `until` (Unix ms, exclusive upper bound on the start date) pages backwards.
  */
 export function fetchGamesPage(
   username: string,
@@ -54,7 +54,12 @@ export function fetchGamesPage(
   until: number | undefined,
   signal?: AbortSignal,
 ): Promise<LichessGame[]> {
-  const params: Record<string, string> = { max: String(max), moves: 'false' }
+  const params: Record<string, string> = {
+    max: String(max),
+    moves: 'false',
+    rated: 'true',
+    perfType: STANDARD_PERFS,
+  }
   if (until !== undefined) params.until = String(until)
   return exportGames(username, params, signal)
 }

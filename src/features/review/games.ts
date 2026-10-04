@@ -1,5 +1,6 @@
 import { parsePgn } from 'chessops/pgn'
 import {
+  isRatedStandardGame,
   summarizeChessComGame,
   summarizeLichessGame,
   type GameSummary,
@@ -23,7 +24,7 @@ export type ReviewGame = GameSummary & {
 /** undefined for games outside the review: unrated, variants, aborted, or without the player. */
 export function fromLichessGame(game: LichessGame, username: string): ReviewGame | undefined {
   const summary = summarizeLichessGame(game, username)
-  if (!summary || !summary.rated || summary.variant) return undefined
+  if (!summary || !isRatedStandardGame(summary)) return undefined
   return {
     ...summary,
     sanMoves: game.moves ? game.moves.split(' ') : [],

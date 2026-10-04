@@ -38,6 +38,14 @@ export type GameSummary = {
   result: GameResult
 }
 
+/**
+ * The games ChessMe works with, in the review as in the history: rated standard chess only
+ * (no casual games, no variants). One rule for both, so they always list the same games.
+ */
+export function isRatedStandardGame(game: GameSummary): boolean {
+  return game.rated && game.variant === undefined
+}
+
 // --- Lichess ---
 
 /** Statuses of games that never really took place. */
