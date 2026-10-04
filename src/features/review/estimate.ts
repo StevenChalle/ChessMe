@@ -1,3 +1,5 @@
+import { defaultPoolSize } from '@/lib/engine/pool'
+import type { DeviceKind } from '@/lib/device'
 import { DEEP_NODES, QUICK_NODES } from './analyze'
 import { deepCheckMinDrop, type ReviewCriteria } from './criteria'
 import type { ReviewGame } from './games'
@@ -15,13 +17,19 @@ export type DeviceProfile = {
 }
 
 /**
+ * Speed of one engine by kind of device.
  * desktop: measured on a 20-core PC (4 workers), about 198 M nodes in 60 s for 10 blitz games.
- * mobile: an assumption (2 workers, about 3× slower each) until measured on a real phone.
+ * mobile: an assumption (about 3× slower per engine) until measured on a real phone.
  */
-export const DEVICE_PROFILES = {
-  desktop: { workers: 4, nodesPerSecond: 825_000 },
-  mobile: { workers: 2, nodesPerSecond: 250_000 },
-} satisfies Record<string, DeviceProfile>
+export const ENGINE_SPEED: Record<DeviceKind, number> = {
+  desktop: 825_000,
+  mobile: 250_000,
+}
+
+/** This device: its kind sets the engine speed, its cores the engines the analysis will run. */
+export function deviceProfile(kind: DeviceKind, workers = defaultPoolSize()): DeviceProfile {
+  return { workers, nodesPerSecond: ENGINE_SPEED[kind] }
+}
 
 /**
  * Share of engine-evaluated positions that get a deep look, by deep-check threshold. About 10 %

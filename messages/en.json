@@ -268,7 +268,6 @@
   "setup_finding": "Looking for games…",
   "setup_invalid": "Select at least one platform, time control, color and result.",
   "recap_title": "Games found",
-  "recap_estimate": "≈ {desktop} on a computer · ≈ {mobile} on a phone",
   "recap_estimate_hint": "Rough estimate: games already analysed on Lichess go faster.",
   "recap_large_warning": "Analyses are not saved yet: closing this window or letting the tab go to sleep loses everything.",
   "recap_none": "No game matches these filters.",
@@ -280,5 +279,7 @@
   "pagination_previous": "Previous",
   "pagination_next": "Next",
   "review_confirm_close": "The analysis is running. Stop it and lose the progress?",
-  "legal_privacy_local_review": "your advanced review settings (filters and thresholds);"
+  "legal_privacy_local_review": "your advanced review settings (filters and thresholds);",
+  "recap_estimate_desktop": "≈ {time} on this computer",
+  "recap_estimate_mobile": "≈ {time} on this phone or tablet"
 }

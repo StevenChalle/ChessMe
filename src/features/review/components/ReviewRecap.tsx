@@ -3,11 +3,12 @@ import { Button } from '@/components/ui/button'
 import { SourceLabel } from '@/features/player/components/SourceBadge'
 import { categoryLabel, sourceErrorMessage } from '@/features/player/sources'
 import { CATEGORIES } from '@/features/player/summary'
+import { detectDevice } from '@/lib/device'
 import { formatEstimate, formatGameCount, formatNumber } from '@/lib/format'
 import type { ApiSource } from '@/lib/http'
 import { m } from '@/paraglide/messages'
 import type { ReviewCriteria } from '../criteria'
-import { DEVICE_PROFILES, estimateSeconds } from '../estimate'
+import { deviceProfile, estimateSeconds } from '../estimate'
 import type { FoundGames } from '../fetch'
 import { LARGE_REVIEW } from '../selection'
 
@@ -25,6 +26,8 @@ export function ReviewRecap({
   onEdit: () => void
   onLaunch: () => void
 }) {
+  // The estimate is for the device running the analysis: its kind and its engines.
+  const device = detectDevice()
   const bySource = SOURCES.map((source) => ({
     source,
     count: games.filter((game) => game.source === source).length,
@@ -68,9 +71,8 @@ export function ReviewRecap({
           </p>
           <div className="space-y-0.5 pt-1">
             <p className="text-font-clear">
-              {m.recap_estimate({
-                desktop: formatEstimate(estimateSeconds(games, criteria, DEVICE_PROFILES.desktop)),
-                mobile: formatEstimate(estimateSeconds(games, criteria, DEVICE_PROFILES.mobile)),
+              {(device === 'mobile' ? m.recap_estimate_mobile : m.recap_estimate_desktop)({
+                time: formatEstimate(estimateSeconds(games, criteria, deviceProfile(device))),
               })}
             </p>
             <p className="text-xs text-muted-foreground">{m.recap_estimate_hint()}</p>

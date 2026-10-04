@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest'
 import { DEFAULT_CRITERIA } from './criteria'
-import { deepShare, DEVICE_PROFILES, enginePositions, estimateSeconds } from './estimate'
+import { deepShare, deviceProfile, enginePositions, estimateSeconds } from './estimate'
+
+const DESKTOP = deviceProfile('desktop', 4)
+const MOBILE = deviceProfile('mobile', 4)
 
 const game = (plies: number, serverCps?: (number | undefined)[]) => ({
   sanMoves: Array.from({ length: plies }, () => 'e4'),
@@ -24,42 +27,41 @@ describe('enginePositions', () => {
 describe('estimateSeconds', () => {
   it('matches the desktop measurement: about a minute for 10 blitz games', () => {
     const games = Array.from({ length: 10 }, () => game(97))
-    const seconds = estimateSeconds(games, DEFAULT_CRITERIA, DEVICE_PROFILES.desktop)
+    const seconds = estimateSeconds(games, DEFAULT_CRITERIA, DESKTOP)
     expect(seconds).toBeGreaterThan(40)
     expect(seconds).toBeLessThan(80)
   })
 
+  it('uses the engines of the device, at the speed of its kind', () => {
+    expect(deviceProfile('desktop', 2)).toEqual({ workers: 2, nodesPerSecond: 825_000 })
+    expect(deviceProfile('mobile', 3)).toEqual({ workers: 3, nodesPerSecond: 250_000 })
+  })
+
   it('is slower on mobile', () => {
     const games = Array.from({ length: 10 }, () => game(80))
-    expect(estimateSeconds(games, DEFAULT_CRITERIA, DEVICE_PROFILES.mobile)).toBeGreaterThan(
-      estimateSeconds(games, DEFAULT_CRITERIA, DEVICE_PROFILES.desktop),
+    expect(estimateSeconds(games, DEFAULT_CRITERIA, MOBILE)).toBeGreaterThan(
+      estimateSeconds(games, DEFAULT_CRITERIA, DESKTOP),
     )
   })
 
   it('keeps a single engine busy for a single game', () => {
-    const one = estimateSeconds([game(80)], DEFAULT_CRITERIA, DEVICE_PROFILES.desktop)
+    const one = estimateSeconds([game(80)], DEFAULT_CRITERIA, DESKTOP)
     const four = estimateSeconds(
       Array.from({ length: 4 }, () => game(80)),
       DEFAULT_CRITERIA,
-      DEVICE_PROFILES.desktop,
+      DESKTOP,
     )
     expect(four).toBeCloseTo(one)
   })
 
   it('grows when lower error thresholds flag more moves for a deep look', () => {
     const games = [game(80)]
-    const strict = estimateSeconds(
-      games,
-      { errorMinDrop: 5, validMaxDrop: 3 },
-      DEVICE_PROFILES.desktop,
-    )
-    expect(strict).toBeGreaterThan(
-      estimateSeconds(games, DEFAULT_CRITERIA, DEVICE_PROFILES.desktop),
-    )
+    const strict = estimateSeconds(games, { errorMinDrop: 5, validMaxDrop: 3 }, DESKTOP)
+    expect(strict).toBeGreaterThan(estimateSeconds(games, DEFAULT_CRITERIA, DESKTOP))
     expect(deepShare(1)).toBeGreaterThan(deepShare(6))
   })
 
   it('is zero when Lichess already analysed everything', () => {
-    expect(estimateSeconds([game(0)], DEFAULT_CRITERIA, DEVICE_PROFILES.desktop)).toBe(0)
+    expect(estimateSeconds([game(0)], DEFAULT_CRITERIA, DESKTOP)).toBe(0)
   })
 })

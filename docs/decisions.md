@@ -265,7 +265,7 @@ Le bouton « Analyser les 10 dernières parties » devient **« Analyse approfon
 
 ### Déroulé en deux étapes
 
-**Réglages → « Trouver les parties » → récapitulatif → « Lancer l'analyse »**. Le récapitulatif donne le nombre exact de parties, leur répartition (plateforme, cadence) et une estimation de durée sur ordinateur et sur téléphone, calculée sur les vraies parties. Ensuite, l'analyse se déroule comme avant (étapes, progression, résultats, entraînement).
+**Réglages → « Trouver les parties » → récapitulatif → « Lancer l'analyse »**. Le récapitulatif donne le nombre exact de parties, leur répartition (plateforme, cadence) et une estimation de durée **pour l'appareil utilisé**, calculée sur les vraies parties. Ensuite, l'analyse se déroule comme avant (étapes, progression, résultats, entraînement).
 
 ### Filtres
 
@@ -288,8 +288,10 @@ Le bouton « Analyser les 10 dernières parties » devient **« Analyse approfon
 
 `estimate.ts` : positions sans évaluation Lichess × 100 000 nœuds, plus une part de positions en passe approfondie × 1 000 000 nœuds, divisé par le débit de l'appareil. Une seule partie n'occupe qu'un moteur.
 
-- **Ordinateur** : 4 moteurs × environ 825 000 nœuds/s, tiré de la mesure (environ 198 M de nœuds en 60 s). Vérifié le 2026-10-05 : 21 parties de bullet estimées à environ 2 min, analysées en 128 s.
-- **Téléphone** : 2 moteurs × environ 250 000 nœuds/s, **hypothèse à mesurer** sur un vrai téléphone.
+- **Une seule estimation, celle de l'appareil** (« ≈ 7 min sur cet ordinateur » ou « sur ce téléphone ou cette tablette »). D'abord, les deux durées (ordinateur et téléphone) étaient affichées côte à côte ; simplifié à la demande de l'utilisateur.
+- **Type d'appareil** (`lib/device.ts`, `detectDevice`) : les Client Hints quand le navigateur en a (`navigator.userAgentData.mobile` : Chrome, Edge, Android), sinon le user agent. Un Mac tactile est un iPad (les iPad récents se présentent comme des Mac).
+- **Moteurs** : le nombre réel de moteurs que l'analyse lancera sur l'appareil (`defaultPoolSize`, selon les cœurs), et non une hypothèse.
+- **Vitesse d'un moteur** (`ENGINE_SPEED`) : ordinateur environ 825 000 nœuds/s, tirés de la mesure (environ 198 M de nœuds en 60 s avec 4 moteurs). Vérifié le 2026-10-05 : 21 parties de bullet estimées à environ 2 min, analysées en 128 s. Téléphone environ 250 000 nœuds/s, **hypothèse à mesurer** sur un vrai téléphone.
 - Part de positions en passe approfondie : environ 10 % au seuil par défaut (mesuré), plus quand le seuil baisse (tableau approximatif dans `deepShare`).
 
 ### Résultats et entraînement

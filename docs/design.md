@@ -40,9 +40,9 @@ Règle : **pas de code hexadécimal dans les composants**. Pour une nouvelle cou
 
 ## Logo
 
-`public/favicon.svg` : le **cavalier blanc des pièces cburnett** (Colin M.L. Burnett, GPL-2.0 ou ultérieure, comme le plateau, crédité sur la page `/legal`) avec une **loupe blanche posée sur son œil**, dessinée dans le même style (blanc cerné de noir). Le verre montre réellement l'œil grossi : c'est le même cavalier, agrandi et découpé dans le cercle. Fond : carré arrondi `#262421` (`bg-card`).
+`public/favicon.svg` : le **fou blanc des pièces cburnett** (Colin M.L. Burnett, GPL-2.0 ou ultérieure, comme le plateau, crédité sur la page `/legal`) qui **regarde au loin dans une longue-vue blanche et bleue** (`#3692e7`, la couleur principale), dessinée dans le même style (cernée de noir). La longue-vue monte légèrement vers la droite et dépasse de la silhouette, ce qui la garde lisible en petit. Fond : carré arrondi `#262421` (`bg-card`).
 
-- Écartés : une loupe bleue en bas à droite (première version), un manche vers le haut à gauche (on aurait dit une corne), un grossissement trop fort (l'œil devenait une tache noire).
+- Écartés (2026-10-05) : un cavalier avec une loupe, en plusieurs variantes (loupe bleue en bas à droite, loupe blanche ou bleue posée sur l'œil, avec ou sans grossissement). La loupe se superposait à la tête et restait confuse en petit. Écartée aussi : une ligne d'horizon derrière le fou.
 - Affiché à côté du titre « ChessMe » dans l'en-tête (32 px).
 - Les icônes de l'app (PWA, Apple, favicon.ico) en sont générées : `pnpm generate-pwa-assets`, à relancer après toute modification du SVG. Les icônes avec marge (maskable Android, Apple) utilisent le fond du logo (`pwa-assets.config.ts`), jamais du blanc.
 

@@ -268,7 +268,6 @@
   "setup_finding": "Recherche des parties…",
   "setup_invalid": "Sélectionne au moins une plateforme, une cadence, une couleur et un résultat.",
   "recap_title": "Parties trouvées",
-  "recap_estimate": "≈ {desktop} sur ordinateur · ≈ {mobile} sur téléphone",
   "recap_estimate_hint": "Estimation approximative : les parties déjà analysées par Lichess vont plus vite.",
   "recap_large_warning": "Les analyses ne sont pas encore enregistrées : fermer cette fenêtre ou laisser l'onglet se mettre en veille fait tout perdre.",
   "recap_none": "Aucune partie ne correspond à ces filtres.",
@@ -280,5 +279,7 @@
   "pagination_previous": "Précédent",
   "pagination_next": "Suivant",
   "review_confirm_close": "L'analyse est en cours. L'arrêter et perdre la progression ?",
-  "legal_privacy_local_review": "vos réglages d'analyse approfondie (filtres et seuils) ;"
+  "legal_privacy_local_review": "vos réglages d'analyse approfondie (filtres et seuils) ;",
+  "recap_estimate_desktop": "≈ {time} sur cet ordinateur",
+  "recap_estimate_mobile": "≈ {time} sur ce téléphone ou cette tablette"
 }
