@@ -56,6 +56,15 @@ export function formatDate(date: Date): string {
   return dateFormat().format(date)
 }
 
+const timeFormat = cachedPerLocale(
+  (locale) => new Intl.DateTimeFormat(locale, { timeStyle: 'short' }),
+)
+
+/** Local time of day, as usual in the locale: "14:32" / "2:32 PM" */
+export function formatTime(date: Date): string {
+  return timeFormat().format(date)
+}
+
 const RELATIVE_UNITS: [Intl.RelativeTimeFormatUnit, number][] = [
   ['year', 365 * 24 * 3600],
   ['month', 30 * 24 * 3600],

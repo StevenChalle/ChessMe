@@ -12,7 +12,7 @@ import {
 import { SourceLabel } from '@/features/player/components/SourceBadge'
 import { categoryLabel } from '@/features/player/sources'
 import { SOURCE_LABELS } from '@/features/player/summary'
-import { formatDate } from '@/lib/format'
+import { formatDate, formatTime } from '@/lib/format'
 import { cn } from '@/lib/utils'
 import { m } from '@/paraglide/messages'
 import {
@@ -78,6 +78,7 @@ export function GamesTable<G extends GameSummary>({
             <TableRow key={`${game.source}-${game.id}`}>
               <TableCell className="text-muted-foreground tabular-nums">
                 {formatDate(game.playedAt)}
+                <span className="block text-xs">{formatTime(game.playedAt)}</span>
               </TableCell>
               <TableCell>
                 <SourceLabel source={game.source} />
