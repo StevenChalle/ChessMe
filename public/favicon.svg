@@ -1,14 +1,26 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
-  <!-- ChessMe logo: white knight (cburnett pieces by Colin M.L. Burnett, GPL-2.0-or-later) with a magnifying glass -->
+  <!-- ChessMe logo: white knight (cburnett pieces by Colin M.L. Burnett, GPL-2.0-or-later)
+       with a magnifying glass on its eye, drawn in the same style (white, black outline). -->
+  <defs>
+    <g id="knight" fill="none" fill-rule="evenodd" stroke="#000" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M22 10c10.5 1 16.5 8 16 29H15c0-9 10-6.5 8-21" fill="#fff"/>
+      <path d="M24 18c.38 2.91-5.55 7.37-8 9-3 2-2.82 4.34-5 4-1.042-.94 1.41-3.04 0-3-1 0 .19 1.23-1 2-1 0-4.003 1-4-4 0-2 6-12 6-12s1.89-1.9 2-3.5c-.73-.994-.5-2-.5-3 1-1 3 2.5 3 2.5h2s.78-1.992 2.5-3c1 0 1 3 1 3" fill="#fff"/>
+      <path d="M9.5 25.5a.5.5 0 1 1-1 0 .5.5 0 1 1 1 0zm5.433-9.75a.5 1.5 30 1 1-.866-.5.5 1.5 30 1 1 .866.5z" fill="#000"/>
+    </g>
+    <!-- The eye is at (14.5, 15.5) in piece units, (21, 22.2) here -->
+    <clipPath id="lens"><circle cx="22.5" cy="23.5" r="7.5"/></clipPath>
+  </defs>
   <rect width="64" height="64" rx="14" fill="#262421"/>
-  <g transform="translate(1 1) scale(1.16)" fill="none" fill-rule="evenodd" stroke="#000" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-    <path d="M22 10c10.5 1 16.5 8 16 29H15c0-9 10-6.5 8-21" fill="#fff"/>
-    <path d="M24 18c.38 2.91-5.55 7.37-8 9-3 2-2.82 4.34-5 4-1.042-.94 1.41-3.04 0-3-1 0 .19 1.23-1 2-1 0-4.003 1-4-4 0-2 6-12 6-12s1.89-1.9 2-3.5c-.73-.994-.5-2-.5-3 1-1 3 2.5 3 2.5h2s.78-1.992 2.5-3c1 0 1 3 1 3" fill="#fff"/>
-    <path d="M9.5 25.5a.5.5 0 1 1-1 0 .5.5 0 1 1 1 0zm5.433-9.75a.5 1.5 30 1 1-.866-.5.5 1.5 30 1 1 .866.5z" fill="#000"/>
+  <use href="#knight" transform="translate(3 3) scale(1.24)"/>
+  <!-- Handle, bottom right: white with a black outline, like the piece -->
+  <line x1="28.5" y1="29.5" x2="36" y2="37" stroke="#000" stroke-width="6.5" stroke-linecap="round"/>
+  <line x1="28.5" y1="29.5" x2="36" y2="37" stroke="#fff" stroke-width="3.5" stroke-linecap="round"/>
+  <!-- Inside the lens: the knight enlarged around its eye -->
+  <g clip-path="url(#lens)">
+    <rect width="64" height="64" fill="#262421"/>
+    <use href="#knight" transform="translate(21 22.2) scale(1.5) translate(-21 -22.2) translate(3 3) scale(1.24)"/>
   </g>
-  <!-- Magnifying glass, bottom right: a dark ring separates it from the knight -->
-  <line x1="47" y1="47" x2="54" y2="54" stroke="#262421" stroke-width="9" stroke-linecap="round"/>
-  <circle cx="40.5" cy="40.5" r="9" fill="none" stroke="#262421" stroke-width="8"/>
-  <line x1="47" y1="47" x2="54" y2="54" stroke="#3692e7" stroke-width="5" stroke-linecap="round"/>
-  <circle cx="40.5" cy="40.5" r="9" fill="#3692e7" fill-opacity="0.22" stroke="#3692e7" stroke-width="3.5"/>
+  <!-- Rim: white with a black outline inside and out -->
+  <circle cx="22.5" cy="23.5" r="8.5" fill="none" stroke="#000" stroke-width="5"/>
+  <circle cx="22.5" cy="23.5" r="8.5" fill="none" stroke="#fff" stroke-width="2.4"/>
 </svg>
