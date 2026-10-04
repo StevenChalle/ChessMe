@@ -7,7 +7,7 @@
     "dev": "vite",
     "build": "pnpm typecheck && vite build",
     "preview": "vite preview",
-    "i18n": "paraglide-js compile --strategy localStorage baseLocale --emit-ts-declarations --silent",
+    "i18n": "paraglide-js compile --strategy localStorage preferredLanguage baseLocale --emit-ts-declarations --silent",
     "typecheck": "pnpm i18n && tsc -b",
     "lint": "oxlint",
     "format": "prettier --write .",

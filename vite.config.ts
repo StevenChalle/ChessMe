@@ -19,8 +19,8 @@ export default defineConfig(({ mode }) => ({
     paraglideVitePlugin({
       project: './project.inlang',
       outdir: './src/paraglide',
-      // English by default; the user's choice is saved in localStorage.
-      strategy: ['localStorage', 'baseLocale'],
+      // Saved choice first, then the browser language, then English.
+      strategy: ['localStorage', 'preferredLanguage', 'baseLocale'],
       emitTsDeclarations: true,
     }),
     VitePWA({

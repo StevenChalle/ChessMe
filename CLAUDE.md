@@ -61,7 +61,7 @@ project.inlang/       # configuration Paraglide (langues, langue de base)
 
 ## Internationalisation (obligatoire)
 
-L'interface existe en **anglais (langue par défaut) et en français**. Le choix de l'utilisateur est enregistré dans le `localStorage` (clé `PARAGLIDE_LOCALE`) ; sans choix enregistré, l'app est en anglais. Le sélecteur EN / FR est dans l'en-tête, et changer de langue recharge la page.
+L'interface existe en **anglais (langue de base) et en français**. Langue initiale : le choix enregistré dans le `localStorage` (clé `PARAGLIDE_LOCALE`), sinon la langue du navigateur, sinon l'anglais. Le sélecteur EN / FR est dans l'en-tête, et changer de langue recharge la page.
 
 - **Aucun texte visible en dur dans les composants** : tout passe par `m.<clé>()` (`import { m } from '@/paraglide/messages'`). Cela vaut aussi pour `title`, `aria-label`, `placeholder` et les messages d'erreur.
 - **Chaque nouvelle clé est ajoutée en même temps dans `messages/en.json` et `messages/fr.json`.** Une clé absente d'une langue retombe sur l'anglais, sans erreur : vérifier les deux fichiers.

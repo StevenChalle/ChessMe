@@ -6,7 +6,7 @@ import { getLocale } from './paraglide/runtime'
 import { routeTree } from './routeTree.gen'
 import './index.css'
 
-// Paraglide resolves the locale (saved choice, else English); expose it to the document.
+// Paraglide resolves the locale (saved choice, then browser language, then English).
 document.documentElement.lang = getLocale()
 
 const queryClient = new QueryClient()

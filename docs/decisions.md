@@ -95,7 +95,7 @@ Remplace l'hypothèse du « même pseudo partout ».
 ## 2026-10-04 : internationalisation anglais / français
 
 - **Paraglide JS 2** (inlang), plutôt que react-i18next ou Lingui. Les messages sont compilés en fonctions typées : une clé inexistante est une erreur TypeScript, et chaque page n'embarque que les messages qu'elle utilise. L'intégration se fait par un simple plugin Vite (Lingui demande un plugin Babel ou SWC).
-- **Anglais par défaut**, sans détection de la langue du navigateur. Stratégie Paraglide : `localStorage` (le choix de l'utilisateur), puis `baseLocale` (anglais). On peut ajouter `preferredLanguage` entre les deux pour suivre la langue du navigateur.
+- **Langue initiale = langue du navigateur.** Stratégie Paraglide : `localStorage` (le choix de l'utilisateur), puis `preferredLanguage` (langue du navigateur si elle est prise en charge), puis `baseLocale` (anglais). Un essai « anglais pour tout le monde » a été fait puis abandonné : la détection est plus naturelle.
 - **Changer de langue recharge la page**, comme le recommande Paraglide : pas d'état de langue réactif dans React, et tout est cohérent après le rechargement (`<html lang>`, formats `Intl`). Contrepartie : les données Lichess et Chess.com sont redemandées, ce qui est acceptable pour une action rare.
 - Les traductions sont dans `messages/{en,fr}.json`. `src/paraglide/` est généré et git-ignoré. `pnpm typecheck` lance `pnpm i18n` pour que `tsc` trouve les types en CI et sur Render.
 - **Dépendance réseau au build** : Paraglide télécharge son plugin de format de messages depuis jsDelivr (`project.inlang/settings.json`) et le met en cache dans `project.inlang/cache` (git-ignoré). Un build sans réseau, et sans ce cache, échoue.
