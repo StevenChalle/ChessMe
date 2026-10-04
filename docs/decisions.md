@@ -31,7 +31,7 @@ L'API Lichess est publique, ne demande pas d'authentification et accepte les app
 | Stockage local    | Dexie                                                  | idb : plus bas niveau                                                                         |
 | Graphiques        | ECharts                                                | Observable Plot : plus statique, alors qu'on veut zoom, infobulles et brush sur la courbe Elo |
 | Stats lourdes     | **reporté** (DuckDB-WASM si besoin)                    | Pèse plusieurs Mo, alors que de simples calculs JS suffisent jusqu'à environ 50 000 parties   |
-| Moteur            | Stockfish WASM dans un Web Worker (pas encore intégré) | APIs tierces : fragiles et limitées                                                           |
+| Moteur            | Stockfish WASM lite mono-thread, plusieurs Web Workers | APIs tierces : fragiles et limitées                                                           |
 | Tests             | Vitest + Testing Library + fake-indexeddb              | —                                                                                             |
 | Qualité           | oxlint (fourni par le template Vite) + Prettier        | ESLint : plus lent, rien de plus pour nos besoins                                             |
 | Paquets           | pnpm                                                   | —                                                                                             |
@@ -110,3 +110,50 @@ Remplace l'hypothèse du « même pseudo partout ».
 - **Stockage : `localStorage`** (`chessme:recent-searches`), et non Dexie. C'est une petite préférence propre à chaque navigateur, lue sans délai, donc pas d'état de chargement ni de clignotement sur l'accueil. Dexie reste réservé aux données volumineuses (parties importées). Le code tolère un stockage absent ou corrompu, et les onglets restent synchronisés grâce à l'événement `storage`.
 - **Enregistrement depuis la page profil, une fois au moins un compte trouvé.** On ne garde que les comptes trouvés, avec la casse officielle du pseudo : une faute de frappe n'est jamais enregistrée, et une paire avec un mauvais pseudo Chess.com est mémorisée sans lui. Les visites par lien ou favori comptent aussi.
 - Les doublons sont détectés sans tenir compte de la casse, sur la paire (Lichess, Chess.com). Une recherche répétée remonte en tête de liste.
+
+---
+
+## 2026-10-04 : analyse des 10 dernières parties (Stockfish WASM)
+
+Un bouton sur le profil ouvre une modale : récupération des 10 dernières parties classées (Lichess et Chess.com confondus), analyse, puis une table avec le nombre d'erreurs du joueur par partie. Code : `src/features/review/` et `src/lib/engine/`.
+
+### Notion d'erreur
+
+Définie dans `src/features/review/errors.ts` (constantes nommées, testées). **Toute évolution de cette règle doit être reportée ici.**
+
+Pour chaque coup du joueur, on compare l'évaluation **avant** et **après** le coup, toutes deux du point de vue du joueur, en centipions :
+
+```
+perte = avant − après
+erreur ⇔ perte ≥ 100 cp
+         ET NON (avant ≥ +400 ET après ≥ +400)   ← toujours gagné
+         ET NON (avant ≤ −400 ET après ≤ −400)   ← déjà perdu
+```
+
+- **1 pion (100 cp)** : le seuil d'une vraie erreur, compréhensible sans connaître les modèles de probabilité de gain.
+- **Partie jouée d'avance (au-delà de ±4)** : passer de +8 à +6 ou de −5 à −8 ne change pas l'issue, donc ce n'est pas compté. Dès qu'un des deux côtés repasse sous les 4 pions (+4,5 → +3), la perte compte.
+- **Mats** : un mat vaut ±10 000 cp. Rater un mat (mat en 3 → +2) ou tomber dans un mat est une erreur, sauf si la partie reste gagnée ou perdue du même côté.
+- **Positions finales** (mat, pat, matériel insuffisant) : évaluées exactement par chessops, sans moteur.
+- Il n'y a qu'un niveau (« erreur ») pour l'instant : pas de distinction imprécision / erreur / gaffe. Les flags `judgment` de Lichess (Inaccuracy, Mistake, Blunder) sont **ignorés** : seul notre seuil compte, pour que les deux plateformes soient comptées pareil.
+- Écarté pour l'instant : le modèle « chances de gain » de Lichess (chute de X % de probabilité de gain). Plus juste mais moins intuitif. À reconsidérer si les comptes semblent faux en pratique.
+
+### Moteur
+
+- **Stockfish 19 lite, mono-thread** (paquet npm `stockfish`, GPL-3, environ 1,8 Mo) : pas de `SharedArrayBuffer`, donc **pas d'en-têtes COOP/COEP** et rien ne casse côté hébergement. Le plugin `stockfishEngine` de `vite.config.ts` sert `node_modules/stockfish/bin/` sous `/engine/` en dev et le copie dans `dist/engine/` au build. Hors du précache PWA : téléchargé au premier usage puis mis en cache (CacheFirst).
+- **Parallélisme : plusieurs moteurs mono-thread** (`hardwareConcurrency − 1`, entre 1 et 4), un par Web Worker, chacun sur des parties entières. Pour une analyse en lot, c'est plus rapide qu'un moteur multi-thread, et sans contrainte d'en-têtes. Le multi-thread reste une piste pour un futur plateau d'analyse en direct.
+- **Deux passes, budget en nœuds** (pas en temps, pour un résultat identique sur tous les appareils) : 100 000 nœuds sur chaque position sans évaluation, puis 1 000 000 nœuds sur les positions autour des coups du joueur qui perdent au moins 60 cp en première passe (marge sous le seuil de 100).
+- **Évaluations Lichess réutilisées** quand la partie a été analysée par Lichess : pas de moteur pour ces positions.
+- `pnpm` 11 bloque le `postinstall` du paquet (il crée seulement des alias `stockfish.js`) : refusé dans `pnpm-workspace.yaml`.
+
+### Périmètre et comportement
+
+- Parties **classées, variante standard** (Chess960 et variantes exclus), toutes cadences, y compris les parties très courtes. Les parties Lichess annulées (`aborted`, `noStart`) sont exclues : elles n'ont pas été jouées.
+- On prend les 10 plus récentes de chaque plateforme, puis les 10 plus récentes au total (date de fin de partie). Chess.com : archives mensuelles parcourues à rebours, en série, jusqu'à 10 parties.
+- **Aucune persistance** pour l'instant (ni Dexie ni cache) : tout est recalculé à chaque ouverture, pour éprouver le système. **Fermer la modale annule tout** (requêtes et Workers).
+- Si une plateforme échoue, la table s'affiche avec l'autre, et un message signale l'échec.
+- **Étapes affichées dès le départ** (`ReviewSteps`) : récupération, analyse rapide, vérification approfondie, chacune avec une phrase d'explication. Les étapes terminées sont cochées avec un résumé (« 10 parties », « 908 positions »), l'étape en cours a sa barre, les suivantes sont grisées. Voir ce qui reste à faire rend l'attente plus supportable. Le démarrage du moteur, d'abord une étape à part, est fondu dans l'analyse rapide : il ne dure qu'un instant et n'apprend rien à l'utilisateur.
+- **Chrono discret** en bas de la modale : temps écoulé depuis l'ouverture, figé à la fin pour garder la durée totale sous les résultats.
+- **Progression par étape** : une barre par passe, égale à « positions évaluées / positions à évaluer » dans cette passe. Les deux totaux sont exacts (celui de la passe profonde est connu à la fin de la passe rapide), donc la barre ne recule jamais : elle repart de zéro à chaque étape. Une première version estimait la passe profonde à l'avance (5 % des positions) sur une barre unique, qui reculait brutalement quand le vrai total tombait.
+- Temps restant **de l'étape en cours** = nœuds restants de la passe / débit mesuré depuis le début de l'analyse (nœuds par seconde), affiché après 3 s de mesure.
+
+**Mesure** (PC 20 cœurs, donc 4 Workers, Chromium headless) : environ 1 minute pour 10 parties de blitz de Hikaru, soit à peu près 980 positions dont une centaine en passe profonde, sans aucune analyse Lichess réutilisable. Reste à mesurer sur mobile.

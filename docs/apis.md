@@ -17,6 +17,13 @@
 | `tablebase.lichess.ovh`                   | tablebases jusqu'à 7 pièces                                                                                                                                               |
 | https://database.lichess.org              | exports mensuels de toutes les parties, sous licence CC0                                                                                                                  |
 
+**Analyse serveur** (avec `evals=true&accuracy=true`), présente **seulement si la partie a été analysée** sur Lichess (bouton « Analyse par ordinateur ») :
+
+- `analysis[]` : une entrée par demi-coup, l'évaluation de la position **après** ce coup, côté Blancs : `{ eval: 76 }` (centipions) ou `{ mate: 3 }`. Sur les coups fautifs s'ajoutent `best` (UCI), `variation` et `judgment: { name: 'Inaccuracy' | 'Mistake' | 'Blunder', comment }`.
+- `players.{white,black}.analysis` : `{ inaccuracy, mistake, blunder, acpl, accuracy }`. Avec `division=true` : `division: { middle, end }` (demi-coups).
+- Aucun moyen de demander une analyse serveur par l'API.
+- Le 2026-10-04, `GET /api/games/user/{username}` renvoyait 404 depuis `curl` et depuis un Chromium headless (alors que `/game/export/{id}` répondait), mais **fonctionne depuis un navigateur normal**, y compris dans l'app : un filtrage côté Lichess des clients automatisés, ou de l'IP de test.
+
 **Débit** : environ 20 parties/s sans token. **Une seule requête à la fois.** En cas de 429, attendre 60 s avant de réessayer.
 
 **Synchro** : un import complet au départ, puis `since = createdAt de la dernière partie + 1`.
@@ -35,7 +42,9 @@
 - Joueur inconnu : 404 avec `{"code":0,"message":"User ... not found."}`. Sans `User-Agent`, `curl` reçoit un 403, mais pas le navigateur.
 - `/stats` : `chess_{bullet,blitz,rapid,daily}` et `chess960_daily`, chacun avec `last` (Elo actuel), `best` (meilleur Elo et partie associée) et `record` (V/N/D). S'y ajoutent `tactics`, `puzzle_rush` et `fide` (déclaratif). Il n'y a pas de cadence « classique ».
 - `status` : `basic`, `premium`, `staff`, `closed` ou `closed:fair_play_violations`.
+- Parties d'un mois : `pgn` (avec `[%clk]`), `time_control` (`"180+2"`, `"600"`, `"1/86400"` pour le daily), `time_class`, `rules` (`chess`, `chess960`…), `rated`, `end_time`, `white`/`black` (`username`, `rating`, `result`). **Aucune évaluation par coup** : seulement `accuracies: { white, black }` quand une Game Review existe (fréquent mais pas garanti).
+- `result` : `win` pour le gagnant ; nulles = `agreed`, `repetition`, `stalemate`, `insufficient`, `50move`, `timevsinsufficient` ; le reste est une défaite (`checkmated`, `resigned`, `timeout`, `abandoned`…).
 
 ## Moteur
 
-Stockfish WASM dans un Web Worker : gratuit, sans limite, sans serveur. La version mono-thread suffit pour commencer. La version multi-thread exige les en-têtes COOP/COEP (voir [decisions.md](decisions.md)).
+Stockfish WASM dans des Web Workers : gratuit, sans limite, sans serveur. On utilise la version lite mono-thread, plusieurs instances en parallèle. La version multi-thread exige les en-têtes COOP/COEP (voir [decisions.md](decisions.md)).

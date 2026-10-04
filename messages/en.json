@@ -88,5 +88,44 @@
     }
   ],
   "recent_searches": "Recent searches",
-  "recent_remove": "Remove {names} from recent searches"
+  "recent_remove": "Remove {names} from recent searches",
+  "dialog_close": "Close",
+  "review_button": "Review last 10 games",
+  "review_title": "Last 10 games",
+  "review_description": "Rated games from the linked accounts, checked by Stockfish. An error is a move that loses at least one pawn, unless the game stays decided (beyond ±4 on the same side).",
+  "review_step_fetch": "Fetch the latest games",
+  "review_step_fetch_hint": "Rated games from each linked account",
+  "review_step_quick": "Quick analysis of every position",
+  "review_step_quick_hint": "Spots the suspicious moves",
+  "review_step_deep": "Deep check of suspicious moves",
+  "review_step_deep_hint": "Confirms the real errors",
+  "review_positions_progress": "{done} / {total} positions",
+  "positions_count": [
+    {
+      "declarations": ["input count", "input formatted", "local countPlural = count: plural"],
+      "selectors": ["countPlural"],
+      "match": {
+        "countPlural=one": "{formatted} position",
+        "countPlural=other": "{formatted} positions"
+      }
+    }
+  ],
+  "review_estimating": "Estimating time left…",
+  "review_elapsed": "Elapsed time",
+  "review_remaining": "About {time} left",
+  "review_no_games": "No rated games found.",
+  "review_failed": "The analysis failed. Close and try again.",
+  "review_col_date": "Date",
+  "review_col_platform": "Platform",
+  "review_col_time_control": "Time control",
+  "review_col_opponent": "Opponent",
+  "review_col_result": "Result",
+  "review_col_errors": "Errors",
+  "review_col_link": "Link to the game",
+  "result_win": "Win",
+  "result_draw": "Draw",
+  "result_loss": "Loss",
+  "played_white": "Played White",
+  "played_black": "Played Black",
+  "time_control_days": "{days} d"
 }

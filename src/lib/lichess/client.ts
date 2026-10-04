@@ -1,10 +1,39 @@
-import { fetchJson } from '@/lib/http'
-import type { LichessUser } from './types'
+import { fetchJson, fetchOk } from '@/lib/http'
+import type { LichessGame, LichessUser } from './types'
 
 const BASE_URL = 'https://lichess.org'
 
 export function fetchUser(username: string, signal?: AbortSignal): Promise<LichessUser> {
   return fetchJson('lichess', `${BASE_URL}/api/user/${encodeURIComponent(username)}`, signal)
+}
+
+/** Standard chess only: variants are left out of the export by listing these perfs. */
+const STANDARD_PERFS = 'ultraBullet,bullet,blitz,rapid,classical,correspondence'
+
+/**
+ * Latest rated standard games, newest first, with the server analysis when there is one.
+ * A single streamed request: never run several Lichess exports at once.
+ */
+export async function fetchRecentGames(
+  username: string,
+  max: number,
+  signal?: AbortSignal,
+): Promise<LichessGame[]> {
+  const params = new URLSearchParams({
+    max: String(max),
+    rated: 'true',
+    perfType: STANDARD_PERFS,
+    evals: 'true',
+  })
+  const url = `${BASE_URL}/api/games/user/${encodeURIComponent(username)}?${params}`
+  const response = await fetchOk('lichess', url, {
+    signal,
+    headers: { Accept: 'application/x-ndjson' },
+  })
+  const games: LichessGame[] = []
+  if (!response.body) return games
+  for await (const game of readNdjson<LichessGame>(response.body)) games.push(game)
+  return games
 }
 
 /**

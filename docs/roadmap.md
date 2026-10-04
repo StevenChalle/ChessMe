@@ -9,6 +9,7 @@
 - [x] Un pseudo par plateforme (comptes aux noms différents), avec recopie rapide
 - [x] Interface bilingue anglais / français (langue du navigateur par défaut), choix mémorisé
 - [x] Recherches récentes sur l'accueil (3 dernières, cliquables)
+- [x] Analyse des 10 dernières parties avec Stockfish WASM : nombre d'erreurs par partie (sans cache)
 
 ## V1 : à cadrer
 
@@ -21,7 +22,7 @@
 
 ## Plus tard
 
-- Analyse des parties avec Stockfish WASM
+- Analyse des parties : mettre en cache les évaluations (Dexie), détailler les erreurs (positions, meilleur coup), filtrer par cadence
 - Entraînement sur ses propres erreurs (rejouer les positions perdues ou les gaffes)
 - Import des parties Chess.com (archives mensuelles)
 - Mémoriser les comptes liés (profil « moi »), à distinguer des recherches récentes

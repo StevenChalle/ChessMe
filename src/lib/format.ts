@@ -78,6 +78,25 @@ export function formatHours(seconds: number): string {
   return `${formatNumber(Math.round(seconds / 3600))} h`
 }
 
+const secondsFormat = cachedPerLocale(
+  (locale) => new Intl.NumberFormat(locale, { style: 'unit', unit: 'second' }),
+)
+const minutesFormat = cachedPerLocale(
+  (locale) => new Intl.NumberFormat(locale, { style: 'unit', unit: 'minute' }),
+)
+
+/** Rough remaining time: "45 sec" (by 5 s steps), then whole minutes: "3 min". */
+export function formatDuration(seconds: number): string {
+  if (seconds < 60) return secondsFormat().format(Math.max(5, Math.ceil(seconds / 5) * 5))
+  return minutesFormat().format(Math.ceil(seconds / 60))
+}
+
+/** Stopwatch: "0:07", "1:42", "12:05" */
+export function formatClock(seconds: number): string {
+  const whole = Math.floor(seconds)
+  return `${Math.floor(whole / 60)}:${String(whole % 60).padStart(2, '0')}`
+}
+
 /** "a", "a or b", "a, b, or c" */
 export function formatOrList(items: string[]): string {
   return orList().format(items)

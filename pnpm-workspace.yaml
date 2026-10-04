@@ -1,0 +1,3 @@
+allowBuilds:
+  # Its postinstall only adds stockfish.js / .wasm aliases; we use the versioned bin/ files.
+  stockfish: false

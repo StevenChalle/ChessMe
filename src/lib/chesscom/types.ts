@@ -53,3 +53,31 @@ export type ChessComPlayer = {
   profile: ChessComProfile
   stats: ChessComStats
 }
+
+export type ChessComGamePlayer = {
+  username: string
+  rating: number
+  /** win, checkmated, resigned, timeout, agreed, repetition, stalemate, insufficient... */
+  result: string
+}
+
+/** A finished game from a monthly archive (`/games/{YYYY}/{MM}`). */
+export type ChessComGame = {
+  url: string
+  uuid: string
+  /** Absent for some games (e.g. abandoned before any move) */
+  pgn?: string
+  /** "180+2" (seconds + increment), "600", or "1/86400" for daily (seconds per move) */
+  time_control: string
+  /** bullet, blitz, rapid, daily */
+  time_class: string
+  /** chess, chess960, bughouse, kingofthehill, threecheck, crazyhouse... */
+  rules: string
+  rated: boolean
+  /** Unix seconds */
+  end_time: number
+  white: ChessComGamePlayer
+  black: ChessComGamePlayer
+  /** Game Review accuracies, when available */
+  accuracies?: { white: number; black: number }
+}

@@ -50,6 +50,8 @@
   --color-font-clear: var(--lc-font-clear);
   --color-lichess: var(--lc-source-lichess);
   --color-chesscom: var(--lc-source-chesscom);
+  --color-piece-white: var(--lc-piece-white);
+  --color-piece-black: var(--lc-piece-black);
 
   --radius-sm: calc(var(--radius) * 0.6);
   --radius-md: calc(var(--radius) * 0.8);
@@ -82,6 +84,9 @@
   /* Source identity colors (bars, dots): one per platform */
   --lc-source-lichess: #3692e7;
   --lc-source-chesscom: #81b64c;
+  /* Side colors (who played White / Black) */
+  --lc-piece-white: #ffffff;
+  --lc-piece-black: #000000;
 
   /* shadcn semantic tokens */
   --background: var(--lc-bg);

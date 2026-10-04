@@ -88,5 +88,44 @@
     }
   ],
   "recent_searches": "Recherches récentes",
-  "recent_remove": "Retirer {names} des recherches récentes"
+  "recent_remove": "Retirer {names} des recherches récentes",
+  "dialog_close": "Fermer",
+  "review_button": "Analyser les 10 dernières parties",
+  "review_title": "10 dernières parties",
+  "review_description": "Parties classées des comptes liés, vérifiées par Stockfish. Une erreur est un coup qui perd au moins un pion, sauf si la partie reste jouée d'avance (au-delà de ±4 du même côté).",
+  "review_step_fetch": "Récupérer les dernières parties",
+  "review_step_fetch_hint": "Parties classées de chaque compte lié",
+  "review_step_quick": "Analyse rapide de chaque position",
+  "review_step_quick_hint": "Repère les coups suspects",
+  "review_step_deep": "Vérification approfondie des coups suspects",
+  "review_step_deep_hint": "Confirme les vraies erreurs",
+  "review_positions_progress": "{done} / {total} positions",
+  "positions_count": [
+    {
+      "declarations": ["input count", "input formatted", "local countPlural = count: plural"],
+      "selectors": ["countPlural"],
+      "match": {
+        "countPlural=one": "{formatted} position",
+        "countPlural=other": "{formatted} positions"
+      }
+    }
+  ],
+  "review_estimating": "Estimation du temps restant…",
+  "review_elapsed": "Temps écoulé",
+  "review_remaining": "Environ {time} restantes",
+  "review_no_games": "Aucune partie classée trouvée.",
+  "review_failed": "L'analyse a échoué. Fermez et réessayez.",
+  "review_col_date": "Date",
+  "review_col_platform": "Plateforme",
+  "review_col_time_control": "Cadence",
+  "review_col_opponent": "Adversaire",
+  "review_col_result": "Résultat",
+  "review_col_errors": "Erreurs",
+  "review_col_link": "Lien vers la partie",
+  "result_win": "Victoire",
+  "result_draw": "Nulle",
+  "result_loss": "Défaite",
+  "played_white": "Avec les blancs",
+  "played_black": "Avec les noirs",
+  "time_control_days": "{days} j"
 }

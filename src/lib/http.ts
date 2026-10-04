@@ -21,15 +21,25 @@ export class ApiError extends Error {
   }
 }
 
+/** fetch() that throws an ApiError on any non-2xx status. */
+export async function fetchOk(
+  source: ApiSource,
+  url: string,
+  init?: RequestInit,
+): Promise<Response> {
+  const response = await fetch(url, init)
+  if (!response.ok) {
+    throw new ApiError(source, response.status, `${url} failed with ${response.status}`)
+  }
+  return response
+}
+
 export async function fetchJson<T>(
   source: ApiSource,
   url: string,
   signal?: AbortSignal,
 ): Promise<T> {
-  const response = await fetch(url, { signal })
-  if (!response.ok) {
-    throw new ApiError(source, response.status, `${url} failed with ${response.status}`)
-  }
+  const response = await fetchOk(source, url, { signal })
   return (await response.json()) as T
 }
 

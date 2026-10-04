@@ -37,8 +37,10 @@ src/
   components/         # composants applicatifs partagés (board/, PlayerSearch…)
   features/<nom>/     # code propre à une fonctionnalité (import, stats, training…), à créer au besoin
   features/player/    # profil croisé : summary.ts (normalisation), search.ts (paramètres ?lichess=&chesscom=), hook, composants
+  features/review/    # analyse des dernières parties : errors.ts (définition d'une erreur), analyze.ts (deux passes)
   lib/lichess/        # client HTTP, types, queryOptions de l'API Lichess
   lib/chesscom/       # idem pour l'API Chess.com
+  lib/engine/         # Stockfish WASM : protocole UCI, Worker, pool de moteurs
   lib/http.ts         # fetchJson, ApiError, null sur 404, politique de retry
   lib/format.ts       # formats fr-FR (nombres, dates, pays…)
   lib/                # utilitaires transverses
