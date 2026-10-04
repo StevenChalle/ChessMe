@@ -24,7 +24,7 @@ export function ReviewButtons({
         <History data-icon="inline-start" />
         {m.review_button_last()}
       </Button>
-      <Button size="lg" variant="outline" onClick={() => setMode('advanced')}>
+      <Button size="lg" onClick={() => setMode('advanced')}>
         <SlidersHorizontal data-icon="inline-start" />
         {m.review_button()}
       </Button>

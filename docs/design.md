@@ -38,6 +38,13 @@ Tous définis dans [`src/index.css`](../src/index.css). La palette brute de Lich
 
 Règle : **pas de code hexadécimal dans les composants**. Pour une nouvelle couleur, ajouter un token.
 
+## Logo
+
+`public/favicon.svg` : le **cavalier blanc des pièces cburnett** (Colin M.L. Burnett, GPL-2.0 ou ultérieure, comme le plateau, crédité sur la page `/legal`) avec une **loupe bleue** (`#3692e7`, la couleur principale), sur un carré arrondi `#262421` (`bg-card`). Un anneau sombre sépare la loupe du cavalier, et le verre teinté laisse voir le cavalier : l'icône reste lisible jusqu'en 16 px.
+
+- Affiché à côté du titre « ChessMe » dans l'en-tête (32 px).
+- Les icônes de l'app (PWA, Apple, favicon.ico) en sont générées : `pnpm generate-pwa-assets`, à relancer après toute modification du SVG. Les icônes avec marge (maskable Android, Apple) utilisent le fond du logo (`pwa-assets.config.ts`), jamais du blanc.
+
 ## Thème clair
 
 Il n'est pas prévu pour l'instant. Le jour où on le voudra, il suffira de redéfinir les variables `--lc-*` sous un sélecteur (`.light` ou `[data-theme]`), puisque les composants n'utilisent que les tokens.

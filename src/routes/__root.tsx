@@ -32,7 +32,11 @@ function RootLayout() {
     <div className="flex min-h-dvh flex-col">
       <UpdateBanner />
       <header className="mx-auto flex h-14 w-full max-w-6xl items-center gap-6 px-4">
-        <Link to="/" className="text-2xl font-medium tracking-tight text-font-clear">
+        <Link
+          to="/"
+          className="flex items-center gap-2.5 text-2xl font-medium tracking-tight text-font-clear"
+        >
+          <img src={`${import.meta.env.BASE_URL}favicon.svg`} alt="" className="size-8" />
           ChessMe
         </Link>
         <div className="ml-auto flex items-center gap-4">
