@@ -43,23 +43,3 @@ export async function fetchArchiveGames(
   const { games } = await fetchJson<{ games: ChessComGame[] }>('chesscom', archiveUrl, signal)
   return games
 }
-
-/**
- * Latest games accepted by `keep`, newest first: walks the monthly archives backwards,
- * one request at a time, until `max` games are found or the archives run out.
- */
-export async function fetchRecentGames(
-  username: string,
-  max: number,
-  keep: (game: ChessComGame) => boolean,
-  signal?: AbortSignal,
-): Promise<ChessComGame[]> {
-  const archives = await fetchArchives(username, signal)
-  const games: ChessComGame[] = []
-  for (const archive of archives.toReversed()) {
-    const month = await fetchArchiveGames(archive, signal)
-    games.push(...month.filter(keep).toSorted((a, b) => b.end_time - a.end_time))
-    if (games.length >= max) break
-  }
-  return games.slice(0, max)
-}

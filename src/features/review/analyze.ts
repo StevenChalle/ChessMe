@@ -1,22 +1,12 @@
 import type { Color } from 'chessops'
-import { fetchRecentGames as fetchChessComGames } from '@/lib/chesscom/client'
 import { defaultPoolSize, EnginePool } from '@/lib/engine/pool'
 import type { Stockfish } from '@/lib/engine/stockfish'
 import type { ApiSource } from '@/lib/http'
-import { fetchRecentGames as fetchLichessGames } from '@/lib/lichess/client'
+import { deepCheckMinDrop, type ReviewCriteria } from './criteria'
 import { fromSideToMove, isError, playerMoves, toCp, winChanceDrop } from './errors'
-import {
-  fromChessComGame,
-  fromLichessGame,
-  isReviewableChessComGame,
-  latestGames,
-  type ReviewGame,
-} from './games'
+import type { ReviewGame } from './games'
 import { replay, type GamePosition } from './positions'
 import { remainingSeconds, type AnalysisPass, type ReviewProgress } from './progress'
-
-/** Games reviewed by default; the last game alone can be reviewed too (count 1). */
-export const REVIEW_GAME_COUNT = 10
 
 /**
  * Two passes: a quick search on every position, then a deeper one only around the player's
@@ -24,13 +14,6 @@ export const REVIEW_GAME_COUNT = 10
  */
 export const QUICK_NODES = 100_000
 export const DEEP_NODES = 1_000_000
-/**
- * A move losing this much winning chances (%) in the quick pass gets a deep look
- * (margin below the error rule, ERROR_MIN_DROP).
- */
-export const DEEP_CHECK_MIN_DROP = 6
-
-export type ReviewAccount = { source: ApiSource; username: string }
 
 /** One error of the reviewed player (see errors.ts), with what is needed to replay it. */
 export type Mistake = {
@@ -55,6 +38,8 @@ export type ReviewOutcome = {
   games: ReviewedGame[]
   /** Platforms whose games could not be fetched: the others are still reviewed. */
   failures: { source: ApiSource; error: Error }[]
+  /** The rules the games were judged with */
+  criteria: ReviewCriteria
 }
 
 /** A game being analysed: its positions and their evaluations (White's side, centipawns). */
@@ -68,15 +53,6 @@ type Work = {
 
 /** Positions of one game to evaluate in a pass. */
 type Job = { work: Work; indexes: number[] }
-
-async function fetchGames({ source, username }: ReviewAccount, count: number, signal: AbortSignal) {
-  if (source === 'lichess') {
-    const games = await fetchLichessGames(username, count, signal)
-    return games.flatMap((game) => fromLichessGame(game, username) ?? [])
-  }
-  const games = await fetchChessComGames(username, count, isReviewableChessComGame, signal)
-  return games.flatMap((game) => fromChessComGame(game, username) ?? [])
-}
 
 function prepare(game: ReviewGame): Work {
   const positions = replay(game.sanMoves, game.initialFen)
@@ -94,11 +70,12 @@ function missing(work: Work): number[] {
 }
 
 /** Engine-evaluated positions around the player's moves that look like errors. */
-function deepCheckPositions(work: Work): number[] {
+function deepCheckPositions(work: Work, criteria: ReviewCriteria): number[] {
   const turns = work.positions.map((position) => position.turn)
   const indexes = new Set<number>()
+  const minDrop = deepCheckMinDrop(criteria)
   for (const move of playerMoves(work.cps as number[], turns, work.game.color)) {
-    if (winChanceDrop(move.beforeCp, move.afterCp) < DEEP_CHECK_MIN_DROP) continue
+    if (winChanceDrop(move.beforeCp, move.afterCp) < minDrop) continue
     for (const index of [move.ply, move.ply + 1]) {
       if (work.byEngine.has(index)) indexes.add(index)
     }
@@ -106,11 +83,11 @@ function deepCheckPositions(work: Work): number[] {
   return [...indexes].toSorted((a, b) => a - b)
 }
 
-function finish(works: Work[]): ReviewedGame[] {
+function finish(works: Work[], criteria: ReviewCriteria): ReviewedGame[] {
   return works.map(({ game, positions, cps }) => {
     const turns = positions.map((position) => position.turn)
     const mistakes = playerMoves(cps as number[], turns, game.color)
-      .filter((move) => isError(move.beforeCp, move.afterCp))
+      .filter((move) => isError(move.beforeCp, move.afterCp, criteria.errorMinDrop))
       .map(({ ply, beforeCp, afterCp }) => ({
         id: `${game.source}-${game.id}-${ply}`,
         game: {
@@ -136,43 +113,25 @@ async function evaluate(engine: Stockfish, position: GamePosition, nodes: number
 }
 
 /**
- * Fetches the latest rated standard games of the given accounts, fills the missing evaluations
- * with Stockfish and counts the player's errors in each game (see errors.ts).
- * Aborting the signal stops the requests and terminates the engines.
+ * Fills the missing evaluations of `games` with Stockfish and finds the player's errors in each
+ * one, judged with `criteria` (see errors.ts). Aborting the signal terminates the engines.
  */
-export async function reviewRecentGames(
-  accounts: ReviewAccount[],
+export async function analyzeGames(
+  games: ReviewGame[],
+  criteria: ReviewCriteria,
   {
     signal,
     onProgress,
-    count = REVIEW_GAME_COUNT,
     poolSize = defaultPoolSize(),
   }: {
     signal: AbortSignal
     onProgress: (progress: ReviewProgress) => void
-    /** How many of the latest games, all platforms together */
-    count?: number
     poolSize?: number
   },
-): Promise<ReviewOutcome> {
-  onProgress({ phase: 'fetching' })
-  const fetched = await Promise.allSettled(
-    accounts.map((account) => fetchGames(account, count, signal)),
-  )
-  signal.throwIfAborted()
-  const failures = fetched.flatMap((result, index) =>
-    result.status === 'rejected'
-      ? [{ source: accounts[index]!.source, error: result.reason as Error }]
-      : [],
-  )
-  const games = latestGames(
-    fetched.flatMap((result) => (result.status === 'fulfilled' ? result.value : [])),
-    count,
-  )
-
+): Promise<ReviewedGame[]> {
   const works = games.map(prepare)
   const quickJobs = works.filter((work) => missing(work).length > 0)
-  if (quickJobs.length === 0) return { games: finish(works), failures }
+  if (quickJobs.length === 0) return finish(works, criteria)
 
   onProgress({ phase: 'starting-engine', games: games.length })
   const pool = await EnginePool.start(Math.min(poolSize, quickJobs.length), signal)
@@ -216,12 +175,12 @@ export async function reviewRecentGames(
 
     await runPass('quick', quick, QUICK_NODES)
     const deepJobs = works
-      .map((work) => ({ work, indexes: deepCheckPositions(work) }))
+      .map((work) => ({ work, indexes: deepCheckPositions(work, criteria) }))
       .filter((job) => job.indexes.length > 0)
     if (deepJobs.length > 0) await runPass('deep', deepJobs, DEEP_NODES)
   } finally {
     pool.terminate()
   }
 
-  return { games: finish(works), failures }
+  return finish(works, criteria)
 }

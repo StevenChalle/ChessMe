@@ -7,6 +7,7 @@ import { ExternalLink } from '@/features/player/components/ExternalLink'
 import type { Mistake } from '@/features/review/analyze'
 import { SideSquare } from '@/features/games/components/GamesTable'
 import { forColor, isValidMove } from '@/features/review/errors'
+import { useValidMaxDrop } from '../criteria'
 import { formatNumber } from '@/lib/format'
 import { cn } from '@/lib/utils'
 import { m } from '@/paraglide/messages'
@@ -97,6 +98,7 @@ function MoveLine({
   baseCp?: number
   showDelta?: boolean
 }) {
+  const validMaxDrop = useValidMaxDrop()
   const delta =
     showDelta && cp !== undefined && baseCp !== undefined
       ? evalDelta(forColor(baseCp, color), forColor(cp, color))
@@ -119,7 +121,7 @@ function MoveLine({
               <span
                 className={cn(
                   'text-sm font-medium tabular-nums',
-                  isValidMove(baseCp!, cp) ? 'text-good' : 'text-bad',
+                  isValidMove(baseCp!, cp, validMaxDrop) ? 'text-good' : 'text-bad',
                 )}
                 title={m.training_delta_title({ eval: formatEval(forColor(baseCp!, color)) })}
               >

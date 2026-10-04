@@ -15,6 +15,7 @@ async function exportGames(
   username: string,
   params: Record<string, string>,
   signal?: AbortSignal,
+  onGame?: (count: number) => void,
 ): Promise<LichessGame[]> {
   const query = new URLSearchParams(params)
   const url = `${BASE_URL}/api/games/user/${encodeURIComponent(username)}?${query}`
@@ -24,24 +25,51 @@ async function exportGames(
   })
   const games: LichessGame[] = []
   if (!response.body) return games
-  for await (const game of readNdjson<LichessGame>(response.body)) games.push(game)
+  for await (const game of readNdjson<LichessGame>(response.body)) {
+    games.push(game)
+    onGame?.(games.length)
+  }
   return games
 }
 
+export type RatedExportOptions = {
+  /** Lichess perf keys (ultraBullet, bullet, blitz, rapid, classical, correspondence) */
+  perfTypes: string[]
+  /** At most this many games; all of them when omitted */
+  max?: number
+  /** Games started at or after this date (Unix ms) */
+  since?: number
+  /** Games started at or before this date (Unix ms) */
+  until?: number
+  /** Only the games played with this color */
+  color?: 'white' | 'black'
+}
+
+/** Query parameters of a rated standard games export, with moves and Lichess evaluations. */
+export function ratedExportParams(options: RatedExportOptions): Record<string, string> {
+  const params: Record<string, string> = {
+    rated: 'true',
+    perfType: options.perfTypes.join(','),
+    evals: 'true',
+  }
+  if (options.max !== undefined) params.max = String(options.max)
+  if (options.since !== undefined) params.since = String(options.since)
+  if (options.until !== undefined) params.until = String(options.until)
+  if (options.color) params.color = options.color
+  return params
+}
+
 /**
- * Latest rated standard games, newest first, with the server analysis when there is one.
- * A single streamed request: never run several Lichess exports at once.
+ * Rated standard games matching `options`, newest first. A single streamed request: never run
+ * several Lichess exports at once. `onGame` reports how many games arrived so far.
  */
-export function fetchRecentGames(
+export function exportRatedGames(
   username: string,
-  max: number,
+  options: RatedExportOptions,
   signal?: AbortSignal,
+  onGame?: (count: number) => void,
 ): Promise<LichessGame[]> {
-  return exportGames(
-    username,
-    { max: String(max), rated: 'true', perfType: STANDARD_PERFS, evals: 'true' },
-    signal,
-  )
+  return exportGames(username, ratedExportParams(options), signal, onGame)
 }
 
 /**

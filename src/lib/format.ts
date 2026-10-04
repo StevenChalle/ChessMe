@@ -91,6 +91,21 @@ export function formatDuration(seconds: number): string {
   return minutesFormat().format(Math.ceil(seconds / 60))
 }
 
+const hoursFormat = cachedPerLocale(
+  (locale) => new Intl.NumberFormat(locale, { style: 'unit', unit: 'hour' }),
+)
+
+/** Rough estimate, possibly long: "45 sec", "12 min", "1 hr 20 min" / "1 h 20 min". */
+export function formatEstimate(seconds: number): string {
+  if (seconds < 3600) return formatDuration(seconds)
+  const minutes = Math.round(seconds / 60)
+  const hours = Math.floor(minutes / 60)
+  const rest = minutes % 60
+  return rest === 0
+    ? hoursFormat().format(hours)
+    : `${hoursFormat().format(hours)} ${minutesFormat().format(rest)}`
+}
+
 const signedTenthsFormat = cachedPerLocale(
   (locale) =>
     new Intl.NumberFormat(locale, {

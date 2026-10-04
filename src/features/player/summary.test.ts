@@ -71,6 +71,24 @@ describe('fromLichess', () => {
     expect(summary.joinedAt).toEqual(new Date(Date.UTC(2015, 0, 1)))
   })
 
+  it('counts UltraBullet games with bullet, without using its rating', () => {
+    const summary = fromLichess({
+      id: 'u',
+      username: 'U',
+      perfs: {
+        ultraBullet: { games: 30, rating: 1400 },
+        bullet: { games: 10, rating: 1800 },
+      },
+    })
+    expect(summary.categories.bullet).toEqual({ rating: 1800, provisional: undefined, games: 40 })
+    const ultraOnly = fromLichess({
+      id: 'v',
+      username: 'V',
+      perfs: { ultraBullet: { games: 5, rating: 1400 } },
+    })
+    expect(ultraOnly.categories.bullet).toEqual({ games: 5 })
+  })
+
   it('handles closed accounts with no data', () => {
     const closed = fromLichess({ id: 'bob', username: 'Bob', disabled: true })
     expect(closed).toMatchObject({ closed: true, categories: {}, record: undefined })

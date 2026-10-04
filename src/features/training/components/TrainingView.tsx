@@ -5,11 +5,13 @@ import { useEffect, useMemo, useReducer, useState } from 'react'
 import { Board } from '@/components/board/Board'
 import { Button } from '@/components/ui/button'
 import type { Mistake } from '@/features/review/analyze'
+import { VALID_MAX_DROP } from '@/features/review/errors'
 import { Progress } from '@/components/ui/progress'
 import { formatNumber } from '@/lib/format'
 import { cn } from '@/lib/utils'
 import { m } from '@/paraglide/messages'
 import { Coach, validMovesOf } from '../coach'
+import { ValidMaxDropContext } from '../criteria'
 import {
   boardMoveToUci,
   isCheck,
@@ -60,11 +62,22 @@ function boardView(state: TrainingState, puzzle: Mistake) {
   return { fen: puzzle.fen, lastMove: puzzle.lastMove, shapes }
 }
 
-/** Replays the player's errors one by one, in random order, then shows a summary. */
-export function TrainingView({ mistakes, onExit }: { mistakes: Mistake[]; onExit: () => void }) {
+/**
+ * Replays the player's errors one by one, in random order, then shows a summary.
+ * `validMaxDrop`: the valid-move threshold of the review (see isValidMove).
+ */
+export function TrainingView({
+  mistakes,
+  validMaxDrop = VALID_MAX_DROP,
+  onExit,
+}: {
+  mistakes: Mistake[]
+  validMaxDrop?: number
+  onExit: () => void
+}) {
   const [state, dispatch] = useReducer(trainingReducer, mistakes, (all) => startTraining(all))
   const [engineFailed, setEngineFailed] = useState(false)
-  const [coach] = useState(() => new Coach())
+  const [coach] = useState(() => new Coach(validMaxDrop))
   const puzzle = currentPuzzle(state)
 
   // One engine for the whole training, stopped when leaving it (or closing the dialog).
@@ -79,7 +92,7 @@ export function TrainingView({ mistakes, onExit }: { mistakes: Mistake[]; onExit
     let active = true
     coach.reference(puzzle).then(
       (reference) => {
-        const valid = validMovesOf(reference, puzzle)
+        const valid = validMovesOf(reference, puzzle, validMaxDrop)
         dispatch({
           type: 'best',
           puzzleId: puzzle.id,
@@ -96,7 +109,7 @@ export function TrainingView({ mistakes, onExit }: { mistakes: Mistake[]; onExit
     return () => {
       active = false
     }
-  }, [coach, puzzle])
+  }, [coach, puzzle, validMaxDrop])
 
   const config = useMemo((): Config | undefined => {
     if (!puzzle) return undefined
@@ -171,7 +184,9 @@ export function TrainingView({ mistakes, onExit }: { mistakes: Mistake[]; onExit
         {engineFailed ? (
           <p className="text-bad">{m.training_engine_failed()}</p>
         ) : (
-          <PuzzlePanel state={state} puzzle={puzzle} dispatch={dispatch} />
+          <ValidMaxDropContext value={validMaxDrop}>
+            <PuzzlePanel state={state} puzzle={puzzle} dispatch={dispatch} />
+          </ValidMaxDropContext>
         )}
         <Button
           variant="ghost"

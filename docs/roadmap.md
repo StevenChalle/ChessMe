@@ -9,6 +9,7 @@
 - [x] Un pseudo par plateforme (comptes aux noms différents), avec recopie rapide
 - [x] Interface bilingue anglais / français (langue du navigateur par défaut), choix mémorisé
 - [x] Recherches récentes sur l'accueil (3 dernières, cliquables)
+- [x] Analyse approfondie : filtres (plateformes, N dernières ou période, cadences, couleur, résultat, longueur), seuils réglables, récapitulatif avec estimation, pagination, rejeu par partie
 - [x] Analyse des 10 dernières parties avec Stockfish WASM : nombre d'erreurs par partie (sans cache)
 - [x] Rejouer ses erreurs sur un échiquier, dans un ordre aléatoire, avec bilan
 - [x] Onglet Parties : historique toutes plateformes, paginé, avec l'Elo et sa variation (sans stockage)
@@ -23,6 +24,9 @@
 - [ ] Bouton « supprimer mes données locales »
 
 ## Plus tard
+
+- Mesurer l'analyse sur un vrai téléphone et ajuster l'estimation
+- Mettre en cache les évaluations (une analyse interrompue ou relancée ne repart pas de zéro)
 
 - Analyse des parties : mettre en cache les évaluations (Dexie), détailler les erreurs (positions, meilleur coup), filtrer par cadence
 - Entraînement : mémoriser les résultats, revoir en priorité les positions ratées, sélecteur de promotion

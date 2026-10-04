@@ -1,5 +1,11 @@
 import type { Mistake } from '@/features/review/analyze'
-import { forColor, fromSideToMove, isValidMove, toCp } from '@/features/review/errors'
+import {
+  forColor,
+  fromSideToMove,
+  isValidMove,
+  toCp,
+  VALID_MAX_DROP,
+} from '@/features/review/errors'
 import { Stockfish } from '@/lib/engine/stockfish'
 import type { EngineScore } from '@/lib/engine/uci'
 import { play, positionFromFen, sameMove } from './moves'
@@ -24,10 +30,11 @@ export const REFERENCE_NODES = 1_500_000
 export function validMovesOf(
   reference: Reference,
   mistake: Pick<Mistake, 'fen' | 'played'>,
+  validMaxDrop = VALID_MAX_DROP,
 ): { moves: ScoredMove[]; capped: boolean } {
   const moves = reference.lines.filter(
     (line) =>
-      isValidMove(reference.bestCp, line.cp) &&
+      isValidMove(reference.bestCp, line.cp, validMaxDrop) &&
       !sameMove(mistake.fen, line.uci, mistake.played.uci),
   )
   return {
@@ -56,6 +63,12 @@ export class Coach {
   private terminated = false
   /** Bumped by terminate(): searches queued before it must not run on the next engine. */
   private generation = 0
+  /** Valid-move threshold (see isValidMove): the review's criteria */
+  private readonly validMaxDrop: number
+
+  constructor(validMaxDrop = VALID_MAX_DROP) {
+    this.validMaxDrop = validMaxDrop
+  }
 
   /** Best move and evaluation of the position before the error. Cached per position. */
   reference(mistake: Mistake): Promise<Reference> {
@@ -81,7 +94,9 @@ export class Coach {
     // One of the engine's top moves: already evaluated, instant answer.
     const ranked = lines.find((line) => sameMove(mistake.fen, uci, line.uci))
     const { cp: afterCp, reply } = ranked ?? (await this.evaluateMove(mistake, uci))
-    const valid = !sameMove(mistake.fen, uci, mistake.played.uci) && isValidMove(bestCp, afterCp)
+    const valid =
+      !sameMove(mistake.fen, uci, mistake.played.uci) &&
+      isValidMove(bestCp, afterCp, this.validMaxDrop)
     return { valid, afterCp, reply }
   }
 

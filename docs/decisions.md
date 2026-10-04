@@ -134,8 +134,9 @@ erreur ⇔ perte ≥ 10 points
 - **10 points** ≈ 1,1 pion depuis l'équilibre (0 → −1,2), mais bien plus en position décidée : de +6 à +4,5 (−6 points) ou de −5 à −8, ce n'est pas une erreur, car l'issue ne change guère. La tolérance grandit progressivement, sans marche.
 - **Mats** : un mat vaut ±10 000 cp, soit 100 % ou 0 %. Rater un mat en restant écrasant (+9) n'est pas une erreur ; le rater en retombant à +3, si.
 - **Positions finales** (mat, pat, matériel insuffisant) : évaluées exactement par chessops, sans moteur.
-- Un seul niveau (« erreur ») : pas de distinction imprécision / erreur / gaffe. Pour mémoire, Lichess compte une imprécision à 10 points, une erreur à 20, une gaffe à 30. Les flags `judgment` de Lichess sont **ignorés** : seul notre seuil compte, pour que les deux plateformes soient comptées pareil.
-- La passe profonde de l'analyse réexamine les coups qui perdent au moins **6 points** en passe rapide (`DEEP_CHECK_MIN_DROP`, marge sous le seuil).
+- Un seul niveau (« erreur ») : pas de distinction imprécision / erreur / gaffe. Pour mémoire, Lichess compte une imprécision à 5 points, une erreur à 10, une gaffe à 15 sur notre échelle (ses seuils 0,1 / 0,2 / 0,3 portent sur des chances de gain de −1 à +1, voir `Advice.scala`). **Corrigé le 2026-10-05** : ce paragraphe indiquait 10 / 20 / 30, par confusion d'échelle. Notre seuil de 10 correspond donc exactement à « erreur » chez Lichess. Les flags `judgment` de Lichess sont **ignorés** : seul notre seuil compte, pour que les deux plateformes soient comptées pareil.
+- La passe profonde de l'analyse réexamine les coups qui perdent au moins **6 points** en passe rapide (marge de 4 sous le seuil, `deepCheckMinDrop` dans `criteria.ts`).
+- **Depuis le 2026-10-05, ce seuil est réglable** dans l'analyse approfondie (voir plus bas). 10 reste la valeur par défaut, et le bouton « Analyser ma dernière partie » l'utilise toujours.
 
 ### Moteur
 
@@ -177,6 +178,8 @@ Définie dans `src/features/review/errors.ts` (`isValidMove`, `VALID_MAX_DROP`, 
 ```
 valide ⇔ gain%(meilleur) − gain%(après) < 5 points
 ```
+
+- **Depuis le 2026-10-05, ce seuil est réglable** dans l'analyse approfondie, toujours strictement inférieur au seuil d'erreur. 5 reste la valeur par défaut.
 
 - **5 points** ≈ un demi-pion depuis l'équilibre (0 → −0,5 accepté, 0 → −0,6 refusé), plus tolérant quand la partie est décidée : +4 → +3,3 accepté, +4 → +3 refusé, +10 → +7,5 accepté, mat → +10 accepté, mat → +5 refusé.
 - Paire cohérente avec les erreurs : **valide sous 5 points, erreur à partir de 10**, et une zone grise entre les deux (coup ni bon ni fautif).
@@ -252,3 +255,52 @@ Constat : une partie amicale toute récente apparaissait dans l'historique, mais
 - **Une seule règle** : `isRatedStandardGame` (`src/features/games/normalize.ts`), utilisée par la revue (`fromLichessGame`) et par l'historique (`feed.ts`). Toute évolution du périmètre se fait là.
 - L'export Lichess de l'historique demande directement `rated=true` et `perfType` (cadences standard), comme la revue, pour ne pas télécharger des parties écartées ensuite. Côté Chess.com, le filtre est appliqué mois par mois, et un mois sans partie retenue fait passer au précédent.
 - Le libellé « Amicale » est supprimé, et le message vide devient « Aucune partie classée trouvée ».
+
+---
+
+## 2026-10-05 : analyse approfondie paramétrable
+
+Le bouton « Analyser les 10 dernières parties » devient **« Analyse approfondie »**. Le bouton « Analyser ma dernière partie » ne change pas : dernière partie, seuils par défaut, lancement immédiat. Code : `src/features/review/` (`criteria.ts`, `selection.ts`, `fetch.ts`, `estimate.ts`, `settings.ts`, composants `ReviewSetup`, `ReviewRecap`, `ReviewDialog`).
+
+### Déroulé en deux étapes
+
+**Réglages → « Trouver les parties » → récapitulatif → « Lancer l'analyse »**. Le récapitulatif donne le nombre exact de parties, leur répartition (plateforme, cadence) et une estimation de durée sur ordinateur et sur téléphone, calculée sur les vraies parties. Ensuite, l'analyse se déroule comme avant (étapes, progression, résultats, entraînement).
+
+### Filtres
+
+- **Plateformes** : les comptes trouvés, cochés par défaut.
+- **Parties** : les N dernières (de 1 à « ≈ total des parties classées du profil », avec raccourcis 10 / 25 / 50 / 100), ou une **période** (dernière semaine, dernier mois, 3 derniers mois, dernière année, ou dates personnalisées). Une période choisie par raccourci est retenue comme raccourci : « dernière semaine » reste la dernière semaine à la prochaine ouverture.
+- **Cadences**, **couleur**, **résultat**, **longueur minimale** (en coups ; 0 = toutes).
+- Les API filtrent ce qu'elles savent filtrer : Lichess les cadences (l'UltraBullet compte comme bullet), la couleur et les dates de **début** ; Chess.com les mois. `matchesSelection` revérifie tout, et la période porte sur la date de **fin**. Côté Lichess, une marge de 60 jours avant le début de la période couvre les parties par correspondance.
+- **« N dernières » avec des filtres que Lichess ne connaît pas** (résultat, longueur) : pagination à rebours par pages de 100 jusqu'à obtenir N parties retenues. Sans ces filtres, on demande exactement N parties à Lichess (le bouton rapide en demande 1).
+- **Pas de plafond** (choix de l'utilisateur), mais un **avertissement à partir de 100 parties** : les analyses ne sont pas encore enregistrées.
+
+### Seuils
+
+- Un curseur « erreur » (3 à 30, défaut 10), avec les repères de Lichess : imprécision 5, erreur 10, gaffe 15.
+- Un curseur « coup valide » (1 à 29, défaut 5). Il reste **strictement sous le seuil d'erreur** (`normalizeCriteria`) : déplacer l'un pousse l'autre. Sinon, un coup pourrait être à la fois une erreur et un coup valide.
+- La règle reste `perte < seuil` pour un coup valide (affichée « moins de X % »).
+- Le seuil de la passe approfondie suit le seuil d'erreur (`deepCheckMinDrop` = seuil − 4, au minimum 1). Un seuil bas allonge nettement l'analyse, et l'estimation en tient compte.
+- L'entraînement utilise le seuil de coup valide de l'analyse (`Coach`, et un contexte React pour la couleur des écarts). Les seuils utilisés sont rappelés au-dessus des résultats.
+
+### Estimation de durée
+
+`estimate.ts` : positions sans évaluation Lichess × 100 000 nœuds, plus une part de positions en passe approfondie × 1 000 000 nœuds, divisé par le débit de l'appareil. Une seule partie n'occupe qu'un moteur.
+
+- **Ordinateur** : 4 moteurs × environ 825 000 nœuds/s, tiré de la mesure (environ 198 M de nœuds en 60 s). Vérifié le 2026-10-05 : 21 parties de bullet estimées à environ 2 min, analysées en 128 s.
+- **Téléphone** : 2 moteurs × environ 250 000 nœuds/s, **hypothèse à mesurer** sur un vrai téléphone.
+- Part de positions en passe approfondie : environ 10 % au seuil par défaut (mesuré), plus quand le seuil baisse (tableau approximatif dans `deepShare`).
+
+### Résultats et entraînement
+
+- Table **paginée par 20** (`TablePagination`).
+- **Rejouer une seule partie** : un bouton par ligne, à côté du nombre d'erreurs. Le bouton global reste.
+- « Modifier les filtres » revient aux réglages.
+
+### Protections pendant l'analyse
+
+Rien n'étant enregistré, fermer la modale pendant une recherche ou une analyse **demande confirmation**. Pendant l'analyse, l'écran reste allumé (Screen Wake Lock, si le navigateur le permet) et quitter la page déclenche un avertissement (`useKeepAwake`). La vraie solution, mettre les évaluations en cache, reste une piste (`docs/vision.md`).
+
+### Réglages mémorisés
+
+Dans le `localStorage` (`chessme:review-settings`), avec une lecture tolérante (chaque champ invalide reprend sa valeur par défaut) et versionnée. Déclarés sur la page `/legal`, et effacés par « Supprimer mes données locales ».

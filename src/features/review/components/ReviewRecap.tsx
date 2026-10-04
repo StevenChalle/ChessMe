@@ -1,0 +1,101 @@
+import { ArrowLeft, Play, TriangleAlert } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import { SourceLabel } from '@/features/player/components/SourceBadge'
+import { categoryLabel, sourceErrorMessage } from '@/features/player/sources'
+import { CATEGORIES } from '@/features/player/summary'
+import { formatEstimate, formatGameCount, formatNumber } from '@/lib/format'
+import type { ApiSource } from '@/lib/http'
+import { m } from '@/paraglide/messages'
+import type { ReviewCriteria } from '../criteria'
+import { DEVICE_PROFILES, estimateSeconds } from '../estimate'
+import type { FoundGames } from '../fetch'
+import { LARGE_REVIEW } from '../selection'
+
+const SOURCES: ApiSource[] = ['lichess', 'chesscom']
+
+/** What the search found, how long the analysis should take, and the button to launch it. */
+export function ReviewRecap({
+  found: { games, failures },
+  criteria,
+  onEdit,
+  onLaunch,
+}: {
+  found: FoundGames
+  criteria: ReviewCriteria
+  onEdit: () => void
+  onLaunch: () => void
+}) {
+  const bySource = SOURCES.map((source) => ({
+    source,
+    count: games.filter((game) => game.source === source).length,
+  })).filter(({ count }) => count > 0)
+  const byCategory = CATEGORIES.map((category) => ({
+    category,
+    count: games.filter((game) => game.category === category).length,
+  })).filter(({ count }) => count > 0)
+
+  return (
+    <div className="space-y-4">
+      {failures.map(({ source, error }) => (
+        <p key={source} className="text-sm text-bad">
+          {sourceErrorMessage(source, error)}
+        </p>
+      ))}
+
+      {games.length === 0 ? (
+        <p className="text-muted-foreground">{m.recap_none()}</p>
+      ) : (
+        <div className="space-y-3 rounded-md bg-muted/50 p-4">
+          <p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
+            {m.recap_title()}
+          </p>
+          <p className="text-2xl font-medium text-font-clear tabular-nums">
+            {formatGameCount(games.length)}
+          </p>
+          <p className="flex flex-wrap gap-x-4 gap-y-1 text-sm">
+            {bySource.map(({ source, count }) => (
+              <span key={source} className="inline-flex items-center gap-1.5">
+                <SourceLabel source={source} />
+                <span className="text-muted-foreground tabular-nums">{formatNumber(count)}</span>
+              </span>
+            ))}
+            {byCategory.map(({ category, count }) => (
+              <span key={category} className="text-muted-foreground">
+                {categoryLabel(category)}{' '}
+                <span className="tabular-nums">{formatNumber(count)}</span>
+              </span>
+            ))}
+          </p>
+          <div className="space-y-0.5 pt-1">
+            <p className="text-font-clear">
+              {m.recap_estimate({
+                desktop: formatEstimate(estimateSeconds(games, criteria, DEVICE_PROFILES.desktop)),
+                mobile: formatEstimate(estimateSeconds(games, criteria, DEVICE_PROFILES.mobile)),
+              })}
+            </p>
+            <p className="text-xs text-muted-foreground">{m.recap_estimate_hint()}</p>
+          </div>
+          {games.length >= LARGE_REVIEW && (
+            <p className="flex gap-2 rounded-md border border-brag/40 bg-brag/10 p-3 text-sm text-font-clear">
+              <TriangleAlert aria-hidden className="mt-0.5 size-4 shrink-0 text-brag" />
+              {m.recap_large_warning()}
+            </p>
+          )}
+        </div>
+      )}
+
+      <div className="flex flex-wrap gap-2">
+        <Button variant="outline" size="lg" onClick={onEdit}>
+          <ArrowLeft data-icon="inline-start" />
+          {m.recap_edit()}
+        </Button>
+        {games.length > 0 && (
+          <Button size="lg" onClick={onLaunch}>
+            <Play data-icon="inline-start" />
+            {m.recap_launch()}
+          </Button>
+        )}
+      </div>
+    </div>
+  )
+}

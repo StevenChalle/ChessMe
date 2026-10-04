@@ -57,9 +57,15 @@ export function fromLichess(user: LichessUser): AccountSummary {
   const categories: AccountSummary['categories'] = {}
   for (const key of CATEGORIES) {
     const perf = user.perfs?.[LICHESS_PERFS[key]]
+    // UltraBullet games count as bullet games (as in the review), but its rating is a separate
+    // pool: the bullet rating is never replaced by it.
+    const extraGames = key === 'bullet' ? (user.perfs?.ultraBullet?.games ?? 0) : 0
+    const games = (perf?.games ?? 0) + extraGames
     // Lichess reports a default 1500? rating for unplayed perfs: ignore them.
-    if (perf?.games) {
-      categories[key] = { rating: perf.rating, provisional: perf.prov, games: perf.games }
+    if (games > 0) {
+      categories[key] = perf?.games
+        ? { rating: perf.rating, provisional: perf.prov, games }
+        : { games }
     }
   }
   return {

@@ -18,9 +18,15 @@ export function PlayerHeader({ accounts }: { accounts: AccountSummary[] }) {
     )
   const [main, ...others] = accounts
   // Closed accounts have no games to review.
-  const reviewable = accounts
-    .filter((account) => !account.closed)
-    .map(({ source, username }) => ({ source, username }))
+  const open = accounts.filter((account) => !account.closed)
+  const reviewable = open.map(({ source, username }) => ({ source, username }))
+  // Rated games per time control, shown as an indication in the advanced review.
+  const gameCounts = Object.fromEntries(
+    open.map(({ source, categories }) => [
+      source,
+      Object.fromEntries(Object.entries(categories).map(([key, stats]) => [key, stats.games])),
+    ]),
+  )
 
   return (
     <div className="flex flex-wrap items-center justify-between gap-4">
@@ -58,7 +64,7 @@ export function PlayerHeader({ accounts }: { accounts: AccountSummary[] }) {
           </p>
         </div>
       </div>
-      {reviewable.length > 0 && <ReviewButtons accounts={reviewable} />}
+      {reviewable.length > 0 && <ReviewButtons accounts={reviewable} gameCounts={gameCounts} />}
     </div>
   )
 }

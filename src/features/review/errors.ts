@@ -12,6 +12,8 @@ import type { EngineScore } from '@/lib/engine/uci'
  *   error ⇔ drop ≥ 10      (about 1.1 pawns from equality)
  *   valid ⇔ drop < 5       (about half a pawn from equality; compared to the engine's best move)
  *
+ * These are the defaults; the advanced review lets the user change both (criteria.ts).
+ *
  * Mates count as ±10 000 cp, i.e. 100 % or 0 %.
  */
 
@@ -58,8 +60,8 @@ export function forColor(whiteCp: number, color: Color): number {
 }
 
 /** Evaluations from the moving player's side, before and after the move. */
-export function isError(beforeCp: number, afterCp: number): boolean {
-  return winChanceDrop(beforeCp, afterCp) >= ERROR_MIN_DROP
+export function isError(beforeCp: number, afterCp: number, minDrop = ERROR_MIN_DROP): boolean {
+  return winChanceDrop(beforeCp, afterCp) >= minDrop
 }
 
 export type PlayerMove = {
@@ -87,12 +89,18 @@ export function playerMoves(whiteCps: number[], turns: Color[], color: Color): P
   return moves
 }
 
-export function countErrors(whiteCps: number[], turns: Color[], color: Color): number {
-  return playerMoves(whiteCps, turns, color).filter((move) => isError(move.beforeCp, move.afterCp))
-    .length
+export function countErrors(
+  whiteCps: number[],
+  turns: Color[],
+  color: Color,
+  minDrop = ERROR_MIN_DROP,
+): number {
+  return playerMoves(whiteCps, turns, color).filter((move) =>
+    isError(move.beforeCp, move.afterCp, minDrop),
+  ).length
 }
 
 /** From the player's side: `bestCp` after the best move, `afterCp` after the tried one. */
-export function isValidMove(bestCp: number, afterCp: number): boolean {
-  return winChanceDrop(bestCp, afterCp) < VALID_MAX_DROP
+export function isValidMove(bestCp: number, afterCp: number, maxDrop = VALID_MAX_DROP): boolean {
+  return winChanceDrop(bestCp, afterCp) < maxDrop
 }

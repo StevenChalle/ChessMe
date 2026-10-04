@@ -1,34 +1,44 @@
-import { History, ScanSearch } from 'lucide-react'
+import { History, SlidersHorizontal } from 'lucide-react'
 import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { m } from '@/paraglide/messages'
-import { REVIEW_GAME_COUNT, type ReviewAccount } from '../analyze'
-import { ReviewDialog } from './ReviewDialog'
+import type { ReviewAccount } from '../fetch'
+import { ReviewDialog, type ReviewMode } from './ReviewDialog'
+import type { GameCounts } from './ReviewSetup'
 
 /**
- * Opens the review of the latest games, or of the last game only; the review runs while the
- * dialog is open.
+ * The quick review of the last game, and the advanced review (filters, then analysis).
+ * Both run in a dialog, while it is open.
  */
-export function ReviewButtons({ accounts }: { accounts: ReviewAccount[] }) {
-  const [count, setCount] = useState<number | undefined>()
+export function ReviewButtons({
+  accounts,
+  gameCounts,
+}: {
+  accounts: ReviewAccount[]
+  gameCounts: GameCounts
+}) {
+  const [mode, setMode] = useState<ReviewMode | undefined>()
   return (
     <div className="flex flex-wrap gap-2">
-      <Button size="lg" onClick={() => setCount(1)}>
+      <Button size="lg" onClick={() => setMode('quick')}>
         <History data-icon="inline-start" />
         {m.review_button_last()}
       </Button>
-      <Button size="lg" onClick={() => setCount(REVIEW_GAME_COUNT)}>
-        <ScanSearch data-icon="inline-start" />
+      <Button size="lg" variant="outline" onClick={() => setMode('advanced')}>
+        <SlidersHorizontal data-icon="inline-start" />
         {m.review_button()}
       </Button>
-      <ReviewDialog
-        accounts={accounts}
-        count={count ?? REVIEW_GAME_COUNT}
-        open={count !== undefined}
-        onOpenChange={(open) => {
-          if (!open) setCount(undefined)
-        }}
-      />
+      {mode && (
+        <ReviewDialog
+          accounts={accounts}
+          gameCounts={gameCounts}
+          mode={mode}
+          open
+          onOpenChange={(open) => {
+            if (!open) setMode(undefined)
+          }}
+        />
+      )}
     </div>
   )
 }

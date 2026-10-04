@@ -45,6 +45,7 @@ function LegalPage() {
         <ul className="list-disc space-y-1 pl-5">
           <li>{m.legal_privacy_local_language()}</li>
           <li>{m.legal_privacy_local_recent()}</li>
+          <li>{m.legal_privacy_local_review()}</li>
           <li>{m.legal_privacy_local_app()}</li>
         </ul>
         <h3 className="pt-2 font-medium text-font-clear">{m.legal_privacy_thirdparty_title()}</h3>
