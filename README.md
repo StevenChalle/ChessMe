@@ -10,6 +10,7 @@ make build   # fichiers statiques dans dist/
 make         # liste des commandes
 ```
 
+- [Vision (réflexions en cours)](docs/vision.md)
 - [Décisions techniques](docs/decisions.md)
 - [Design](docs/design.md)
 - [APIs](docs/apis.md)
