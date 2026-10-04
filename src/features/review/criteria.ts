@@ -7,7 +7,7 @@ import { ERROR_MIN_DROP, VALID_MAX_DROP } from './errors'
 export type ReviewCriteria = {
   /** A player's move losing at least this much is an error */
   errorMinDrop: number
-  /** In training, a move losing less than this (vs the best move) is valid */
+  /** In training, a move losing at most this (vs the best move) is valid */
   validMaxDrop: number
 }
 
@@ -37,8 +37,9 @@ export function deepCheckMinDrop(criteria: ReviewCriteria): number {
 const clamp = (value: number, min: number, max: number) => Math.min(Math.max(value, min), max)
 
 /**
- * Rounds and bounds both thresholds, keeping a valid move strictly below an error: otherwise a
- * move could be both an error in the game and a valid answer in training.
+ * Rounds and bounds both thresholds, keeping the valid one strictly below the error one: a move
+ * losing exactly as much as both would otherwise be an error in the game and a valid answer in
+ * training (valid ⇔ drop ≤ validMaxDrop, error ⇔ drop ≥ errorMinDrop).
  * `changed` tells which one the user just moved: the other one gives way.
  */
 export function normalizeCriteria(

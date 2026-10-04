@@ -10,7 +10,7 @@ import type { EngineScore } from '@/lib/engine/uci'
  * drop = winChance(before) − winChance(after), both from the moving player's side.
  *
  *   error ⇔ drop ≥ 10      (about 1.1 pawns from equality)
- *   valid ⇔ drop < 5       (about half a pawn from equality; compared to the engine's best move)
+ *   valid ⇔ drop ≤ 5       (about half a pawn from equality; compared to the engine's best move)
  *
  * These are the defaults; the advanced review lets the user change both (criteria.ts).
  *
@@ -102,5 +102,5 @@ export function countErrors(
 
 /** From the player's side: `bestCp` after the best move, `afterCp` after the tried one. */
 export function isValidMove(bestCp: number, afterCp: number, maxDrop = VALID_MAX_DROP): boolean {
-  return winChanceDrop(bestCp, afterCp) < maxDrop
+  return winChanceDrop(bestCp, afterCp) <= maxDrop
 }

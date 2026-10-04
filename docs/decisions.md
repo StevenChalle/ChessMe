@@ -176,13 +176,14 @@ Définie dans `src/features/review/errors.ts` (`isValidMove`, `VALID_MAX_DROP`, 
 Évaluations du point de vue du joueur : `meilleur` = après le meilleur coup du moteur, `après` = après le coup proposé.
 
 ```
-valide ⇔ gain%(meilleur) − gain%(après) < 5 points
+valide ⇔ gain%(meilleur) − gain%(après) ≤ 5 points
 ```
 
 - **Depuis le 2026-10-05, ce seuil est réglable** dans l'analyse approfondie, toujours strictement inférieur au seuil d'erreur. 5 reste la valeur par défaut.
 
 - **5 points** ≈ un demi-pion depuis l'équilibre (0 → −0,5 accepté, 0 → −0,6 refusé), plus tolérant quand la partie est décidée : +4 → +3,3 accepté, +4 → +3 refusé, +10 → +7,5 accepté, mat → +10 accepté, mat → +5 refusé.
-- Paire cohérente avec les erreurs : **valide sous 5 points, erreur à partir de 10**, et une zone grise entre les deux (coup ni bon ni fautif).
+- Paire cohérente avec les erreurs : **valide jusqu'à 5 points inclus, erreur à partir de 10**, et une zone grise entre les deux (coup ni bon ni fautif).
+- **Révisée le 2026-10-05** : la règle était stricte (`< 5`). Elle est passée à `≤ 5` à la demande de l'utilisateur, pour l'analyse rapide comme pour la valeur par défaut de l'analyse approfondie. L'écart ne joue qu'à la frontière exacte.
 - **Le coup joué dans la partie est toujours refusé**, même si la nouvelle recherche le trouvait limite. Un coup qui termine la partie (mat, pat) est évalué exactement par chessops.
 - **Évaluations comparables** : la référence est une recherche MultiPV 5 (1,5 M nœuds partagés). Un coup du top 5 est jugé sur sa ligne. Un coup hors du top 5 est évalué depuis la même position de départ, en restreignant la recherche à ce coup (`searchmoves`), avec le budget d'une ligne (300 k nœuds). Avant, il était évalué à part, depuis la position d'après et avec un autre budget : un décalage de profondeur pouvait fausser la comparaison.
 - L'écart affiché sous chaque coup reste en pions (`+2,0 → +1,4 (−0,6)`), plus parlant ; sa couleur (vert / rouge) suit cette règle.
@@ -279,7 +280,7 @@ Le bouton « Analyser les 10 dernières parties » devient **« Analyse approfon
 
 - Un curseur « erreur » (3 à 30, défaut 10), avec les repères de Lichess : imprécision 5, erreur 10, gaffe 15.
 - Un curseur « coup valide » (1 à 29, défaut 5). Il reste **strictement sous le seuil d'erreur** (`normalizeCriteria`) : déplacer l'un pousse l'autre. Sinon, un coup pourrait être à la fois une erreur et un coup valide.
-- La règle reste `perte < seuil` pour un coup valide (affichée « moins de X % »).
+- Un coup valide perd **au plus** le seuil (`perte ≤ seuil`, affiché « au plus X % »), comme dans l'analyse rapide.
 - Le seuil de la passe approfondie suit le seuil d'erreur (`deepCheckMinDrop` = seuil − 4, au minimum 1). Un seuil bas allonge nettement l'analyse, et l'estimation en tient compte.
 - L'entraînement utilise le seuil de coup valide de l'analyse (`Coach`, et un contexte React pour la couleur des écarts). Les seuils utilisés sont rappelés au-dessus des résultats.
 

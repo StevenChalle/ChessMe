@@ -8,6 +8,7 @@ import {
   playerMoves,
   toCp,
   winChance,
+  winChanceDrop,
 } from './errors'
 
 describe('winChance', () => {
@@ -68,7 +69,13 @@ describe('playerMoves and countErrors', () => {
   })
 })
 
-describe('isValidMove (< 5 % of winning chances lost vs the best move)', () => {
+describe('isValidMove (≤ 5 % of winning chances lost vs the best move)', () => {
+  it('accepts a move losing exactly the threshold', () => {
+    const drop = winChanceDrop(0, -60)
+    expect(isValidMove(0, -60, drop)).toBe(true)
+    expect(isValidMove(0, -61, drop)).toBe(false)
+  })
+
   it.each([
     // [best, after, expected, why]
     [0, -40, true, 'loses less than half a pawn from equality'],
