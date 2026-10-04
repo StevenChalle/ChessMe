@@ -26,6 +26,9 @@ export const ENGINE_SPEED: Record<DeviceKind, number> = {
   mobile: 250_000,
 }
 
+/** A typical computer: 4 engines (the pool's maximum) at desktop speed. */
+export const REFERENCE_DESKTOP: DeviceProfile = { workers: 4, nodesPerSecond: ENGINE_SPEED.desktop }
+
 /** This device: its kind sets the engine speed, its cores the engines the analysis will run. */
 export function deviceProfile(kind: DeviceKind, workers = defaultPoolSize()): DeviceProfile {
   return { workers, nodesPerSecond: ENGINE_SPEED[kind] }
@@ -64,4 +67,20 @@ export function estimateSeconds(
   // Each engine works on whole games: a single game keeps a single engine busy.
   const workers = Math.min(device.workers, perGame.length)
   return nodes / (workers * device.nodesPerSecond)
+}
+
+/**
+ * How many times faster these games would be analysed on a typical computer, rounded; undefined
+ * when the gain is too small to mention (under 1.5×).
+ */
+export function desktopSpeedup(
+  games: Pick<ReviewGame, 'sanMoves' | 'serverCps'>[],
+  criteria: ReviewCriteria,
+  device: DeviceProfile,
+): number | undefined {
+  const here = estimateSeconds(games, criteria, device)
+  const desktop = estimateSeconds(games, criteria, REFERENCE_DESKTOP)
+  if (desktop === 0) return undefined
+  const ratio = here / desktop
+  return ratio >= 1.5 ? Math.round(ratio) : undefined
 }

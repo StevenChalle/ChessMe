@@ -288,7 +288,7 @@ Le bouton « Analyser les 10 dernières parties » devient **« Analyse approfon
 
 `estimate.ts` : positions sans évaluation Lichess × 100 000 nœuds, plus une part de positions en passe approfondie × 1 000 000 nœuds, divisé par le débit de l'appareil. Une seule partie n'occupe qu'un moteur.
 
-- **Une seule estimation, celle de l'appareil** (« ≈ 7 min sur cet ordinateur » ou « sur ce téléphone ou cette tablette »). D'abord, les deux durées (ordinateur et téléphone) étaient affichées côte à côte ; simplifié à la demande de l'utilisateur.
+- **Une seule estimation, celle de l'appareil** : « Temps estimé : ≈ 7 min ». Sur téléphone ou tablette, une ligne de plus : « Environ N fois plus rapide sur un ordinateur » (`desktopSpeedup`, comparé à un ordinateur type de 4 moteurs, sur les mêmes parties ; rien si le gain est sous 1,5×). Historique : d'abord les deux durées côte à côte, puis « sur cet ordinateur / ce téléphone » ; simplifié à la demande de l'utilisateur.
 - **Type d'appareil** (`lib/device.ts`, `detectDevice`) : les Client Hints quand le navigateur en a (`navigator.userAgentData.mobile` : Chrome, Edge, Android), sinon le user agent. Un Mac tactile est un iPad (les iPad récents se présentent comme des Mac).
 - **Moteurs** : le nombre réel de moteurs que l'analyse lancera sur l'appareil (`defaultPoolSize`, selon les cœurs), et non une hypothèse.
 - **Vitesse d'un moteur** (`ENGINE_SPEED`) : ordinateur environ 825 000 nœuds/s, tirés de la mesure (environ 198 M de nœuds en 60 s avec 4 moteurs). Vérifié le 2026-10-05 : 21 parties de bullet estimées à environ 2 min, analysées en 128 s. Téléphone environ 250 000 nœuds/s, **hypothèse à mesurer** sur un vrai téléphone.
@@ -297,7 +297,7 @@ Le bouton « Analyser les 10 dernières parties » devient **« Analyse approfon
 ### Résultats et entraînement
 
 - Table **paginée par 20** (`TablePagination`).
-- **Rejouer une seule partie** : un bouton par ligne, à côté du nombre d'erreurs. Le bouton global reste.
+- **Rejouer une seule partie** : un bouton bleu par ligne (le style des boutons principaux, pour le repérer), à côté du nombre d'erreurs, grisé sans erreur. Le bouton global reste.
 - « Modifier les filtres » revient aux réglages.
 
 ### Protections pendant l'analyse

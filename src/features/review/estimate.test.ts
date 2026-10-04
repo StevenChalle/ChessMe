@@ -1,6 +1,12 @@
 import { describe, expect, it } from 'vitest'
 import { DEFAULT_CRITERIA } from './criteria'
-import { deepShare, deviceProfile, enginePositions, estimateSeconds } from './estimate'
+import {
+  deepShare,
+  desktopSpeedup,
+  deviceProfile,
+  enginePositions,
+  estimateSeconds,
+} from './estimate'
 
 const DESKTOP = deviceProfile('desktop', 4)
 const MOBILE = deviceProfile('mobile', 4)
@@ -63,5 +69,23 @@ describe('estimateSeconds', () => {
 
   it('is zero when Lichess already analysed everything', () => {
     expect(estimateSeconds([game(0)], DEFAULT_CRITERIA, DESKTOP)).toBe(0)
+  })
+})
+
+describe('desktopSpeedup', () => {
+  const games = Array.from({ length: 10 }, () => game(80))
+
+  it('tells a phone how much faster a computer would be', () => {
+    // 825k vs 250k nodes/s per engine, 4 engines vs 2
+    expect(desktopSpeedup(games, DEFAULT_CRITERIA, deviceProfile('mobile', 2))).toBe(7)
+  })
+
+  it('only counts busy engines: a single game uses one everywhere', () => {
+    expect(desktopSpeedup([game(80)], DEFAULT_CRITERIA, deviceProfile('mobile', 2))).toBe(3)
+  })
+
+  it('says nothing when the gain is small or there is nothing to analyse', () => {
+    expect(desktopSpeedup(games, DEFAULT_CRITERIA, deviceProfile('desktop', 4))).toBeUndefined()
+    expect(desktopSpeedup([game(0)], DEFAULT_CRITERIA, deviceProfile('mobile', 2))).toBeUndefined()
   })
 })

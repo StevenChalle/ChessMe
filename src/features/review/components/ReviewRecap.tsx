@@ -8,7 +8,7 @@ import { formatEstimate, formatGameCount, formatNumber } from '@/lib/format'
 import type { ApiSource } from '@/lib/http'
 import { m } from '@/paraglide/messages'
 import type { ReviewCriteria } from '../criteria'
-import { deviceProfile, estimateSeconds } from '../estimate'
+import { desktopSpeedup, deviceProfile, estimateSeconds } from '../estimate'
 import type { FoundGames } from '../fetch'
 import { LARGE_REVIEW } from '../selection'
 
@@ -28,6 +28,9 @@ export function ReviewRecap({
 }) {
   // The estimate is for the device running the analysis: its kind and its engines.
   const device = detectDevice()
+  const profile = deviceProfile(device)
+  // On a phone or a tablet: how much faster a computer would be.
+  const speedup = device === 'mobile' ? desktopSpeedup(games, criteria, profile) : undefined
   const bySource = SOURCES.map((source) => ({
     source,
     count: games.filter((game) => game.source === source).length,
@@ -71,10 +74,15 @@ export function ReviewRecap({
           </p>
           <div className="space-y-0.5 pt-1">
             <p className="text-font-clear">
-              {(device === 'mobile' ? m.recap_estimate_mobile : m.recap_estimate_desktop)({
-                time: formatEstimate(estimateSeconds(games, criteria, deviceProfile(device))),
+              {m.recap_estimate({
+                time: formatEstimate(estimateSeconds(games, criteria, profile)),
               })}
             </p>
+            {speedup !== undefined && (
+              <p className="text-sm text-font-clear">
+                {m.recap_faster_on_desktop({ times: String(speedup) })}
+              </p>
+            )}
             <p className="text-xs text-muted-foreground">{m.recap_estimate_hint()}</p>
           </div>
           {games.length >= LARGE_REVIEW && (

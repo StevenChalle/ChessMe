@@ -248,13 +248,11 @@ function ReviewResults({
                     {formatNumber(game.mistakes.length)}
                   </span>
                   <Button
-                    variant="ghost"
                     size="icon-xs"
                     disabled={game.mistakes.length === 0}
                     onClick={() => onTrain(game.mistakes)}
                     aria-label={m.replay_game()}
                     title={m.replay_game()}
-                    className="text-muted-foreground"
                   >
                     <Swords />
                   </Button>

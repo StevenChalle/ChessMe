@@ -280,6 +280,6 @@
   "pagination_next": "Next",
   "review_confirm_close": "The analysis is running. Stop it and lose the progress?",
   "legal_privacy_local_review": "your advanced review settings (filters and thresholds);",
-  "recap_estimate_desktop": "≈ {time} on this computer",
-  "recap_estimate_mobile": "≈ {time} on this phone or tablet"
+  "recap_estimate": "Estimated time: ≈ {time}",
+  "recap_faster_on_desktop": "About {times}× faster on a computer."
 }
