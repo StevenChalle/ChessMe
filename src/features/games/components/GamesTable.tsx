@@ -76,9 +76,9 @@ export function GamesTable<G extends GameSummary>({
           const result = RESULTS[game.result]
           return (
             <TableRow key={`${game.source}-${game.id}`}>
-              <TableCell className="text-muted-foreground tabular-nums">
-                {formatDate(game.playedAt)}
-                <span className="block text-xs">{formatTime(game.playedAt)}</span>
+              <TableCell className="whitespace-nowrap text-muted-foreground tabular-nums">
+                {formatDate(game.playedAt)}{' '}
+                <span className="ml-1 text-muted-foreground/70">{formatTime(game.playedAt)}</span>
               </TableCell>
               <TableCell>
                 <SourceLabel source={game.source} />
