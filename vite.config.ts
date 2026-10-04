@@ -63,7 +63,10 @@ export default defineConfig(({ mode }) => ({
       emitTsDeclarations: true,
     }),
     VitePWA({
-      registerType: 'autoUpdate',
+      // A new version is applied at launch, or offered by a banner later on (see
+      // src/lib/registerServiceWorker.ts): never a forced reload in the middle of a review.
+      registerType: 'prompt',
+      injectRegister: false,
       includeAssets: ['favicon.svg'],
       // Lets you install a separate "ChessMe (dev)" app from `make dev` that follows HMR.
       devOptions: { enabled: true, suppressWarnings: true },

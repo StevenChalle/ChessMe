@@ -197,5 +197,7 @@
   "history_casual": "Amicale",
   "history_no_games": "Aucune partie trouvée.",
   "history_failed": "Impossible de charger les parties.",
-  "training_engine_reply": "Le moteur répond"
+  "training_engine_reply": "Le moteur répond",
+  "update_available": "Une nouvelle version de ChessMe est disponible.",
+  "update_apply": "Mettre à jour"
 }

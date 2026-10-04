@@ -10,6 +10,7 @@ import {
 import { TanStackRouterDevtools } from '@tanstack/react-router-devtools'
 import { Search } from 'lucide-react'
 import { LanguageSwitcher } from '@/components/LanguageSwitcher'
+import { UpdateBanner } from '@/components/UpdateBanner'
 import { AccountSearchForm } from '@/features/player/components/AccountSearchForm'
 import { validatePlayerSearch } from '@/features/player/search'
 import { m } from '@/paraglide/messages'
@@ -28,6 +29,7 @@ function RootLayout() {
 
   return (
     <div className="flex min-h-dvh flex-col">
+      <UpdateBanner />
       <header className="mx-auto flex h-14 w-full max-w-6xl items-center gap-6 px-4">
         <Link to="/" className="text-2xl font-medium tracking-tight text-font-clear">
           ChessMe

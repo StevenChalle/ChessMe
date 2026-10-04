@@ -214,3 +214,14 @@ Un onglet **Parties** sur le profil (`/player/history`) liste toutes les parties
 - **Colonne Elo** (au lieu du nombre d'erreurs) : l'Elo du joueur après la partie et la variation. Lichess donne la variation (`ratingDiff`) et l'Elo d'avant ; Chess.com donne l'Elo d'après mais pas la variation, calculée par différence avec la partie précédente de la même cadence et variante (`withChessComRatingDiffs`), sur tout ce qui est déjà chargé, tampon compris. La toute première partie connue d'une cadence n'a donc pas de variation. Les parties amicales affichent « Amicale ».
 - **Normalisation partagée** (`src/features/games/normalize.ts`) : le résumé d'une partie (`GameSummary` : plateforme, date, cadence, variante, couleur, Elo, adversaire, résultat) sert à la fois à l'analyse et à l'historique, et la table (`GamesTable`) est la même, avec une dernière colonne au choix (erreurs ou Elo).
 - Limite connue : Lichess pagine sur la date de **début** et la liste est triée sur la date de **fin** ; une partie par correspondance très longue peut apparaître un peu plus loin que sa date de fin.
+
+---
+
+## 2026-10-04 : mises à jour de la PWA
+
+Constat sur Android : l'app installée ne recevait pas les nouvelles versions. Le service worker ne cherchait une mise à jour qu'au chargement d'une page, or rouvrir l'app depuis l'écran d'accueil reprend souvent la page en mémoire sans la recharger ; et une version trouvée ne s'appliquait qu'au chargement suivant.
+
+- **Enregistrement manuel** (`src/lib/registerServiceWorker.ts`, `registerType: 'prompt'`, `injectRegister: false`, dépendance `workbox-window`) : recherche de mise à jour au retour de l'app au premier plan (`visibilitychange`) et toutes les heures.
+- **Au lancement** : une nouvelle version trouvée dans les 10 premières secondes est appliquée tout de suite (rechargement), puisque rien n'a encore été commencé.
+- **Plus tard** : un bandeau « Une nouvelle version de ChessMe est disponible · Mettre à jour » (`UpdateBanner`), plutôt qu'un rechargement forcé qui ferait perdre une analyse ou un entraînement en cours (rien n'est stocké).
+- Une page jamais contrôlée par le service worker (première visite) ne reçoit pas l'événement de prise de contrôle : un rechargement simple suit au bout de 2 s si besoin.

@@ -197,5 +197,7 @@
   "history_casual": "Casual",
   "history_no_games": "No games found.",
   "history_failed": "Couldn't load the games.",
-  "training_engine_reply": "The engine replies"
+  "training_engine_reply": "The engine replies",
+  "update_available": "A new version of ChessMe is available.",
+  "update_apply": "Update"
 }
