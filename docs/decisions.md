@@ -225,3 +225,19 @@ Constat sur Android : l'app installée ne recevait pas les nouvelles versions. L
 - **Au lancement** : une nouvelle version trouvée dans les 10 premières secondes est appliquée tout de suite (rechargement), puisque rien n'a encore été commencé.
 - **Plus tard** : un bandeau « Une nouvelle version de ChessMe est disponible · Mettre à jour » (`UpdateBanner`), plutôt qu'un rechargement forcé qui ferait perdre une analyse ou un entraînement en cours (rien n'est stocké).
 - Une page jamais contrôlée par le service worker (première visite) ne reçoit pas l'événement de prise de contrôle : un rechargement simple suit au bout de 2 s si besoin.
+
+---
+
+## 2026-10-04 : licence, mentions légales et confidentialité
+
+En vue d'un partage public :
+
+- **Fichier `LICENSE` (GPL-3.0)**, texte officiel de gnu.org. Comme le JavaScript et le WASM sont envoyés aux visiteurs, c'est une distribution au sens de la GPL : le code source doit leur être accessible. Le pied de page affiche donc « Code source (GPL-3.0) », un lien vers le dépôt public, et `main` correspond à la version déployée.
+- **Pied de page** : « Projet indépendant, sans lien avec Lichess ou Chess.com ». On cite les marques sans utiliser leurs logos.
+- **Page `/legal`** (en anglais et en français) :
+  - **éditeur** : site personnel non professionnel, donc anonyme comme l'autorise la LCEN (art. 6), avec contact par les issues GitHub ;
+  - **hébergeur** : Render Services, Inc. ;
+  - **confidentialité** : aucun compte, cookie, mesure d'audience ni publicité ; liste de ce qui est stocké localement ; liste des services tiers appelés (lichess.org, api.chess.com, images.chesscomfiles.com) et journaux de l'hébergeur ;
+  - **bouton « Supprimer mes données locales »** ;
+  - **licence et crédits** : chessground et chessops, Stockfish, pièces cburnett, Noto Sans, API.
+- Si on ajoute un jour de la publicité ou de la mesure d'audience : bannière de consentement et politique de confidentialité à revoir entièrement.

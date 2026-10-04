@@ -9,6 +9,7 @@ import {
 } from '@tanstack/react-router'
 import { TanStackRouterDevtools } from '@tanstack/react-router-devtools'
 import { Search } from 'lucide-react'
+import { Footer } from '@/components/Footer'
 import { LanguageSwitcher } from '@/components/LanguageSwitcher'
 import { UpdateBanner } from '@/components/UpdateBanner'
 import { AccountSearchForm } from '@/features/player/components/AccountSearchForm'
@@ -42,6 +43,7 @@ function RootLayout() {
       <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-6">
         <Outlet />
       </main>
+      <Footer />
       {import.meta.env.DEV && (
         <>
           <TanStackRouterDevtools position="bottom-left" />

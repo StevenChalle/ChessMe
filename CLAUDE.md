@@ -80,7 +80,8 @@ L'interface existe en **anglais (langue de base) et en français**. Langue initi
 ## Règles à respecter
 
 - **API Lichess : une seule requête à la fois**. Sur un 429, attendre 60 s. Ne jamais paralléliser les exports de parties.
-- Licence : chessground et chessops sont sous GPL-3, le projet doit donc rester open source (GPL-compatible).
+- Licence : **GPL-3.0** (fichier `LICENSE`), imposée par chessground, chessops et Stockfish. Le lien « Code source » du pied de page doit rester visible (`lib/project.ts`), et toute nouvelle dépendance doit être compatible avec la GPL.
+- **Vie privée** : tout nouveau stockage local (clé `localStorage`, base IndexedDB) ou tout nouveau service tiers appelé doit être **déclaré sur la page `/legal`**, et le stockage doit être **effacé par `clearLocalData()`** (`lib/localData.ts`).
 - Stockfish multi-thread exige les en-têtes COOP/COEP : à configurer à la fois dans Vite et chez l'hébergeur le jour où on l'ajoute (voir docs/decisions.md).
 - pnpm 11 refuse par défaut les versions publiées très récemment : c'est voulu, ne pas forcer.
 - **Déploiement** : Render, configuré dans `render.yaml`. Un push sur `main` redéploie le site une fois la CI verte. On travaille sur `develop` et on ne merge sur `main` que ce qui doit partir en ligne.

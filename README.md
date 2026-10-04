@@ -16,4 +16,4 @@ make         # liste des commandes
 - [APIs](docs/apis.md)
 - [Feuille de route](docs/roadmap.md)
 
-Licence : GPL-3.0-or-later (imposée par chessground et chessops).
+Licence : [GPL-3.0](LICENSE), imposée par chessground, chessops et Stockfish. Projet indépendant, sans lien avec Lichess ou Chess.com.
