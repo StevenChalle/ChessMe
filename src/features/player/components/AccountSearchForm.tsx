@@ -1,5 +1,5 @@
 import { useNavigate } from '@tanstack/react-router'
-import { ArrowDown, ArrowLeft, ArrowRight, ArrowUp, Search } from 'lucide-react'
+import { ArrowDown, ArrowLeft, ArrowRight, Search } from 'lucide-react'
 import { useId, useState, type FormEvent, type ReactNode } from 'react'
 import { Button } from '@/components/ui/button'
 import type { ApiSource } from '@/lib/http'
@@ -13,7 +13,7 @@ const INPUT_CLASS =
 
 /**
  * One username per platform, either or both. Accounts may have different names:
- * a "same username" shortcut copies one field into the other, in either direction.
+ * a "same username" shortcut copies one field into the other.
  */
 export function AccountSearchForm({
   initial = {},
@@ -47,7 +47,6 @@ export function AccountSearchForm({
     setValues((current) => ({ ...current, [target]: current[otherSource(target)].trim() }))
   }
 
-  /** In the full form, each field gets its own button copying from the other one. */
   const canCopyInto = (target: ApiSource) => {
     const from = cleanUsername(values[otherSource(target)])
     return Boolean(from) && from !== cleanUsername(values[target])
@@ -59,19 +58,19 @@ export function AccountSearchForm({
     void navigate({ to: '/player', search: { lichess, chesscom } })
   }
 
-  const copyButton = (target: ApiSource) => (
+  // Full form: a single button on the Chess.com field copies the Lichess username above it.
+  const copyButton = (
     <Button
       type="button"
       variant="ghost"
       size="xs"
-      disabled={!canCopyInto(target)}
-      onClick={() => copyInto(target)}
-      title={`Même pseudo que sur ${SOURCE_LABELS[otherSource(target)]}`}
-      aria-label={`Utiliser le pseudo ${SOURCE_LABELS[otherSource(target)]} pour ${SOURCE_LABELS[target]}`}
+      disabled={!canCopyInto('chesscom')}
+      onClick={() => copyInto('chesscom')}
+      title="Même pseudo que sur Lichess"
+      aria-label="Utiliser le pseudo Lichess pour Chess.com"
       className="text-muted-foreground"
     >
-      {/* Lichess sits above Chess.com: the arrow points from the source field to this one */}
-      {target === 'chesscom' ? <ArrowDown /> : <ArrowUp />}
+      <ArrowDown />
       Même pseudo
     </Button>
   )
@@ -128,13 +127,12 @@ export function AccountSearchForm({
         value={values.lichess}
         onChange={setValue}
         autoFocus={autoFocus}
-        labelAside={copyButton('lichess')}
       />
       <UsernameInput
         source="chesscom"
         value={values.chesscom}
         onChange={setValue}
-        labelAside={copyButton('chesscom')}
+        labelAside={copyButton}
       />
       <div className="flex items-center gap-3 pt-1">
         <Button type="submit" size="lg" disabled={!canSubmit}>
