@@ -31,8 +31,9 @@ const arrow = (uci: string, brush: string): DrawShape => {
 
 /**
  * What the board shows. Before the position is solved, the player's tried move stays on the
- * board. Once solved with another move than the best, or once the solution is shown, the board
- * goes back to the position with arrows: best move (green), the game's move (red), theirs (blue).
+ * board, with the engine's reply in red after a miss. Once solved with another move than the
+ * best, or once the solution is shown, the board goes back to the position with arrows: best move
+ * (green), the game's move (red), theirs (blue).
  */
 function boardView(state: TrainingState, puzzle: Mistake) {
   const { status, tried, best } = state
@@ -40,7 +41,15 @@ function boardView(state: TrainingState, puzzle: Mistake) {
   const showsTried =
     tried !== undefined &&
     (status === 'checking' || status === 'wrong' || (status === 'solved' && (triedIsBest || !best)))
-  if (showsTried) return { fen: play(puzzle.fen, tried).fen, lastMove: tried, shapes: [] }
+  if (showsTried) {
+    // A miss shows how it gets punished: the engine's reply, in red.
+    const punishment = status === 'wrong' && state.triedReply
+    return {
+      fen: play(puzzle.fen, tried).fen,
+      lastMove: tried,
+      shapes: punishment ? [arrow(punishment, 'red')] : [],
+    }
+  }
 
   const shapes: DrawShape[] = []
   if (status === 'solved' || status === 'revealed') {
@@ -109,8 +118,8 @@ export function TrainingView({ mistakes, onExit }: { mistakes: Mistake[]; onExit
             const uci = boardMoveToUci(puzzle.fen, orig, dest)
             dispatch({ type: 'try', uci })
             coach.check(puzzle, uci).then(
-              ({ valid, afterCp }) =>
-                dispatch({ type: 'verdict', puzzleId: puzzle.id, valid, afterCp }),
+              ({ valid, afterCp, reply }) =>
+                dispatch({ type: 'verdict', puzzleId: puzzle.id, valid, afterCp, reply }),
               () => setEngineFailed(true),
             )
           },

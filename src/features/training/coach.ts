@@ -4,8 +4,8 @@ import { Stockfish } from '@/lib/engine/stockfish'
 import type { EngineScore } from '@/lib/engine/uci'
 import { play, positionFromFen, sameMove } from './moves'
 
-/** A move and the evaluation after it (centipawns, player's side). */
-export type ScoredMove = { uci: string; cp: number }
+/** A move and the evaluation after it (centipawns, player's side), with the engine's reply. */
+export type ScoredMove = { uci: string; cp: number; reply?: string }
 
 /** Best play in a position, from the player's side, with the engine's top moves. */
 export type Reference = { bestMove: string; bestCp: number; lines: ScoredMove[] }
@@ -36,8 +36,11 @@ export function validMovesOf(
   }
 }
 
-/** A tried move: valid or not, and its evaluation (centipawns, player's side). */
-export type Verdict = { valid: boolean; afterCp: number }
+/**
+ * A tried move: valid or not, its evaluation (centipawns, player's side), and the engine's
+ * expected reply (UCI), which shows how a bad move gets punished.
+ */
+export type Verdict = { valid: boolean; afterCp: number; reply?: string }
 
 /**
  * The single engine used while replaying errors. Searches run one at a time, in order:
@@ -49,7 +52,7 @@ export class Coach {
   private engine: Promise<Stockfish> | undefined
   private queue: Promise<unknown> = Promise.resolve()
   private readonly references = new Map<string, Promise<Reference>>()
-  private readonly moveEvaluations = new Map<string, Promise<number>>()
+  private readonly moveEvaluations = new Map<string, Promise<ScoredMove>>()
   private terminated = false
   /** Bumped by terminate(): searches queued before it must not run on the next engine. */
   private generation = 0
@@ -72,12 +75,14 @@ export class Coach {
    */
   async check(mistake: Mistake, uci: string): Promise<Verdict> {
     const { bestMove, bestCp, lines } = await this.reference(mistake)
-    if (sameMove(mistake.fen, uci, bestMove)) return { valid: true, afterCp: bestCp }
+    if (sameMove(mistake.fen, uci, bestMove)) {
+      return { valid: true, afterCp: bestCp, reply: lines[0]?.reply }
+    }
     // One of the engine's top moves: already evaluated, instant answer.
     const ranked = lines.find((line) => sameMove(mistake.fen, uci, line.uci))
-    const afterCp = ranked ? ranked.cp : await this.evaluateMove(mistake, uci)
+    const { cp: afterCp, reply } = ranked ?? (await this.evaluateMove(mistake, uci))
     const valid = !sameMove(mistake.fen, uci, mistake.played.uci) && isValidMove(bestCp, afterCp)
-    return { valid, afterCp }
+    return { valid, afterCp, reply }
   }
 
   /**
@@ -85,17 +90,17 @@ export class Coach {
    * it again costs nothing. Searched from the same position as the reference, restricted to this
    * move, with the budget of one reference line: both evaluations are comparable.
    */
-  private evaluateMove(mistake: Mistake, uci: string): Promise<number> {
+  private evaluateMove(mistake: Mistake, uci: string): Promise<ScoredMove> {
     const after = play(mistake.fen, uci)
     const key = `${mistake.id}:${after.move!.uci}`
     let evaluation = this.moveEvaluations.get(key)
     if (!evaluation) {
       evaluation =
         after.finalCp !== undefined
-          ? Promise.resolve(forColor(after.finalCp, mistake.color))
+          ? Promise.resolve({ uci: after.move!.uci, cp: forColor(after.finalCp, mistake.color) })
           : this.search(mistake.fen, mistake.color, REFERENCE_NODES / REFERENCE_LINES, 1, [
               after.move!.uci,
-            ]).then(({ cp }) => cp)
+            ]).then(({ cp, lines }) => ({ uci: after.move!.uci, cp, reply: lines[0]?.reply }))
       this.moveEvaluations.set(key, evaluation)
       // A failed search is not worth remembering.
       evaluation.catch(() => this.moveEvaluations.delete(key))
@@ -143,7 +148,11 @@ export class Coach {
       return {
         bestMove,
         cp: toPlayer(score),
-        lines: lines.map((line) => ({ uci: line.move, cp: toPlayer(line.score) })),
+        lines: lines.map((line) => ({
+          uci: line.move,
+          cp: toPlayer(line.score),
+          reply: line.reply,
+        })),
       }
     })
     // A failed search must not block the next ones.

@@ -196,5 +196,6 @@
   "history_col_rating": "Elo",
   "history_casual": "Amicale",
   "history_no_games": "Aucune partie trouvée.",
-  "history_failed": "Impossible de charger les parties."
+  "history_failed": "Impossible de charger les parties.",
+  "training_engine_reply": "Le moteur répond"
 }

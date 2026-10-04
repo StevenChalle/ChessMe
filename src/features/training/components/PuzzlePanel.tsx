@@ -1,3 +1,4 @@
+import type { Color } from 'chessops'
 import { ArrowRight, Check, Lightbulb, LoaderCircle, RotateCcw, Shuffle, X } from 'lucide-react'
 import { useState, type PointerEvent, type ReactNode } from 'react'
 import { Button } from '@/components/ui/button'
@@ -5,13 +6,13 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { ExternalLink } from '@/features/player/components/ExternalLink'
 import type { Mistake } from '@/features/review/analyze'
 import { SideSquare } from '@/features/games/components/GamesTable'
-import { isValidMove } from '@/features/review/errors'
+import { forColor, isValidMove } from '@/features/review/errors'
 import { formatNumber } from '@/lib/format'
 import { cn } from '@/lib/utils'
 import { m } from '@/paraglide/messages'
 import { evalDelta, formatDelta, formatEval } from '../evaluation'
 import { REFERENCE_LINES } from '../coach'
-import { lichessAnalysisUrl, sameMove, sanOf } from '../moves'
+import { lichessAnalysisUrl, play, sameMove, sanOf } from '../moves'
 import type { TrainingAction, TrainingState } from '../session'
 
 type Tone = 'good' | 'bad' | 'solution'
@@ -58,7 +59,7 @@ function Feedback({
 }
 
 /** An evaluation, as a small chip. The target of a transition stands out, its origin less. */
-function EvalChip({ cp, muted }: { cp: number; muted?: boolean }) {
+function EvalChip({ cp, color, muted }: { cp: number; color: Color; muted?: boolean }) {
   return (
     <span
       className={cn(
@@ -68,7 +69,7 @@ function EvalChip({ cp, muted }: { cp: number; muted?: boolean }) {
           : 'bg-background/70 font-medium text-font-clear',
       )}
     >
-      {formatEval(cp)}
+      {formatEval(forColor(cp, color))}
     </span>
   )
 }
@@ -82,18 +83,24 @@ function EvalChip({ cp, muted }: { cp: number; muted?: boolean }) {
 function MoveLine({
   label,
   san,
+  color,
   cp,
   baseCp,
   showDelta = true,
 }: {
   label: string
   san: string
+  /** The player's color: evaluations are shown from White's side, as usual in chess */
+  color: Color
+  /** From the player's side */
   cp?: number
   baseCp?: number
   showDelta?: boolean
 }) {
   const delta =
-    showDelta && cp !== undefined && baseCp !== undefined ? evalDelta(baseCp, cp) : undefined
+    showDelta && cp !== undefined && baseCp !== undefined
+      ? evalDelta(forColor(baseCp, color), forColor(cp, color))
+      : undefined
   return (
     <div className="space-y-0.5">
       <p className="text-sm text-muted-foreground">{label}</p>
@@ -103,18 +110,18 @@ function MoveLine({
           <span className="ml-auto flex items-center gap-1.5">
             {baseCp !== undefined && (
               <>
-                <EvalChip cp={baseCp} muted />
+                <EvalChip cp={baseCp} color={color} muted />
                 <ArrowRight aria-hidden className="size-3.5 text-muted-foreground" />
               </>
             )}
-            <EvalChip cp={cp} />
+            <EvalChip cp={cp} color={color} />
             {delta !== undefined && (
               <span
                 className={cn(
                   'text-sm font-medium tabular-nums',
                   isValidMove(baseCp!, cp) ? 'text-good' : 'text-bad',
                 )}
-                title={m.training_delta_title({ eval: formatEval(baseCp!) })}
+                title={m.training_delta_title({ eval: formatEval(forColor(baseCp!, color)) })}
               >
                 ({formatDelta(delta)})
               </span>
@@ -184,7 +191,7 @@ function ValidMoves({ state, puzzle }: { state: TrainingState; puzzle: Mistake }
                     <span className="text-xs text-muted-foreground">{m.training_best_tag()}</span>
                   )}
                 </span>
-                <EvalChip cp={move.cp} />
+                <EvalChip cp={move.cp} color={puzzle.color} />
               </li>
             )
           })}
@@ -222,7 +229,7 @@ function Prompt({
       {positionCp !== undefined && (
         <p className="flex items-center gap-2 pt-1 text-sm text-muted-foreground">
           {m.training_position_eval()}
-          <EvalChip cp={positionCp} />
+          <EvalChip cp={positionCp} color={puzzle.color} />
         </p>
       )}
     </div>
@@ -270,6 +277,7 @@ export function PuzzlePanel({
   const foundBest = Boolean(tried && best && sameMove(puzzle.fen, tried, best))
   const yourMove = tried && (
     <MoveLine
+      color={puzzle.color}
       label={m.training_your_move()}
       san={sanOf(puzzle.fen, tried)}
       cp={triedCp}
@@ -280,6 +288,7 @@ export function PuzzlePanel({
   )
   const bestMove = best && (
     <MoveLine
+      color={puzzle.color}
       label={m.training_best_move()}
       san={sanOf(puzzle.fen, best)}
       cp={bestCp}
@@ -298,6 +307,14 @@ export function PuzzlePanel({
               ? m.training_wrong_game_move()
               : m.training_wrong_hint()}
           </p>
+          {tried && state.triedReply && (
+            <p className="flex items-center gap-2 text-base text-font-clear">
+              <span className="text-sm text-muted-foreground">{m.training_engine_reply()}</span>
+              <span className="text-xl font-semibold text-bad">
+                {sanOf(play(puzzle.fen, tried).fen, state.triedReply)}
+              </span>
+            </p>
+          )}
         </Feedback>
         <div className="grid grid-cols-2 gap-2">
           <Button
@@ -347,6 +364,7 @@ export function PuzzlePanel({
       <div className={cn('space-y-3', APPEAR)}>
         <div className="px-1">
           <MoveLine
+            color={puzzle.color}
             label={m.training_game_move()}
             san={puzzle.played.san}
             cp={puzzle.afterCp}

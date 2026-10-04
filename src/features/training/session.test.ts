@@ -49,6 +49,13 @@ describe('trainingReducer', () => {
       { type: 'verdict', puzzleId: 'a', valid: false, afterCp: 0 },
     )
     expect(state.status).toBe('wrong')
+    const withReply = run(
+      start(),
+      { type: 'try', uci: 'e2e4' },
+      { type: 'verdict', puzzleId: 'a', valid: false, afterCp: -200, reply: 'd8h4' },
+    )
+    expect(withReply.triedReply).toBe('d8h4')
+    expect(run(withReply, { type: 'retry' }).triedReply).toBeUndefined()
     const solved = run(
       state,
       { type: 'retry' },

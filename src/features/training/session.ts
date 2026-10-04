@@ -25,6 +25,8 @@ export type TrainingState = {
   tried?: string
   /** Evaluation after the tried move (centipawns, player's side), once checked */
   triedCp?: number
+  /** The engine's expected reply to the tried move (UCI), once checked */
+  triedReply?: string
   /** Engine's best move for the current position (UCI) and its evaluation, once known */
   best?: string
   bestCp?: number
@@ -39,7 +41,7 @@ export type TrainingState = {
 
 export type TrainingAction =
   | { type: 'try'; uci: string }
-  | { type: 'verdict'; puzzleId: string; valid: boolean; afterCp: number }
+  | { type: 'verdict'; puzzleId: string; valid: boolean; afterCp: number; reply?: string }
   | {
       type: 'best'
       puzzleId: string
@@ -91,6 +93,7 @@ export function trainingReducer(state: TrainingState, action: TrainingAction): T
         ...state,
         status: action.valid ? 'solved' : 'wrong',
         triedCp: action.afterCp,
+        triedReply: action.reply,
         validMoves: action.valid
           ? withMove(state.validMoves, puzzle.fen, { uci: state.tried!, cp: action.afterCp })
           : state.validMoves,
@@ -109,7 +112,13 @@ export function trainingReducer(state: TrainingState, action: TrainingAction): T
       }
     case 'retry':
       if (state.status !== 'wrong') return state
-      return { ...state, status: 'thinking', tried: undefined, triedCp: undefined }
+      return {
+        ...state,
+        status: 'thinking',
+        tried: undefined,
+        triedCp: undefined,
+        triedReply: undefined,
+      }
     case 'reveal':
       if (state.status !== 'wrong' || !state.best) return state
       return {
@@ -117,11 +126,18 @@ export function trainingReducer(state: TrainingState, action: TrainingAction): T
         status: 'revealed',
         tried: undefined,
         triedCp: undefined,
+        triedReply: undefined,
         outcome: state.outcome ?? 'revealed',
       }
     case 'explore':
       if (state.status !== 'solved' && state.status !== 'revealed') return state
-      return { ...state, status: 'thinking', tried: undefined, triedCp: undefined }
+      return {
+        ...state,
+        status: 'thinking',
+        tried: undefined,
+        triedCp: undefined,
+        triedReply: undefined,
+      }
     case 'next': {
       // Once settled, the player may move on from any state, even while exploring.
       if (!state.outcome) return state
@@ -134,6 +150,7 @@ export function trainingReducer(state: TrainingState, action: TrainingAction): T
         attempts: 0,
         tried: undefined,
         triedCp: undefined,
+        triedReply: undefined,
         best: undefined,
         bestCp: undefined,
         validMoves: undefined,

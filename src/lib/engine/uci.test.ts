@@ -7,7 +7,14 @@ describe('parseInfo', () => {
       parseInfo(
         'info depth 12 seldepth 18 multipv 1 score cp 34 nodes 100234 nps 812000 time 123 pv e2e4 e7e5',
       ),
-    ).toEqual({ depth: 12, multipv: 1, score: { cp: 34 }, nodes: 100234, pv: 'e2e4' })
+    ).toEqual({
+      depth: 12,
+      multipv: 1,
+      score: { cp: 34 },
+      nodes: 100234,
+      pv: 'e2e4',
+      reply: 'e7e5',
+    })
   })
 
   it('reads a mate score, negative when the side to move gets mated', () => {

@@ -14,9 +14,14 @@ export type InfoLine = {
   bound?: boolean
   /** First move of the principal variation (UCI) */
   pv?: string
+  /** Second move of the principal variation: the expected reply to `pv` */
+  reply?: string
 }
 
 const NUMBER_FIELDS = ['depth', 'multipv', 'nodes'] as const
+
+/** e2e4, e7e8q */
+const UCI_MOVE = /^[a-h][1-8][a-h][1-8][qrbn]?$/
 
 export function parseInfo(line: string): InfoLine | undefined {
   if (!line.startsWith('info ')) return undefined
@@ -24,9 +29,11 @@ export function parseInfo(line: string): InfoLine | undefined {
   const info: InfoLine = {}
   for (let i = 1; i < tokens.length; i++) {
     const token = tokens[i]!
-    // The principal variation runs to the end of the line: only its first move matters here.
+    // The principal variation runs to the end of the line: only its first two moves matter here.
     if (token === 'pv') {
-      if (tokens[i + 1]) info.pv = tokens[i + 1]
+      const [first, second] = tokens.slice(i + 1, i + 3)
+      if (first && UCI_MOVE.test(first)) info.pv = first
+      if (info.pv && second && UCI_MOVE.test(second)) info.reply = second
       break
     }
     if (token === 'string') break

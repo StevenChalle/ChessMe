@@ -196,5 +196,6 @@
   "history_col_rating": "Rating",
   "history_casual": "Casual",
   "history_no_games": "No games found.",
-  "history_failed": "Couldn't load the games."
+  "history_failed": "Couldn't load the games.",
+  "training_engine_reply": "The engine replies"
 }

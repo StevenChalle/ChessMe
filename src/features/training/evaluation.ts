@@ -2,8 +2,8 @@ import { MATE_CP } from '@/features/review/errors'
 import { formatSignedTenths } from '@/lib/format'
 
 /**
- * Evaluations shown while training, in pawns from the player's side: "+1.5", "−0.3".
- * Mates (±MATE_CP) read "+#" (the player mates) or "-#" (the player gets mated).
+ * Evaluations shown while training, in pawns from White's side as usual in chess: "+1.5" White
+ * is better, "-0.3" Black is. Mates (±MATE_CP) read "+#" (White mates) or "-#" (Black mates).
  */
 export function formatEval(cp: number): string {
   if (Math.abs(cp) >= MATE_CP) return cp > 0 ? '+#' : '-#'

@@ -12,8 +12,8 @@ export type Evaluation = {
   nodes: number
   /** UCI, castling as the king move (e1g1) */
   bestMove: string
-  /** With MultiPV: the best lines, best first, each with its first move and score */
-  lines: { move: string; score: EngineScore }[]
+  /** With MultiPV: the best lines, best first, each with its first move, the expected reply and the score */
+  lines: { move: string; reply?: string; score: EngineScore }[]
 }
 
 export class EngineTerminatedError extends Error {
@@ -83,7 +83,7 @@ export class Stockfish {
     }
     // Lines by depth, then by rank: a search stopped mid-iteration mixes two depths, where the
     // same move can show up at two ranks. Only a complete iteration is consistent.
-    type Line = { move: string; score: EngineScore; nodes: number }
+    type Line = { move: string; reply?: string; score: EngineScore; nodes: number }
     const byDepth = new Map<number, Map<number, Line>>()
     let bestMove: string | undefined
     this.worker.postMessage(`position fen ${fen}`)
@@ -93,7 +93,12 @@ export class Stockfish {
       if (info?.score && info.pv && !info.bound) {
         const depth = info.depth ?? 0
         const lines = byDepth.get(depth) ?? new Map<number, Line>()
-        lines.set(info.multipv ?? 1, { move: info.pv, score: info.score, nodes: info.nodes ?? 0 })
+        lines.set(info.multipv ?? 1, {
+          move: info.pv,
+          reply: info.reply,
+          score: info.score,
+          nodes: info.nodes ?? 0,
+        })
         byDepth.set(depth, lines)
       }
       bestMove = parseBestMove(line)
@@ -107,7 +112,7 @@ export class Stockfish {
       nodes: best.nodes,
       // From the same iteration as the score (the final "bestmove" may come from a partial one).
       bestMove: best.move,
-      lines: lines.map(({ move, score }) => ({ move, score })),
+      lines: lines.map(({ move, reply, score }) => ({ move, reply, score })),
     }
   }
 
