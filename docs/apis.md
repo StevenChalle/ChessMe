@@ -38,7 +38,7 @@
 - Lecture seule, sans authentification, données publiques.
 - `GET https://api.chess.com/pub/player/{username}` (profil), `/stats` (état **actuel** seulement, pas d'historique), `/games/archives` (liste des mois), `/games/{YYYY}/{MM}` (ou `/pgn`).
 - Toute la carrière est accessible, mois par mois. La courbe d'Elo doit être reconstruite à partir des parties.
-- Données en cache, donc avec quelques heures de retard. **Faire les requêtes en série** (le parallèle provoque des 429).
+- Données en cache : la plupart des endpoints se rafraîchissent **au plus une fois toutes les 12 h**, certains toutes les 24 h. Une partie récente peut donc manquer, ce que l'onglet Chess.com signale discrètement. **Faire les requêtes en série** (le parallèle provoque des 429).
 - Synchro : ne récupérer à nouveau que le mois en cours.
 - CORS : `access-control-allow-origin: *`. Le navigateur interdit de définir le `User-Agent` : on reste donc strictement en série.
 - Les pseudos sont **redirigés en 301 vers leur version en minuscules** : le client met le pseudo en minuscules avant d'appeler l'API. La casse d'affichage se trouve dans l'URL du profil (`url`).

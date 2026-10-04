@@ -232,5 +232,6 @@
   "legal_credits_font": "font, SIL Open Font License",
   "legal_credits_data": "Data: Lichess API and Chess.com Published-Data API.",
   "legal_trademarks": "Lichess and Chess.com are trademarks of their respective owners. ChessMe is not affiliated with, endorsed or sponsored by them.",
-  "legal_warranty": "Provided as is, without warranty, as stated by the license."
+  "legal_warranty": "Provided as is, without warranty, as stated by the license.",
+  "chesscom_data_delay": "Chess.com updates this data at most every 12 to 24 hours: your latest games may not show up yet."
 }

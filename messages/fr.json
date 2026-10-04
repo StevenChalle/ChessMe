@@ -232,5 +232,6 @@
   "legal_credits_font": "police, licence SIL Open Font",
   "legal_credits_data": "Données : API de Lichess et Published-Data API de Chess.com.",
   "legal_trademarks": "Lichess et Chess.com sont des marques de leurs propriétaires respectifs. ChessMe n'est ni affilié, ni approuvé, ni sponsorisé par eux.",
-  "legal_warranty": "Fourni tel quel, sans garantie, comme le prévoit la licence."
+  "legal_warranty": "Fourni tel quel, sans garantie, comme le prévoit la licence.",
+  "chesscom_data_delay": "Chess.com met à jour ces données au plus toutes les 12 à 24 heures : tes dernières parties peuvent ne pas encore apparaître."
 }

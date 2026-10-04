@@ -111,6 +111,8 @@ function ChessComPlayerDetails({ player: { profile, stats } }: { player: ChessCo
           </dl>
         </Panel>
       )}
+
+      <p className="text-xs text-muted-foreground">{m.chesscom_data_delay()}</p>
     </div>
   )
 }

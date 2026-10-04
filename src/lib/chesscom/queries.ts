@@ -11,7 +11,7 @@ export function chessComPlayerQueryOptions(username: string | undefined) {
   return queryOptions({
     queryKey: chessComKeys.player(username ?? ''),
     queryFn: username ? ({ signal }) => orNullIfNotFound(fetchPlayer(username, signal)) : skipToken,
-    // Chess.com serves cached data that lags by a few hours anyway.
+    // Chess.com refreshes its published data at most every 12 to 24 hours anyway.
     staleTime: 15 * 60_000,
     retry: shouldRetry,
   })
