@@ -86,5 +86,7 @@
         "countPlural=other": "{formatted} parties"
       }
     }
-  ]
+  ],
+  "recent_searches": "Recherches récentes",
+  "recent_remove": "Retirer {names} des recherches récentes"
 }

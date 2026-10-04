@@ -101,3 +101,12 @@ Remplace l'hypothèse du « même pseudo partout ».
 - **Dépendance réseau au build** : Paraglide télécharge son plugin de format de messages depuis jsDelivr (`project.inlang/settings.json`) et le met en cache dans `project.inlang/cache` (git-ignoré). Un build sans réseau, et sans ce cache, échoue.
 - Formats (`lib/format.ts`) : les objets `Intl` suivent la langue courante et sont mis en cache par langue. Les listes « a ou b » passent par `Intl.ListFormat`, les guillemets par un message (`“…”` en anglais, `« … »` en français).
 - Le manifeste PWA et la balise meta description sont en anglais. `<html lang>` est mis à jour au démarrage.
+
+---
+
+## 2026-10-04 : recherches récentes
+
+- L'accueil affiche les **3 dernières recherches**. Un clic rouvre le profil, et une croix retire une entrée. Jusqu'à 10 recherches sont conservées, pour pouvoir afficher plus tard une liste plus longue.
+- **Stockage : `localStorage`** (`chessme:recent-searches`), et non Dexie. C'est une petite préférence propre à chaque navigateur, lue sans délai, donc pas d'état de chargement ni de clignotement sur l'accueil. Dexie reste réservé aux données volumineuses (parties importées). Le code tolère un stockage absent ou corrompu, et les onglets restent synchronisés grâce à l'événement `storage`.
+- **Enregistrement depuis la page profil, une fois au moins un compte trouvé.** On ne garde que les comptes trouvés, avec la casse officielle du pseudo : une faute de frappe n'est jamais enregistrée, et une paire avec un mauvais pseudo Chess.com est mémorisée sans lui. Les visites par lien ou favori comptent aussi.
+- Les doublons sont détectés sans tenir compte de la casse, sur la paire (Lichess, Chess.com). Une recherche répétée remonte en tête de liste.

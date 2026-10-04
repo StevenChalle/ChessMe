@@ -1,6 +1,8 @@
 import { createFileRoute, Outlet } from '@tanstack/react-router'
+import { useEffect } from 'react'
 import { PlayerHeader } from '@/features/player/components/PlayerHeader'
 import { PlayerTabs } from '@/features/player/components/PlayerTabs'
+import { saveRecentSearch } from '@/features/player/recentSearches'
 import { hasAnyUsername, validatePlayerSearch } from '@/features/player/search'
 import { usePlayerAccounts } from '@/features/player/usePlayerAccounts'
 import { chessComPlayerQueryOptions } from '@/lib/chesscom/queries'
@@ -25,6 +27,18 @@ export const Route = createFileRoute('/player')({
 function PlayerLayout() {
   const usernames = Route.useSearch()
   const { states, linked, accounts, noAccount } = usePlayerAccounts(usernames)
+
+  // Remember the search once at least one account is found, keeping only found accounts
+  // (with their official casing) so typos never end up in the recent searches.
+  const foundLichess =
+    states.lichess.status === 'found' ? states.lichess.account.username : undefined
+  const foundChessCom =
+    states.chesscom.status === 'found' ? states.chesscom.account.username : undefined
+  useEffect(() => {
+    if (foundLichess || foundChessCom) {
+      saveRecentSearch({ lichess: foundLichess, chesscom: foundChessCom })
+    }
+  }, [foundLichess, foundChessCom])
 
   if (!hasAnyUsername(usernames)) {
     return <p className="text-muted-foreground">{m.player_need_username()}</p>

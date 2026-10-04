@@ -7,7 +7,8 @@
 - [x] Profil croisé Lichess + Chess.com : vue d'ensemble combinée, plus un onglet par plateforme
 - [x] Configuration du déploiement Render (`render.yaml`)
 - [x] Un pseudo par plateforme (comptes aux noms différents), avec recopie rapide
-- [x] Interface bilingue anglais (par défaut) / français, choix mémorisé
+- [x] Interface bilingue anglais / français (langue du navigateur par défaut), choix mémorisé
+- [x] Recherches récentes sur l'accueil (3 dernières, cliquables)
 
 ## V1 : à cadrer
 
@@ -23,5 +24,5 @@
 - Analyse des parties avec Stockfish WASM
 - Entraînement sur ses propres erreurs (rejouer les positions perdues ou les gaffes)
 - Import des parties Chess.com (archives mensuelles)
-- Mémoriser les comptes liés (profil « moi » dans Dexie)
+- Mémoriser les comptes liés (profil « moi »), à distinguer des recherches récentes
 - Backend, si comptes ou synchro entre appareils
