@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { ratedExportParams, readNdjson } from './client'
+import { exportParams, readNdjson } from './client'
 
 function streamOf(...chunks: string[]): ReadableStream<Uint8Array<ArrayBuffer>> {
   const encoder = new TextEncoder()
@@ -34,18 +34,24 @@ describe('readNdjson', () => {
   })
 })
 
-describe('ratedExportParams', () => {
-  it('asks for rated games of the given perfs, with evaluations', () => {
-    expect(ratedExportParams({ perfTypes: ['ultraBullet', 'bullet'] })).toEqual({
-      rated: 'true',
+describe('exportParams', () => {
+  it('asks for the given perfs, rated and casual, with evaluations', () => {
+    expect(exportParams({ perfTypes: ['ultraBullet', 'bullet'] })).toEqual({
       perfType: 'ultraBullet,bullet',
       evals: 'true',
     })
   })
 
-  it('adds the optional limit, dates and color', () => {
+  it('adds the optional limit, dates, color and rated filter', () => {
     expect(
-      ratedExportParams({ perfTypes: ['blitz'], max: 50, since: 1, until: 2, color: 'black' }),
+      exportParams({
+        perfTypes: ['blitz'],
+        max: 50,
+        since: 1,
+        until: 2,
+        color: 'black',
+        rated: true,
+      }),
     ).toEqual({
       rated: 'true',
       perfType: 'blitz',
@@ -55,5 +61,11 @@ describe('ratedExportParams', () => {
       until: '2',
       color: 'black',
     })
+  })
+})
+
+describe('exportParams, casual only', () => {
+  it('asks for casual games', () => {
+    expect(exportParams({ perfTypes: ['blitz'], rated: false }).rated).toBe('false')
   })
 })

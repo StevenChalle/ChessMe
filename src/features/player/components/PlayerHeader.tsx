@@ -8,7 +8,7 @@ import { SourceDot } from './SourceBadge'
 
 /**
  * Name, titles, avatar and country, gathered from whichever accounts were found; `actions` on the
- * right. With `profileLink`, the name leads back to the profile of these accounts.
+ * right. The name always leads to the profile of these accounts (`profileLink`).
  */
 export function PlayerHeader({
   accounts,
@@ -17,7 +17,7 @@ export function PlayerHeader({
 }: {
   accounts: AccountSummary[]
   actions?: ReactNode
-  profileLink?: PlayerUsernames
+  profileLink: PlayerUsernames
 }) {
   const avatarUrl = accounts.find((account) => account.avatarUrl)?.avatarUrl
   const country = accounts.map((account) => countryName(account.countryCode)).find(Boolean)
@@ -52,13 +52,9 @@ export function PlayerHeader({
                 {account.title}
               </span>
             ))}
-            {profileLink ? (
-              <Link to="/player" search={profileLink} className="hover:text-primary">
-                {main?.username}
-              </Link>
-            ) : (
-              main?.username
-            )}
+            <Link to="/player" search={profileLink} className="hover:text-primary">
+              {main?.username}
+            </Link>
           </h1>
           <p className="flex flex-wrap items-center gap-x-3 text-sm text-muted-foreground">
             {country && <span>{country}</span>}

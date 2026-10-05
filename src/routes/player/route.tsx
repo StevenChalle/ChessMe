@@ -55,6 +55,7 @@ function PlayerLayout() {
     <div className="space-y-6">
       <PlayerHeader
         accounts={accounts}
+        profileLink={usernames}
         actions={
           reviewableAccounts(accounts).accounts.length > 0 && (
             <ReviewButtons usernames={usernames} />

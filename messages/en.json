@@ -192,7 +192,7 @@
   "history_next": "Older games",
   "history_range": "Games {from}–{to}",
   "history_col_rating": "Rating",
-  "history_no_games": "No rated games found.",
+  "history_no_games": "No games found.",
   "history_failed": "Couldn't load the games.",
   "training_engine_reply": "The engine replies",
   "update_available": "A new version of ChessMe is available.",
@@ -295,5 +295,11 @@
   "confirm_leave_title": "Leave the analysis?",
   "confirm_leave_body": "The analysis and the training in progress will be lost: nothing is saved yet.",
   "confirm_leave_action": "Leave",
-  "analysis_unavailable": "No account to analyse: closed accounts have no games."
+  "analysis_unavailable": "No account to analyse: closed accounts have no games.",
+  "ai_opponent": "Stockfish level {level}",
+  "setup_ratings": "Game type",
+  "rating_rated": "Rated",
+  "rating_casual": "Casual",
+  "history_casual": "Casual",
+  "preset_today": "Today"
 }

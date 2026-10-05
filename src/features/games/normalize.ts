@@ -39,11 +39,11 @@ export type GameSummary = {
 }
 
 /**
- * The games ChessMe works with, in the review as in the history: rated standard chess only
- * (no casual games, no variants). One rule for both, so they always list the same games.
+ * The games ChessMe works with, in the review as in the history: standard chess, rated or casual
+ * (no variants). The review can then keep only rated or only casual games (selection.ts).
  */
-export function isRatedStandardGame(game: GameSummary): boolean {
-  return game.rated && game.variant === undefined
+export function isStandardGame(game: GameSummary): boolean {
+  return game.variant === undefined
 }
 
 // --- Lichess ---
@@ -94,7 +94,13 @@ export function summarizeLichessGame(game: LichessGame, username: string): GameS
         ? player.rating + (player.ratingDiff ?? 0)
         : undefined,
     ratingDiff: game.rated ? player.ratingDiff : undefined,
-    opponent: { name: opponent.user?.name ?? '?', rating: opponent.rating },
+    // Games against the computer have no opponent account, only its level.
+    opponent: {
+      name:
+        opponent.user?.name ??
+        (opponent.aiLevel !== undefined ? m.ai_opponent({ level: opponent.aiLevel }) : '?'),
+      rating: opponent.rating,
+    },
     result: !game.winner ? 'draw' : game.winner === color ? 'win' : 'loss',
   }
 }

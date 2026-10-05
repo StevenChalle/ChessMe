@@ -1,6 +1,6 @@
 import {
   byNewest,
-  isRatedStandardGame,
+  isStandardGame,
   summarizeChessComGame,
   summarizeLichessGame,
   type GameSummary,
@@ -11,7 +11,7 @@ import type { LichessGame } from '@/lib/lichess/types'
 
 /**
  * The game history of linked accounts, all platforms together, newest first, one page at a
- * time. Same games as the review: rated standard chess only (isRatedStandardGame). Nothing is stored: each platform keeps a cursor (Lichess: a date; Chess.com: the monthly
+ * time. Same games as the review: standard chess, rated or casual (isStandardGame). Nothing is stored: each platform keeps a cursor (Lichess: a date; Chess.com: the monthly
  * archives left) and a buffer of games fetched but not shown yet, and pages are merged by date.
  */
 
@@ -63,7 +63,7 @@ export function startFeed(accounts: HistoryAccount[]): FeedState {
 }
 
 const keep = (game: GameSummary | undefined): GameSummary[] =>
-  game && isRatedStandardGame(game) ? [game] : []
+  game && isStandardGame(game) ? [game] : []
 
 /** Fills an empty buffer, fetching until some game shows up or the platform has no more. */
 async function refill(feed: SourceFeed, fetchers: FeedFetchers, signal?: AbortSignal) {

@@ -2,14 +2,14 @@ import type { Category } from '@/features/player/summary'
 import { fetchArchiveGames, fetchArchives } from '@/lib/chesscom/client'
 import type { ChessComGame } from '@/lib/chesscom/types'
 import type { ApiSource } from '@/lib/http'
-import { exportRatedGames, type RatedExportOptions } from '@/lib/lichess/client'
+import { exportStandardGames, type GameExportOptions } from '@/lib/lichess/client'
 import type { LichessGame } from '@/lib/lichess/types'
 import { fromChessComGame, fromLichessGame, latestGames, type ReviewGame } from './games'
 import { ALL_RESULTS, matchesSelection, type GameSelection } from './selection'
 
 /**
  * Finds the games of the advanced review: the APIs filter what they can (Lichess: time controls,
- * color, start dates; Chess.com: months), matchesSelection checks everything else.
+ * rated or casual, color, start dates; Chess.com: months), matchesSelection checks everything else.
  */
 
 export type ReviewAccount = { source: ApiSource; username: string }
@@ -24,7 +24,7 @@ export type FoundGames = {
 export type GameFetchers = {
   lichessExport: (
     username: string,
-    options: RatedExportOptions,
+    options: GameExportOptions,
     signal?: AbortSignal,
   ) => Promise<LichessGame[]>
   chessComArchives: (username: string, signal?: AbortSignal) => Promise<string[]>
@@ -32,7 +32,7 @@ export type GameFetchers = {
 }
 
 const API_FETCHERS: GameFetchers = {
-  lichessExport: exportRatedGames,
+  lichessExport: exportStandardGames,
   chessComArchives: fetchArchives,
   chessComMonth: fetchArchiveGames,
 }
@@ -57,9 +57,10 @@ async function findLichessGames(
   fetchers: GameFetchers,
   signal?: AbortSignal,
 ): Promise<ReviewGame[]> {
-  const base: RatedExportOptions = {
+  const base: GameExportOptions = {
     perfTypes: selection.categories.flatMap((category) => LICHESS_PERFS[category]),
     color: selection.colors.length === 1 ? selection.colors[0] : undefined,
+    rated: selection.ratings.length === 1 ? selection.ratings[0] === 'rated' : undefined,
   }
   const keep = (games: LichessGame[]) =>
     games.flatMap((game) => {

@@ -20,6 +20,7 @@ describe('parseReviewSettings', () => {
       saved({
         selection: {
           sources: ['chesscom'],
+          ratings: ['rated'],
           scope: { kind: 'range', from: 1, to: 2, preset: 'month' },
           categories: ['blitz'],
           colors: ['black'],
@@ -33,6 +34,7 @@ describe('parseReviewSettings', () => {
     expect(settings).toEqual({
       selection: {
         sources: ['chesscom'],
+        ratings: ['rated'],
         scope: { kind: 'range', from: 1, to: 2, preset: 'month' },
         categories: ['blitz'],
         colors: ['black'],

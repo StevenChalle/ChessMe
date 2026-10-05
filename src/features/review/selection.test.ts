@@ -40,8 +40,10 @@ describe('matchesSelection', () => {
     expect(matchesSelection(game(), all)).toBe(true)
   })
 
-  it('filters platform, time control, color and result', () => {
+  it('filters platform, rated or casual, time control, color and result', () => {
     expect(matchesSelection(game(), { ...all, sources: ['chesscom'] })).toBe(false)
+    expect(matchesSelection(game(), { ...all, ratings: ['casual'] })).toBe(false)
+    expect(matchesSelection(game({ rated: false }), { ...all, ratings: ['casual'] })).toBe(true)
     expect(matchesSelection(game(), { ...all, categories: ['bullet'] })).toBe(false)
     expect(matchesSelection(game(), { ...all, colors: ['black'] })).toBe(false)
     expect(matchesSelection(game(), { ...all, results: ['win', 'draw'] })).toBe(false)
@@ -65,6 +67,13 @@ describe('matchesSelection', () => {
 })
 
 describe('date presets', () => {
+  it('starts today at local midnight', () => {
+    const { from, to } = datePresetRange('today', NOW)
+    expect(to).toBe(NOW)
+    expect(new Date(from).getHours()).toBe(0)
+    expect(NOW - from).toBeLessThan(DAY)
+  })
+
   it('goes back a week, or calendar months, from now', () => {
     expect(datePresetRange('week', NOW)).toEqual({ from: NOW - 7 * DAY, to: NOW })
     expect(new Date(datePresetRange('month', NOW).from).getUTCMonth()).toBe(8)
@@ -83,6 +92,7 @@ describe('isSelectionValid', () => {
   it('needs something to look for', () => {
     expect(isSelectionValid(all)).toBe(true)
     expect(isSelectionValid({ ...all, sources: [] })).toBe(false)
+    expect(isSelectionValid({ ...all, ratings: [] })).toBe(false)
     expect(isSelectionValid({ ...all, categories: [] })).toBe(false)
     expect(isSelectionValid({ ...all, scope: { kind: 'latest', count: 0 } })).toBe(false)
     expect(isSelectionValid({ ...all, scope: { kind: 'range', from: 2, to: 1 } })).toBe(false)

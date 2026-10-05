@@ -81,8 +81,8 @@ describe('fromLichessGame', () => {
     expect(game?.serverCps).toEqual([20, -MATE_CP, undefined])
   })
 
-  it('skips unrated, variant and aborted games', () => {
-    expect(fromLichessGame(lichessGame({ rated: false }), 'alice')).toBeUndefined()
+  it('keeps casual games, skips variant and aborted games', () => {
+    expect(fromLichessGame(lichessGame({ rated: false }), 'alice')?.rated).toBe(false)
     expect(fromLichessGame(lichessGame({ variant: 'chess960' }), 'alice')).toBeUndefined()
     expect(fromLichessGame(lichessGame({ status: 'aborted' }), 'alice')).toBeUndefined()
   })
@@ -111,8 +111,8 @@ describe('fromChessComGame', () => {
     expect(fromChessComGame(game, 'alice')?.result).toBe('draw')
   })
 
-  it('skips unrated and variant games', () => {
-    expect(fromChessComGame(chessComGame({ rated: false }), 'bob')).toBeUndefined()
+  it('keeps casual games, skips variant games', () => {
+    expect(fromChessComGame(chessComGame({ rated: false }), 'bob')?.rated).toBe(false)
     expect(fromChessComGame(chessComGame({ rules: 'chess960' }), 'bob')).toBeUndefined()
   })
 })

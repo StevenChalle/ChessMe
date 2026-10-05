@@ -22,9 +22,15 @@ export function Board({ config, className }: BoardProps) {
 
   useEffect(() => {
     if (!elementRef.current) return
-    const api = Chessground(elementRef.current, config)
+    const element = elementRef.current
+    const api = Chessground(element, config)
     apiRef.current = api
+    // Chessground caches the board's size. Created while hidden (a tab not shown yet) it would
+    // measure 0×0 and miss every click: redraw whenever the size changes, shown again included.
+    const observer = new ResizeObserver(() => api.redrawAll())
+    observer.observe(element)
     return () => {
+      observer.disconnect()
       api.destroy()
       apiRef.current = null
     }
@@ -43,7 +49,13 @@ export function Board({ config, className }: BoardProps) {
   }, [config])
 
   return (
-    <div className={cn('aspect-square w-full', className)}>
+    <div
+      className={cn('aspect-square w-full', className)}
+      // Chessground also caches where the board is on screen, and only refreshes it on window
+      // resize or scroll. A layout shift (content above appearing or going away) would make clicks
+      // land on the wrong squares: forget the cached position before each press.
+      onPointerDownCapture={() => apiRef.current?.state.dom.bounds.clear()}
+    >
       <div ref={elementRef} className="size-full" />
     </div>
   )

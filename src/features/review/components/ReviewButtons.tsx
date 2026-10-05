@@ -29,21 +29,15 @@ export function ReviewButtons({ usernames }: { usernames: PlayerUsernames }) {
   )
 }
 
-/** Analysis page header: a new quick review, and replaying every error of the analysis. */
+/** Analysis page header: replaying every error of the analysis. */
 export function AnalysisActions() {
-  const { analysis, quickLast, train } = useAnalysisSession()
+  const { analysis, train } = useAnalysisSession()
   const mistakes =
     analysis.status === 'done' ? analysis.outcome.games.flatMap((game) => game.mistakes) : []
   return (
-    <div className="flex flex-wrap gap-2">
-      <Button size="lg" onClick={() => void quickLast()}>
-        <History data-icon="inline-start" />
-        {m.review_button_last()}
-      </Button>
-      <Button size="lg" disabled={mistakes.length === 0} onClick={() => void train(mistakes)}>
-        <Swords data-icon="inline-start" />
-        {m.training_start({ count: formatNumber(mistakes.length) })}
-      </Button>
-    </div>
+    <Button size="lg" disabled={mistakes.length === 0} onClick={() => void train(mistakes)}>
+      <Swords data-icon="inline-start" />
+      {m.training_start({ count: formatNumber(mistakes.length) })}
+    </Button>
   )
 }

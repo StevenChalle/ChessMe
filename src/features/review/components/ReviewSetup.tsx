@@ -1,17 +1,16 @@
 import type { Color } from 'chessops'
 import { LoaderCircle, RotateCcw, Search } from 'lucide-react'
-import { useId, type ReactNode } from 'react'
+import { useId, useState, type ReactNode } from 'react'
 import { Button } from '@/components/ui/button'
-import { Checkbox } from '@/components/ui/checkbox'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { Slider } from '@/components/ui/slider'
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group'
 import type { GameResult } from '@/features/games/normalize'
-import { SourceLabel } from '@/features/player/components/SourceBadge'
+import { SourceDot } from '@/features/player/components/SourceBadge'
 import { categoryLabel } from '@/features/player/sources'
-import { CATEGORIES, type Category } from '@/features/player/summary'
+import { CATEGORIES, SOURCE_LABELS, type Category } from '@/features/player/summary'
 import { formatNumber } from '@/lib/format'
 import type { ApiSource } from '@/lib/http'
 import { cn } from '@/lib/utils'
@@ -28,13 +27,16 @@ import {
 import type { ReviewAccount } from '../fetch'
 import {
   ALL_COLORS,
+  ALL_RATINGS,
   ALL_RESULTS,
   DATE_PRESETS,
   datePresetRange,
   isSelectionValid,
   LATEST_SHORTCUTS,
   type DatePreset,
+  type GameScope,
   type GameSelection,
+  type RatingKind,
 } from '../selection'
 import type { ReviewSettings } from '../settings'
 
@@ -42,11 +44,18 @@ import type { ReviewSettings } from '../settings'
 export type GameCounts = Partial<Record<ApiSource, Partial<Record<Category, number>>>>
 
 const PRESET_LABELS: Record<DatePreset, () => string> = {
+  today: m.preset_today,
   week: m.preset_week,
   month: m.preset_month,
   '3months': m.preset_3months,
   year: m.preset_year,
 }
+const RATING_LABELS: Record<RatingKind, () => string> = {
+  rated: m.rating_rated,
+  casual: m.rating_casual,
+}
+/** The count slider stops here (enough for the usual choices); the field takes any number. */
+const LATEST_SLIDER_MAX = 200
 const COLOR_LABELS: Record<Color, () => string> = { white: m.color_white, black: m.color_black }
 const RESULT_LABELS: Record<GameResult, () => string> = {
   win: m.result_wins,
@@ -120,6 +129,25 @@ export function ReviewSetup({
   )
   const { scope } = selection
   const valid = isSelectionValid(selection)
+  // Both ways of choosing games stay visible: the inactive one keeps its last values, dimmed,
+  // and using it makes it the active one.
+  const [lastLatest, setLastLatest] = useState(scope.kind === 'latest' ? scope.count : 10)
+  const [lastRange, setLastRange] = useState<Extract<GameScope, { kind: 'range' }>>(() =>
+    scope.kind === 'range'
+      ? scope
+      : { kind: 'range', preset: 'month', ...datePresetRange('month', Date.now()) },
+  )
+  const latest = scope.kind === 'latest' ? scope.count : lastLatest
+  const range = scope.kind === 'range' ? scope : lastRange
+  const setLatest = (count: number) => {
+    setLastLatest(count)
+    update({ scope: { kind: 'latest', count } })
+  }
+  const setRange = (next: Extract<GameScope, { kind: 'range' }>) => {
+    setLastRange(next)
+    update({ scope: next })
+  }
+  const sliderMax = total > 0 ? Math.min(total, LATEST_SLIDER_MAX) : LATEST_SLIDER_MAX
 
   return (
     <form
@@ -129,26 +157,22 @@ export function ReviewSetup({
         if (valid && !finding) onFind()
       }}
     >
-      <div className="grid gap-6 md:grid-cols-2">
+      <div className="grid gap-6 md:grid-cols-[minmax(0,1fr)_minmax(0,1.6fr)_minmax(0,1fr)]">
         <Section title={m.setup_platforms()}>
-          <div className="flex flex-wrap gap-4">
+          <ToggleGroup
+            type="multiple"
+            value={selection.sources}
+            onValueChange={(value) => update({ sources: value as ApiSource[] })}
+            className="flex-wrap"
+          >
             {accounts.map(({ source, username }) => (
-              <CheckboxField
-                key={source}
-                checked={selection.sources.includes(source)}
-                onChange={(checked) =>
-                  update({
-                    sources: checked
-                      ? [...selection.sources, source]
-                      : selection.sources.filter((item) => item !== source),
-                  })
-                }
-              >
-                <SourceLabel source={source} />
+              <ToggleGroupItem key={source} value={source} size="sm" className={CHIP_CLASS}>
+                <SourceDot source={source} />
+                {SOURCE_LABELS[source]}
                 <span className="text-muted-foreground">{username}</span>
-              </CheckboxField>
+              </ToggleGroupItem>
             ))}
-          </div>
+          </ToggleGroup>
         </Section>
 
         <Section title={m.setup_time_controls()}>
@@ -165,110 +189,22 @@ export function ReviewSetup({
             ))}
           </ToggleGroup>
         </Section>
-      </div>
 
-      <Section title={m.setup_games()}>
-        <RadioGroup
-          value={scope.kind}
-          onValueChange={(kind) =>
-            update({
-              scope:
-                kind === 'latest'
-                  ? { kind: 'latest', count: 10 }
-                  : { kind: 'range', preset: 'month', ...datePresetRange('month', Date.now()) },
-            })
-          }
-          className="gap-4"
-        >
-          <div className="space-y-2">
-            <RadioField value="latest">{m.setup_latest()}</RadioField>
-            {scope.kind === 'latest' && (
-              <div className="flex flex-wrap items-center gap-2 pl-6">
-                <Input
-                  type="number"
-                  min={1}
-                  max={total > 0 ? total : undefined}
-                  value={Number.isNaN(scope.count) ? '' : scope.count}
-                  onChange={(event) =>
-                    update({ scope: { kind: 'latest', count: event.target.valueAsNumber } })
-                  }
-                  aria-label={m.setup_latest()}
-                  className="h-8 w-24 bg-muted tabular-nums"
-                />
-                {total > 0 && (
-                  <span className="text-xs text-muted-foreground">
-                    {m.setup_latest_total({ total: formatNumber(total) })}
-                  </span>
-                )}
-                <div className="flex gap-1">
-                  {LATEST_SHORTCUTS.map((count) => (
-                    <Button
-                      key={count}
-                      type="button"
-                      variant="ghost"
-                      size="xs"
-                      aria-pressed={scope.count === count}
-                      className={cn(scope.count === count && SELECTED_SHORTCUT)}
-                      onClick={() => update({ scope: { kind: 'latest', count } })}
-                    >
-                      {count}
-                    </Button>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
-          <div className="space-y-2">
-            <RadioField value="range">{m.setup_period()}</RadioField>
-            {scope.kind === 'range' && (
-              <div className="space-y-2 pl-6">
-                <div className="flex flex-wrap gap-1">
-                  {DATE_PRESETS.map((preset) => (
-                    <Button
-                      key={preset}
-                      type="button"
-                      variant="ghost"
-                      size="xs"
-                      aria-pressed={scope.preset === preset}
-                      className={cn(scope.preset === preset && SELECTED_SHORTCUT)}
-                      onClick={() =>
-                        update({
-                          scope: { kind: 'range', preset, ...datePresetRange(preset, Date.now()) },
-                        })
-                      }
-                    >
-                      {PRESET_LABELS[preset]()}
-                    </Button>
-                  ))}
-                </div>
-                <div className="flex flex-wrap items-center gap-2 text-sm">
-                  <DateField
-                    label={m.setup_from()}
-                    value={toDateInput(scope.from)}
-                    onChange={(value) => {
-                      const from = fromDateInput(value, false)
-                      if (from !== undefined)
-                        update({ scope: { kind: 'range', from, to: scope.to } })
-                    }}
-                  />
-                  <DateField
-                    label={m.setup_to()}
-                    value={toDateInput(scope.to)}
-                    onChange={(value) => {
-                      const to = fromDateInput(value, true)
-                      if (to !== undefined)
-                        update({ scope: { kind: 'range', from: scope.from, to } })
-                    }}
-                  />
-                  {!scope.preset && (
-                    <span className="text-xs text-muted-foreground">{m.preset_custom()}</span>
-                  )}
-                </div>
-              </div>
-            )}
-          </div>
-        </RadioGroup>
-      </Section>
+        <Section title={m.setup_ratings()}>
+          <ToggleGroup
+            type="multiple"
+            value={selection.ratings}
+            onValueChange={(value) => update({ ratings: value as RatingKind[] })}
+            className="flex-wrap"
+          >
+            {ALL_RATINGS.map((rating) => (
+              <ToggleGroupItem key={rating} value={rating} size="sm" className={CHIP_CLASS}>
+                {RATING_LABELS[rating]()}
+              </ToggleGroupItem>
+            ))}
+          </ToggleGroup>
+        </Section>
+      </div>
 
       <div className="grid gap-6 md:grid-cols-3">
         <Section title={m.setup_color()}>
@@ -315,6 +251,115 @@ export function ReviewSetup({
           <p className="text-xs text-muted-foreground">{m.setup_min_moves_hint()}</p>
         </Section>
       </div>
+
+      <Section title={m.setup_games()}>
+        <RadioGroup
+          value={scope.kind}
+          onValueChange={(kind) => (kind === 'latest' ? setLatest(latest) : setRange(range))}
+          className="grid gap-6 md:grid-cols-2"
+        >
+          <div className="space-y-3">
+            <RadioField value="latest">{m.setup_latest()}</RadioField>
+            <div
+              className={cn(
+                'space-y-3 pl-6 transition-opacity',
+                scope.kind !== 'latest' && 'opacity-50',
+              )}
+            >
+              <div className="flex flex-wrap items-center gap-2">
+                <Input
+                  type="number"
+                  min={1}
+                  max={total > 0 ? total : undefined}
+                  value={Number.isNaN(latest) ? '' : latest}
+                  onChange={(event) => setLatest(event.target.valueAsNumber)}
+                  aria-label={m.setup_latest()}
+                  className="h-8 w-24 bg-muted tabular-nums"
+                />
+                {total > 0 && (
+                  <span className="text-xs text-muted-foreground">
+                    {m.setup_latest_total({ total: formatNumber(total) })}
+                  </span>
+                )}
+              </div>
+              <Slider
+                min={1}
+                max={sliderMax}
+                step={1}
+                value={[Math.min(Number.isNaN(latest) ? 1 : latest, sliderMax)]}
+                onValueChange={([next]) => next !== undefined && setLatest(next)}
+                aria-label={m.setup_latest()}
+                className="max-w-xs"
+              />
+              <div className="flex gap-1">
+                {LATEST_SHORTCUTS.map((count) => (
+                  <Button
+                    key={count}
+                    type="button"
+                    variant="ghost"
+                    size="xs"
+                    aria-pressed={scope.kind === 'latest' && latest === count}
+                    className={cn(scope.kind === 'latest' && latest === count && SELECTED_SHORTCUT)}
+                    onClick={() => setLatest(count)}
+                  >
+                    {count}
+                  </Button>
+                ))}
+              </div>
+            </div>
+          </div>
+          <div className="space-y-3">
+            <RadioField value="range">{m.setup_period()}</RadioField>
+            <div
+              className={cn(
+                'space-y-3 pl-6 transition-opacity',
+                scope.kind !== 'range' && 'opacity-50',
+              )}
+            >
+              <div className="flex flex-wrap gap-1">
+                {DATE_PRESETS.map((preset) => (
+                  <Button
+                    key={preset}
+                    type="button"
+                    variant="ghost"
+                    size="xs"
+                    aria-pressed={scope.kind === 'range' && range.preset === preset}
+                    className={cn(
+                      scope.kind === 'range' && range.preset === preset && SELECTED_SHORTCUT,
+                    )}
+                    onClick={() =>
+                      setRange({ kind: 'range', preset, ...datePresetRange(preset, Date.now()) })
+                    }
+                  >
+                    {PRESET_LABELS[preset]()}
+                  </Button>
+                ))}
+              </div>
+              <div className="flex flex-wrap items-center gap-2 text-sm">
+                <DateField
+                  label={m.setup_from()}
+                  value={toDateInput(range.from)}
+                  onChange={(value) => {
+                    const from = fromDateInput(value, false)
+                    if (from !== undefined) setRange({ kind: 'range', from, to: range.to })
+                  }}
+                />
+                <DateField
+                  label={m.setup_to()}
+                  value={toDateInput(range.to)}
+                  onChange={(value) => {
+                    const to = fromDateInput(value, true)
+                    if (to !== undefined) setRange({ kind: 'range', from: range.from, to })
+                  }}
+                />
+                {!range.preset && (
+                  <span className="text-xs text-muted-foreground">{m.preset_custom()}</span>
+                )}
+              </div>
+            </div>
+          </div>
+        </RadioGroup>
+      </Section>
 
       <Section title={m.setup_thresholds()}>
         <div className="grid gap-6 md:grid-cols-2">
@@ -368,26 +413,6 @@ export function ReviewSetup({
         {!valid && <span className="text-sm text-bad">{m.setup_invalid()}</span>}
       </div>
     </form>
-  )
-}
-
-function CheckboxField({
-  checked,
-  onChange,
-  children,
-}: {
-  checked: boolean
-  onChange: (checked: boolean) => void
-  children: ReactNode
-}) {
-  const id = useId()
-  return (
-    <div className="flex items-center gap-2">
-      <Checkbox id={id} checked={checked} onCheckedChange={(value) => onChange(value === true)} />
-      <Label htmlFor={id} className="flex items-center gap-2 font-normal">
-        {children}
-      </Label>
-    </div>
   )
 }
 

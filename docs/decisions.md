@@ -325,3 +325,32 @@ La modale enchaînait réglages, récapitulatif, progression, résultats et entr
 - **Confirmations** (modales `ConfirmDialog` / `useConfirm`) : remplacer l'analyse en cours (ce qui arrête aussi son entraînement), arrêter l'entraînement en cours pour en lancer un autre, quitter la page pendant une analyse ou un entraînement (`useBlocker` de TanStack Router ; changer d'onglet n'est jamais bloqué ; fermer ou recharger l'onglet déclenche l'avertissement natif).
 - **Accès direct** à `/analysis/run` ou `/analysis/training` sans rien en mémoire (rechargement, lien partagé) : retour à l'onglet Filtres.
 - Le chrono utilise les heures de début et de fin stockées dans la session : il ne repart pas de zéro quand on change d'onglet.
+
+---
+
+## 2026-10-05 : parties non classées, formulaire réorganisé, clics sur l'échiquier
+
+### Parties classées et non classées
+
+**Révise « l'historique liste les mêmes parties que la revue »** : à la demande de l'utilisateur, les parties **non classées** reviennent, dans l'historique comme dans l'analyse (bouton rapide compris). Seules les variantes restent exclues.
+
+- Règle commune : `isStandardGame` (remplace `isRatedStandardGame`), c'est-à-dire échecs standard, classés ou non.
+- Nouveau filtre de l'analyse : **Type de partie**, « Classées » et « Non classées », les deux actifs par défaut (`selection.ratings`). Lichess le filtre lui-même (`rated=true/false`, omis pour les deux) ; Chess.com est filtré ici.
+- L'historique affiche de nouveau « Amicale » dans la colonne Elo pour les parties non classées. Les parties contre l'ordinateur (Lichess) ont pour adversaire « Stockfish niveau N » au lieu de « ? ».
+
+### Formulaire
+
+- Plateformes, cadences et type de partie : des **pastilles** activables, toutes actives par défaut (les plateformes étaient des cases à cocher).
+- Ordre des rangées : plateformes / cadences / type de partie, puis couleur / résultat / longueur minimale, puis **Parties**, puis les seuils.
+- **Parties** : « Dernières parties » et « Période » côte à côte, **toujours visibles**. L'option inactive garde ses dernières valeurs, atténuée, et s'active dès qu'on l'utilise. « Dernières parties » a un **curseur** (1 à 200, ou au total du profil s'il est plus petit), un champ pour toute autre valeur, et des raccourcis 10 / 25 / 50 / 100 qui placent le curseur. La période gagne le raccourci **Aujourd'hui** (depuis minuit, heure locale).
+- **« Revenir aux filtres de l'analyse en cours »** est toujours affiché, désactivé tant que les réglages n'ont pas changé.
+- Le bouton rapide n'apparaît plus sur la page d'analyse : l'en-tête n'y garde que « Rejouer mes erreurs (N) ». Le nom du joueur est un lien vers le profil partout, y compris sur le profil.
+
+### Bug : les clics sur l'échiquier d'entraînement tombaient à côté
+
+chessground garde en cache la position du plateau à l'écran, et ne la rafraîchit qu'au redimensionnement de la fenêtre ou au défilement. Sur la page d'analyse, l'échiquier était mesuré sous la table des résultats, puis remontait quand l'onglet changeait : les clics étaient calculés 242 px trop bas. Corrigé à deux niveaux :
+
+- l'entraînement est rendu **avant** le contenu de l'onglet, pour que l'échiquier ne bouge plus ;
+- `Board` **oublie la position en cache à chaque appui** (`state.dom.bounds.clear()`) et se redessine quand sa taille change (`ResizeObserver`, pour un échiquier créé dans un onglet masqué).
+
+Le message « Couldn't start Stockfish » signalé n'a pas été reproduit après cette correction (coups joués et verdicts obtenus dans tous les enchaînements testés). Les échecs du moteur pendant l'entraînement sont désormais écrits dans la console, pour diagnostiquer s'il revient. Aussi : quitter l'entraînement ramène bien aux résultats (la redirection « pas d'entraînement » de l'onglet passait avant la navigation).

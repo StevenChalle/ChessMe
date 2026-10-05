@@ -99,8 +99,8 @@ function AnalysisPage({
       <PlayerHeader accounts={accounts} profileLink={usernames} actions={<AnalysisActions />} />
       <h2 className="text-xl font-medium text-font-clear">{m.review_title()}</h2>
       <AnalysisTabs usernames={usernames} />
-      <Outlet />
-      {/* Kept mounted while another tab is shown: the training session goes on where it was. */}
+      {/* Kept mounted while another tab is shown: the training session goes on where it was.
+          Placed before the tab content so the board never moves when that content changes. */}
       {training && (
         <div hidden={!onTrainingTab}>
           <TrainingView
@@ -111,6 +111,7 @@ function AnalysisPage({
           />
         </div>
       )}
+      <Outlet />
       <ConfirmDialog
         open={blocker.status === 'blocked'}
         options={{

@@ -192,7 +192,7 @@
   "history_next": "Parties plus anciennes",
   "history_range": "Parties {from} à {to}",
   "history_col_rating": "Elo",
-  "history_no_games": "Aucune partie classée trouvée.",
+  "history_no_games": "Aucune partie trouvée.",
   "history_failed": "Impossible de charger les parties.",
   "training_engine_reply": "Le moteur répond",
   "update_available": "Une nouvelle version de ChessMe est disponible.",
@@ -295,5 +295,11 @@
   "confirm_leave_title": "Quitter l'analyse ?",
   "confirm_leave_body": "L'analyse et l'entraînement en cours seront perdus : rien n'est encore enregistré.",
   "confirm_leave_action": "Quitter",
-  "analysis_unavailable": "Aucun compte à analyser : les comptes fermés n'ont pas de parties."
+  "analysis_unavailable": "Aucun compte à analyser : les comptes fermés n'ont pas de parties.",
+  "ai_opponent": "Stockfish niveau {level}",
+  "setup_ratings": "Type de partie",
+  "rating_rated": "Classées",
+  "rating_casual": "Non classées",
+  "history_casual": "Amicale",
+  "preset_today": "Aujourd'hui"
 }

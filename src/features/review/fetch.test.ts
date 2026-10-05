@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { ChessComGame } from '@/lib/chesscom/types'
-import type { RatedExportOptions } from '@/lib/lichess/client'
+import type { GameExportOptions } from '@/lib/lichess/client'
 import type { LichessGame } from '@/lib/lichess/types'
 import { findGames, type GameFetchers } from './fetch'
 import { defaultSelection, type GameSelection } from './selection'
@@ -51,10 +51,10 @@ function chessComGame(
 const lichessOnly = [{ source: 'lichess' as const, username: 'alice' }]
 
 describe('findGames', () => {
-  it('sends the time controls and a single color to Lichess', async () => {
-    const calls: RatedExportOptions[] = []
+  it('sends the time controls, a single color and rated or casual to Lichess', async () => {
+    const calls: GameExportOptions[] = []
     const fetchers = {
-      lichessExport: async (_user: string, options: RatedExportOptions) => {
+      lichessExport: async (_user: string, options: GameExportOptions) => {
         calls.push(options)
         return []
       },
@@ -77,7 +77,7 @@ describe('findGames', () => {
     )
     const untils: (number | undefined)[] = []
     const fetchers = {
-      lichessExport: async (_user: string, { max, until }: RatedExportOptions) => {
+      lichessExport: async (_user: string, { max, until }: GameExportOptions) => {
         untils.push(until)
         return all.filter((game) => until === undefined || game.createdAt <= until).slice(0, max)
       },
@@ -96,7 +96,7 @@ describe('findGames', () => {
   it('asks Lichess for exactly the count when nothing is filtered here', async () => {
     const maxes: (number | undefined)[] = []
     const fetchers = {
-      lichessExport: async (_user: string, { max }: RatedExportOptions) => {
+      lichessExport: async (_user: string, { max }: GameExportOptions) => {
         maxes.push(max)
         return [lichessGame('last', 10)]
       },
@@ -111,9 +111,9 @@ describe('findGames', () => {
   })
 
   it('asks Lichess for a date range with a margin, then checks the end dates', async () => {
-    let options: RatedExportOptions | undefined
+    let options: GameExportOptions | undefined
     const fetchers = {
-      lichessExport: async (_user: string, received: RatedExportOptions) => {
+      lichessExport: async (_user: string, received: GameExportOptions) => {
         options = received
         return [lichessGame('in', 15), lichessGame('before', 5)]
       },

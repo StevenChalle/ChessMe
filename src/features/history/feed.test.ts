@@ -78,7 +78,7 @@ describe('history feed', () => {
     expect(first.state.sources[0]!.buffer.map((game) => game.id)).toEqual(['l2', 'l1'])
   })
 
-  it('only lists rated standard games, like the review (no casual games, no variants)', async () => {
+  it('lists standard games, rated or casual, like the review (no variants)', async () => {
     const lichess = [
       lichessGame('casual', 40, { rated: false }),
       lichessGame('960', 35, { variant: 'chess960' }),
@@ -102,7 +102,7 @@ describe('history feed', () => {
     ])
 
     const page = await nextPage(state, fetchers)
-    expect(page.games.map((game) => game.id)).toEqual(['l1', 'c1'])
+    expect(page.games.map((game) => game.id)).toEqual(['c-casual', 'casual', 'l1', 'c1'])
   })
 
   it('gives the rating change: Lichess directly, Chess.com from the previous game of the pool', async () => {

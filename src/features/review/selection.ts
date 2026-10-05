@@ -8,7 +8,7 @@ import type { ApiSource } from '@/lib/http'
  * the APIs when they support it; everything is checked again here (matchesSelection).
  */
 
-export type DatePreset = 'week' | 'month' | '3months' | 'year'
+export type DatePreset = 'today' | 'week' | 'month' | '3months' | 'year'
 
 export type GameScope =
   /** The `count` latest games matching the filters, all platforms together */
@@ -16,8 +16,12 @@ export type GameScope =
   /** Games that ended in [from, to] (Unix ms). `preset` keeps the range relative when saved. */
   | { kind: 'range'; from: number; to: number; preset?: DatePreset }
 
+/** Rated games, casual games, or both */
+export type RatingKind = 'rated' | 'casual'
+
 export type GameSelection = {
   sources: ApiSource[]
+  ratings: RatingKind[]
   scope: GameScope
   categories: Category[]
   colors: Color[]
@@ -26,16 +30,18 @@ export type GameSelection = {
   minMoves: number
 }
 
+export const ALL_RATINGS: RatingKind[] = ['rated', 'casual']
 export const ALL_COLORS: Color[] = ['white', 'black']
 export const ALL_RESULTS: GameResult[] = ['win', 'draw', 'loss']
 export const LATEST_SHORTCUTS = [10, 25, 50, 100] as const
-export const DATE_PRESETS: DatePreset[] = ['week', 'month', '3months', 'year']
+export const DATE_PRESETS: DatePreset[] = ['today', 'week', 'month', '3months', 'year']
 /** From this many games, the recap warns that nothing is saved yet. */
 export const LARGE_REVIEW = 100
 
 export function defaultSelection(sources: ApiSource[]): GameSelection {
   return {
     sources,
+    ratings: [...ALL_RATINGS],
     scope: { kind: 'latest', count: 10 },
     categories: [...CATEGORIES],
     colors: [...ALL_COLORS],
@@ -46,9 +52,13 @@ export function defaultSelection(sources: ApiSource[]): GameSelection {
 
 const DAY = 86_400_000
 
-/** [from, to] for a preset, ending now (Unix ms). Months are calendar months back. */
+/** [from, to] for a preset, ending now (Unix ms). Today starts at local midnight; months are calendar months back. */
 export function datePresetRange(preset: DatePreset, now: number): { from: number; to: number } {
   const start = new Date(now)
+  if (preset === 'today') {
+    start.setHours(0, 0, 0, 0)
+    return { from: start.getTime(), to: now }
+  }
   if (preset === 'week') return { from: now - 7 * DAY, to: now }
   if (preset === 'month') start.setMonth(start.getMonth() - 1)
   else if (preset === '3months') start.setMonth(start.getMonth() - 3)
@@ -81,6 +91,7 @@ export function matchesSelection(
   }
   return (
     selection.sources.includes(game.source) &&
+    selection.ratings.includes(game.rated ? 'rated' : 'casual') &&
     selection.categories.includes(game.category) &&
     selection.colors.includes(game.color) &&
     selection.results.includes(game.result) &&
@@ -88,7 +99,7 @@ export function matchesSelection(
   )
 }
 
-/** Something to look for: at least one platform, time control, color and result. */
+/** Something to look for: at least one platform, kind of game, time control, color and result. */
 export function isSelectionValid(selection: GameSelection): boolean {
   const { scope } = selection
   const scopeOk =
@@ -98,6 +109,7 @@ export function isSelectionValid(selection: GameSelection): boolean {
   return (
     scopeOk &&
     selection.sources.length > 0 &&
+    selection.ratings.length > 0 &&
     selection.categories.length > 0 &&
     selection.colors.length > 0 &&
     selection.results.length > 0 &&

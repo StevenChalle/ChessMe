@@ -1,6 +1,6 @@
 import { parsePgn } from 'chessops/pgn'
 import {
-  isRatedStandardGame,
+  isStandardGame,
   summarizeChessComGame,
   summarizeLichessGame,
   type GameSummary,
@@ -21,10 +21,10 @@ export type ReviewGame = GameSummary & {
   serverCps?: (number | undefined)[]
 }
 
-/** undefined for games outside the review: unrated, variants, aborted, or without the player. */
+/** undefined for games outside the review: variants, aborted, or without the player. */
 export function fromLichessGame(game: LichessGame, username: string): ReviewGame | undefined {
   const summary = summarizeLichessGame(game, username)
-  if (!summary || !isRatedStandardGame(summary)) return undefined
+  if (!summary || !isStandardGame(summary)) return undefined
   return {
     ...summary,
     sanMoves: game.moves ? game.moves.split(' ') : [],
@@ -39,9 +39,9 @@ export function fromLichessGame(game: LichessGame, username: string): ReviewGame
   }
 }
 
-/** Rated standard chess with moves: the only games we review. */
+/** Standard chess (rated or casual) with moves: the only games we review. */
 export function isReviewableChessComGame(game: ChessComGame): boolean {
-  return game.rules === 'chess' && game.rated && Boolean(game.pgn)
+  return game.rules === 'chess' && Boolean(game.pgn)
 }
 
 export function fromChessComGame(game: ChessComGame, username: string): ReviewGame | undefined {

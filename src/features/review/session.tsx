@@ -205,15 +205,6 @@ export function AnalysisSessionProvider({
     goTo('/analysis/run')
   }, [search, confirmReplace, runAnalysis, goTo])
 
-  const quickLast = useCallback(async () => {
-    if (!(await confirmReplace())) return
-    const settings = quickSettings(accounts)
-    // Shown in the filters tab, but not saved: the quick review is not a chosen setting.
-    setDraft(settings)
-    void runAnalysis(settings, (signal) => findGames(accounts, settings.selection, { signal }))
-    goTo('/analysis/run')
-  }, [confirmReplace, accounts, setDraft, runAnalysis, goTo])
-
   const train = useCallback(
     async (mistakes: Mistake[]) => {
       if (analysis.status !== 'done') return
@@ -239,10 +230,10 @@ export function AnalysisSessionProvider({
     [analysis, training, confirm, goTo],
   )
 
+  // Leave the training tab first: without a session, it would send back to the filters.
   const endTraining = useCallback(() => {
-    setTraining(undefined)
-    goTo('/analysis/run')
-  }, [goTo])
+    void navigate({ to: '/analysis/run', search: usernames }).then(() => setTraining(undefined))
+  }, [navigate, usernames])
 
   const analysisSettings = analysis.status === 'none' ? undefined : analysis.settings
   const draftChanged = analysisSettings !== undefined && !sameSettings(draft, analysisSettings)
@@ -261,7 +252,6 @@ export function AnalysisSessionProvider({
     draftChanged,
     find,
     launch,
-    quickLast,
     train,
     restoreDraft,
     endTraining,

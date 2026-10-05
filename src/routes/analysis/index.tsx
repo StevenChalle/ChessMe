@@ -27,15 +27,14 @@ function FiltersTab() {
 
   return (
     <div className="space-y-6">
-      {draftChanged && (
-        <div className="flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
-          <span>{m.restore_filters_hint()}</span>
-          <Button variant="outline" size="sm" onClick={restoreDraft}>
-            <RotateCcw data-icon="inline-start" />
-            {m.restore_filters()}
-          </Button>
-        </div>
-      )}
+      {/* Always there; usable once the filters differ from those of the current analysis. */}
+      <div className="flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
+        <Button variant="outline" size="sm" disabled={!draftChanged} onClick={restoreDraft}>
+          <RotateCcw data-icon="inline-start" />
+          {m.restore_filters()}
+        </Button>
+        {draftChanged && <span>{m.restore_filters_hint()}</span>}
+      </div>
       <ReviewSetup
         accounts={accounts}
         gameCounts={gameCounts}

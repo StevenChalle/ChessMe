@@ -46,8 +46,6 @@ export type Session = {
   find: () => void
   /** Analyses the games found (asks first if an analysis exists), then shows the analysis tab */
   launch: () => Promise<void>
-  /** Last game, default rules, no filters step */
-  quickLast: () => Promise<void>
   /** Replays these mistakes (asks first if a training session is open) */
   train: (mistakes: Mistake[]) => Promise<void>
   restoreDraft: () => void

@@ -102,8 +102,10 @@ export function TrainingView({
           validCapped: valid.capped,
         })
       },
-      () => {
-        if (active) setEngineFailed(true)
+      (error: unknown) => {
+        if (!active) return
+        console.error('Training: reference search failed', error)
+        setEngineFailed(true)
       },
     )
     return () => {
@@ -133,7 +135,10 @@ export function TrainingView({
             coach.check(puzzle, uci).then(
               ({ valid, afterCp, reply }) =>
                 dispatch({ type: 'verdict', puzzleId: puzzle.id, valid, afterCp, reply }),
-              () => setEngineFailed(true),
+              (error: unknown) => {
+                console.error('Training: move check failed', error)
+                setEngineFailed(true)
+              },
             )
           },
         },

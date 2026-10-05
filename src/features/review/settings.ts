@@ -5,11 +5,13 @@ import type { ApiSource } from '@/lib/http'
 import { DEFAULT_CRITERIA, normalizeCriteria, type ReviewCriteria } from './criteria'
 import {
   ALL_COLORS,
+  ALL_RATINGS,
   ALL_RESULTS,
   DATE_PRESETS,
   defaultSelection,
   type GameScope,
   type GameSelection,
+  type RatingKind,
 } from './selection'
 
 /**
@@ -65,6 +67,7 @@ export function parseReviewSettings(raw: string | null, available: ApiSource[]):
   const sources = (pick(s.sources, SOURCES) ?? []).filter((source) => available.includes(source))
   const selection: GameSelection = {
     sources: sources.length > 0 ? sources : defaults.selection.sources,
+    ratings: pick<RatingKind>(s.ratings, ALL_RATINGS) ?? defaults.selection.ratings,
     scope: parseScope(s.scope) ?? defaults.selection.scope,
     categories: pick<Category>(s.categories, CATEGORIES) ?? defaults.selection.categories,
     colors: pick<Color>(s.colors, ALL_COLORS) ?? defaults.selection.colors,
@@ -121,6 +124,7 @@ export function sameSettings(a: ReviewSettings, b: ReviewSettings): boolean {
   return (
     sameScope &&
     sameItems(x.sources, y.sources) &&
+    sameItems(x.ratings, y.ratings) &&
     sameItems(x.categories, y.categories) &&
     sameItems(x.colors, y.colors) &&
     sameItems(x.results, y.results) &&
