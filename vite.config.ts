@@ -102,9 +102,13 @@ export default defineConfig(({ mode }) => ({
             options: { cacheName: 'fonts', expiration: { maxEntries: 20 } },
           },
           {
-            urlPattern: ({ url }) => url.pathname.includes('/engine/'),
+            // The Stockfish files only (/engine/ at the site root), never app code: a looser match
+            // (`includes('/engine/')`) also caught Vite's dev modules /src/lib/engine/*.ts and
+            // served stale ones forever. Self-contained: Workbox copies this function into sw.js.
+            urlPattern: ({ url, sameOrigin }) => sameOrigin && url.pathname.startsWith('/engine/'),
             handler: 'CacheFirst',
-            options: { cacheName: 'engine', expiration: { maxEntries: 4 } },
+            // Renamed from "engine", which held such stale modules (deleted at startup).
+            options: { cacheName: 'stockfish', expiration: { maxEntries: 4 } },
           },
         ],
       },

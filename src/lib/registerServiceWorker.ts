@@ -14,7 +14,16 @@ const CHECK_EVERY_MS = 60 * 60_000
  */
 const RELOAD_FALLBACK_MS = 2_000
 
+/**
+ * The engine files' cache used to be "engine", with a rule that also caught app modules in dev
+ * (/src/lib/engine/*.ts), served stale from then on. Its replacement has another name: drop it.
+ */
+const OBSOLETE_CACHES = ['engine']
+
 export function registerServiceWorker(): void {
+  if ('caches' in window) {
+    for (const name of OBSOLETE_CACHES) void caches.delete(name)
+  }
   const openedAt = Date.now()
   const apply = () => {
     void updateSW(true)
