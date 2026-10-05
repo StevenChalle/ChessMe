@@ -13,8 +13,11 @@ export type DatePreset = 'today' | 'week' | 'month' | '3months' | 'year'
 export type GameScope =
   /** The `count` latest games matching the filters, all platforms together */
   | { kind: 'latest'; count: number }
-  /** Games that ended in [from, to] (Unix ms). `preset` keeps the range relative when saved. */
-  | { kind: 'range'; from: number; to: number; preset?: DatePreset }
+  /**
+   * Games that ended in [from, to] (Unix ms), the `max` latest of them if set. `preset` keeps the
+   * range relative when saved.
+   */
+  | { kind: 'range'; from: number; to: number; preset?: DatePreset; max?: number }
 
 /** Rated games, casual games, or both */
 export type RatingKind = 'rated' | 'casual'
@@ -35,6 +38,8 @@ export const ALL_COLORS: Color[] = ['white', 'black']
 export const ALL_RESULTS: GameResult[] = ['win', 'draw', 'loss']
 export const LATEST_SHORTCUTS = [10, 25, 50, 100] as const
 export const DATE_PRESETS: DatePreset[] = ['today', 'week', 'month', '3months', 'year']
+/** The period's maximum when first chosen (it can be cleared: no limit). */
+export const DEFAULT_RANGE_MAX = 50
 /** From this many games, the recap warns that nothing is saved yet. */
 export const LARGE_REVIEW = 100
 
@@ -105,7 +110,8 @@ export function isSelectionValid(selection: GameSelection): boolean {
   const scopeOk =
     scope.kind === 'latest'
       ? Number.isInteger(scope.count) && scope.count >= 1
-      : scope.from <= scope.to
+      : scope.from <= scope.to &&
+        (scope.max === undefined || (Number.isInteger(scope.max) && scope.max >= 1))
   return (
     scopeOk &&
     selection.sources.length > 0 &&

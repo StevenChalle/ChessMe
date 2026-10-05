@@ -96,5 +96,11 @@ describe('isSelectionValid', () => {
     expect(isSelectionValid({ ...all, categories: [] })).toBe(false)
     expect(isSelectionValid({ ...all, scope: { kind: 'latest', count: 0 } })).toBe(false)
     expect(isSelectionValid({ ...all, scope: { kind: 'range', from: 2, to: 1 } })).toBe(false)
+    expect(isSelectionValid({ ...all, scope: { kind: 'range', from: 1, to: 2, max: 0 } })).toBe(
+      false,
+    )
+    expect(isSelectionValid({ ...all, scope: { kind: 'range', from: 1, to: 2, max: 5 } })).toBe(
+      true,
+    )
   })
 })

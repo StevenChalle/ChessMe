@@ -40,7 +40,14 @@ function parseScope(value: unknown): GameScope | undefined {
   }
   if (scope.kind === 'range' && typeof scope.from === 'number' && typeof scope.to === 'number') {
     const preset = DATE_PRESETS.find((item) => item === scope.preset)
-    return { kind: 'range', from: scope.from, to: scope.to, ...(preset && { preset }) }
+    const max = Number.isInteger(scope.max) && (scope.max as number) >= 1 ? scope.max : undefined
+    return {
+      kind: 'range',
+      from: scope.from,
+      to: scope.to,
+      ...(preset && { preset }),
+      ...(max !== undefined && { max: max as number }),
+    }
   }
   return undefined
 }
@@ -109,27 +116,36 @@ export function saveReviewSettings(settings: ReviewSettings) {
 const sameItems = <T>(a: T[], b: T[]) =>
   a.length === b.length && a.every((item) => b.includes(item))
 
-/** Same games and same rules (order of the chosen items does not matter). */
-export function sameSettings(a: ReviewSettings, b: ReviewSettings): boolean {
-  const { selection: x, criteria: c } = a
-  const { selection: y, criteria: d } = b
-  const sameScope =
-    x.scope.kind === 'latest' && y.scope.kind === 'latest'
-      ? x.scope.count === y.scope.count
-      : x.scope.kind === 'range' && y.scope.kind === 'range'
-        ? x.scope.from === y.scope.from &&
-          x.scope.to === y.scope.to &&
-          x.scope.preset === y.scope.preset
-        : false
+export function sameScope(x: GameScope, y: GameScope): boolean {
+  return x.kind === 'latest' && y.kind === 'latest'
+    ? x.count === y.count
+    : x.kind === 'range' && y.kind === 'range'
+      ? x.from === y.from && x.to === y.to && x.preset === y.preset && x.max === y.max
+      : false
+}
+
+/** Same games filters, whatever the scope (order of the chosen items does not matter). */
+export function sameFilters(x: GameSelection, y: GameSelection): boolean {
   return (
-    sameScope &&
     sameItems(x.sources, y.sources) &&
     sameItems(x.ratings, y.ratings) &&
     sameItems(x.categories, y.categories) &&
     sameItems(x.colors, y.colors) &&
     sameItems(x.results, y.results) &&
-    x.minMoves === y.minMoves &&
-    c.errorMinDrop === d.errorMinDrop &&
-    c.validMaxDrop === d.validMaxDrop
+    x.minMoves === y.minMoves
   )
+}
+
+/** Same games: same scope and same filters. */
+export function sameSelection(x: GameSelection, y: GameSelection): boolean {
+  return sameScope(x.scope, y.scope) && sameFilters(x, y)
+}
+
+export function sameCriteria(a: ReviewCriteria, b: ReviewCriteria): boolean {
+  return a.errorMinDrop === b.errorMinDrop && a.validMaxDrop === b.validMaxDrop
+}
+
+/** Same games and same rules. */
+export function sameSettings(a: ReviewSettings, b: ReviewSettings): boolean {
+  return sameSelection(a.selection, b.selection) && sameCriteria(a.criteria, b.criteria)
 }

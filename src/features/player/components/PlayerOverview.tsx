@@ -1,4 +1,5 @@
 import { formatMonthYear, formatNumber, formatRelative } from '@/lib/format'
+import { InfoTip } from '@/components/InfoTip'
 import { m } from '@/paraglide/messages'
 import type { PlayerUsernames } from '../search'
 import { earliestJoin, latestActivity, SOURCE_LABELS, sumRecords, totalGames } from '../summary'
@@ -18,6 +19,8 @@ export function PlayerOverview({ usernames }: { usernames: PlayerUsernames }) {
   const record = sumRecords(withRecord.map((account) => account.record))
   const oldest = earliestJoin(accounts)
   const latest = latestActivity(accounts)
+  // Chess.com only publishes the records of rated games: its casual games are not counted.
+  const hasChessCom = withRecord.some((account) => account.source === 'chesscom')
 
   return (
     <div className="space-y-4">
@@ -31,7 +34,16 @@ export function PlayerOverview({ usernames }: { usernames: PlayerUsernames }) {
         <>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
             <StatTile
-              label={m.games_played()}
+              label={
+                hasChessCom ? (
+                  <span className="inline-flex items-center gap-1.5">
+                    {m.games_played()}
+                    <InfoTip text={m.chesscom_rated_only()} />
+                  </span>
+                ) : (
+                  m.games_played()
+                )
+              }
               value={formatNumber(totalGames(record))}
               hint={
                 withRecord.length > 1 &&
@@ -68,7 +80,14 @@ export function PlayerOverview({ usernames }: { usernames: PlayerUsernames }) {
             <div className="space-y-4">
               <Panel
                 title={m.overall_record()}
-                aside={withRecord.length > 1 && m.all_games_both_sites()}
+                aside={
+                  (withRecord.length > 1 || hasChessCom) && (
+                    <span className="inline-flex items-center gap-1.5">
+                      {withRecord.length > 1 && m.all_games_both_sites()}
+                      {hasChessCom && <InfoTip text={m.chesscom_rated_only()} />}
+                    </span>
+                  )
+                }
               >
                 <ResultBar record={record} />
                 {withRecord.length > 1 && (

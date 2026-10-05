@@ -69,24 +69,33 @@ async function findLichessGames(
     })
 
   const { scope } = selection
+  const limit = scope.kind === 'latest' ? scope.count : scope.max
+  let since: number | undefined
+  let until: number | undefined
   if (scope.kind === 'range') {
     const margin = selection.categories.includes('daily') ? CORRESPONDENCE_MARGIN : DAY
-    const games = await fetchers.lichessExport(
-      username,
-      { ...base, since: scope.from - margin, until: scope.to },
-      signal,
-    )
-    return keep(games)
+    since = scope.from - margin
+    until = scope.to
+  }
+  // A whole date range, in one request.
+  if (limit === undefined) {
+    return keep(await fetchers.lichessExport(username, { ...base, since, until }, signal))
   }
 
-  // Results and lengths are only checked here: then page backwards until enough games match.
-  // Without them, Lichess returns exactly the right games (the quick review asks for 1).
-  const filteredHere = selection.results.length < ALL_RESULTS.length || selection.minMoves > 0
-  const pageSize = filteredHere ? Math.max(LICHESS_PAGE, scope.count) : scope.count
+  // Results, lengths and end dates are only checked here: then page backwards until enough games
+  // match. Without them, Lichess returns exactly the right games (the quick review asks for 1).
+  const filteredHere =
+    scope.kind === 'range' ||
+    selection.results.length < ALL_RESULTS.length ||
+    selection.minMoves > 0
+  const pageSize = filteredHere ? Math.max(LICHESS_PAGE, limit) : limit
   const found: ReviewGame[] = []
-  let until: number | undefined
-  while (found.length < scope.count) {
-    const page = await fetchers.lichessExport(username, { ...base, max: pageSize, until }, signal)
+  while (found.length < limit) {
+    const page = await fetchers.lichessExport(
+      username,
+      { ...base, max: pageSize, since, until },
+      signal,
+    )
     found.push(...keep(page))
     if (page.length < pageSize) break
     until = Math.min(...page.map((game) => game.createdAt)) - 1
@@ -126,14 +135,15 @@ async function findChessComGames(
       const review = fromChessComGame(game, username)
       if (review && matchesSelection(review, selection)) found.push(review)
     }
-    if (scope.kind === 'latest' && found.length >= scope.count) break
+    const limit = scope.kind === 'latest' ? scope.count : scope.max
+    if (limit !== undefined && found.length >= limit) break
   }
   return found
 }
 
 /**
- * The games of the selection, all platforms together, newest first: the `count` latest, or all
- * those of the date range. Platforms are searched in parallel, each one sequentially.
+ * The games of the selection, all platforms together, newest first: the `count` latest, or those
+ * of the date range (the `max` latest, if set). Platforms are searched in parallel, each one sequentially.
  */
 export async function findGames(
   accounts: ReviewAccount[],
@@ -157,7 +167,7 @@ export async function findGames(
   const all = results.flatMap((result) => (result.status === 'fulfilled' ? result.value : []))
   const { scope } = selection
   return {
-    games: latestGames(all, scope.kind === 'latest' ? scope.count : all.length),
+    games: latestGames(all, (scope.kind === 'latest' ? scope.count : scope.max) ?? all.length),
     failures,
   }
 }

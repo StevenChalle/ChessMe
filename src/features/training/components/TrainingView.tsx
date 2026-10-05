@@ -3,7 +3,6 @@ import type { DrawShape } from '@lichess-org/chessground/draw'
 import type { Key } from '@lichess-org/chessground/types'
 import { useEffect, useMemo, useReducer, useState } from 'react'
 import { Board } from '@/components/board/Board'
-import { Button } from '@/components/ui/button'
 import type { Mistake } from '@/features/review/analyze'
 import { VALID_MAX_DROP } from '@/features/review/errors'
 import { Progress } from '@/components/ui/progress'
@@ -193,14 +192,6 @@ export function TrainingView({
             <PuzzlePanel state={state} puzzle={puzzle} dispatch={dispatch} />
           </ValidMaxDropContext>
         )}
-        <Button
-          variant="ghost"
-          size="sm"
-          className="mt-auto self-start text-muted-foreground"
-          onClick={onExit}
-        >
-          {m.training_quit()}
-        </Button>
       </div>
     </div>
   )

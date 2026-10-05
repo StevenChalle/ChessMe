@@ -1,8 +1,8 @@
 import { createContext, useContext } from 'react'
 import type { Mistake, ReviewOutcome } from './analyze'
-import type { GameCounts } from './components/ReviewSetup'
 import type { FoundGames, ReviewAccount } from './fetch'
 import type { ReviewProgress } from './progress'
+import type { GameSelection } from './selection'
 import type { ReviewSettings } from './settings'
 
 /**
@@ -13,7 +13,7 @@ import type { ReviewSettings } from './settings'
 export type SearchState =
   | { status: 'idle' }
   | { status: 'finding' }
-  | { status: 'found'; found: FoundGames; settings: ReviewSettings }
+  | { status: 'found'; found: FoundGames; selection: GameSelection }
   | { status: 'error'; error: Error }
 
 /** `startedAt` / `endedAt` (Unix ms) drive the stopwatch, which survives tab switches. */
@@ -34,21 +34,22 @@ export type TrainingSession = { id: number; mistakes: Mistake[]; validMaxDrop: n
 
 export type Session = {
   accounts: ReviewAccount[]
-  gameCounts: GameCounts
+  /** Games played on all the accounts, an indication */
+  gameTotal: number
   /** The filters and options being edited */
   draft: ReviewSettings
   setDraft: (settings: ReviewSettings) => void
   search: SearchState
   analysis: AnalysisState
   training: TrainingSession | undefined
-  /** The settings of the current analysis differ from the form: offer to restore them */
-  draftChanged: boolean
+  /** The settings of the current analysis, which each section of the form can go back to */
+  analysisSettings: ReviewSettings | undefined
+  /** Looks for the games of the filters being edited (the filters tab calls it on every change) */
   find: () => void
-  /** Analyses the games found (asks first if an analysis exists), then shows the analysis tab */
+  /** Analyses the games found, with the rules being edited (asks first if an analysis exists), then shows the analysis tab */
   launch: () => Promise<void>
   /** Replays these mistakes (asks first if a training session is open) */
   train: (mistakes: Mistake[]) => Promise<void>
-  restoreDraft: () => void
   /** Closes the training session (its tab goes away) and shows the results */
   endTraining: () => void
 }

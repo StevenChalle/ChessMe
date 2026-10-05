@@ -54,10 +54,3 @@ export function normalizeCriteria(
   }
   return { errorMinDrop, validMaxDrop }
 }
-
-export function isDefaultCriteria(criteria: ReviewCriteria): boolean {
-  return (
-    criteria.errorMinDrop === DEFAULT_CRITERIA.errorMinDrop &&
-    criteria.validMaxDrop === DEFAULT_CRITERIA.validMaxDrop
-  )
-}

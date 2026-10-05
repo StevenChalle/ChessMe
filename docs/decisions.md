@@ -355,3 +355,25 @@ chessground garde en cache la position du plateau à l'écran, et ne la rafraîc
 - `Board` **oublie la position en cache à chaque appui** (`state.dom.bounds.clear()`) et se redessine quand sa taille change (`ResizeObserver`, pour un échiquier créé dans un onglet masqué).
 
 Le message « Couldn't start Stockfish » signalé n'a pas été reproduit après cette correction (coups joués et verdicts obtenus dans tous les enchaînements testés). Les échecs du moteur pendant l'entraînement sont désormais écrits dans la console, pour diagnostiquer s'il revient. Aussi : quitter l'entraînement ramène bien aux résultats (la redirection « pas d'entraînement » de l'onglet passait avant la navigation).
+
+---
+
+## 2026-10-05 : filtres en sections dépliables, recherche automatique
+
+**Révise le formulaire de l'entrée précédente et le déroulé « Trouver les parties »** de l'analyse approfondie.
+
+- **Trois sections dépliables** (`<details>` natif, sans dépendance), chacune résumée sur une ligne quand elle est fermée :
+  - **Plage de recherche**, ouverte par défaut : « Dernières parties » ou « Période » ;
+  - **Parties**, fermée : plateformes, type de partie, cadences, couleur, résultat, longueur minimale. Résumé : ce que les filtres excluent, sinon « Toutes les parties » ;
+  - **Entraînement**, fermée : les seuils d'erreur et de coup valide.
+- **Maximum de parties pour la période** (`scope.max`), derrière une case « Limiter à [50] parties », **décochée par défaut** : décochée, pas de limite (plutôt que de taper 9999) ; le dernier nombre reste affiché, atténué. Les plus récentes passent en premier, ce qu'indique une info-bulle. Lichess pagine alors à rebours comme pour « Dernières parties », Chess.com s'arrête au mois qui atteint le maximum.
+- **Plus de bouton « Trouver les parties »** : la recherche est rapide, l'onglet Filtres la relance **400 ms après chaque modification** (la précédente est annulée). Elle attend que l'analyse en cours ait fini de récupérer ses parties : une seule requête Lichess à la fois.
+- Seuls les **filtres de parties** périment la recherche (`sameSelection`) : les seuils ne changent que l'estimation de durée, et l'analyse prend les seuils affichés au lancement.
+- Les réglages sont **mémorisés à chaque analyse lancée** depuis l'onglet Filtres (et non plus à chaque recherche, devenue automatique). Le bouton rapide ne les touche pas.
+- Explications secondaires derrière une **icône d'info** (info-bulle `InfoTip`) : maximum de la période, longueur minimale, repères de Lichess (à côté du titre « Erreur »). Le bouton « Valeurs par défaut » des seuils est retiré.
+- **« Revenir aux filtres de l'analyse en cours » disparaît** au profit d'un bouton par section, à droite de son en-tête : **« Revenir à l'analyse en cours »** (`sameScope`, `sameFilters`, `sameCriteria`). Il ne remet que sa section dans l'état de l'analyse en cours. Absent tant qu'aucune analyse n'existe, désactivé si la section n'a pas changé. Il est dans le `<summary>`, enveloppé d'un élément qui annule le clic : sinon, un clic sur le bouton désactivé ouvrirait ou fermerait la section.
+- Section Entraînement : bouton **« Valeurs par défaut »** dans son en-tête (10 % / 5 %), à côté de « Revenir à l'analyse en cours ». Les repères de Lichess figurent aussi sous le curseur « Coup valide ».
+- Rappel de « Dernières parties » : **toutes les parties** des comptes (`gameTotal`), quels que soient la cadence, le type ou la plateforme. Lichess donne le total exact (`count`) ; Chess.com ne publie que le bilan de ses parties classées, ses parties amicales n'y sont donc pas. Une info-bulle (`InfoTip`, composant partagé) le signale, ici comme sur la vue d'ensemble du profil (« Parties jouées », « Bilan global »). L'analyse, elle, lit les archives mensuelles de Chess.com, qui contiennent aussi les parties amicales.
+- « Lancer l'analyse » passe en haut à droite de l'encadré « Parties trouvées ». Le titre « Analyse approfondie » et le rappel des seuils au-dessus des résultats sont retirés.
+- **Estimation** : elle déduisait déjà les positions évaluées par Lichess ; la phrase « les parties déjà analysées par Lichess vont plus vite » laissait croire le contraire. Elle est remplacée par « Dont N parties déjà analysées par Lichess : leurs évaluations sont reprises ». Le calcul simule désormais la répartition des parties entre les moteurs (`makespan`, comme `EnginePool.run`), puis la passe approfondie après la rapide : 5 parties sur 4 moteurs prennent deux tours. Une mesure (10 parties Chess.com, PC 20 cœurs) : ≈ 50 s estimées, 58 s réelles ; la vitesse du moteur n'a pas été recalibrée.
+- Le bouton « Quitter » de l'entraînement est retiré : les onglets suffisent pour en sortir, et le bilan de fin ramène toujours aux résultats.

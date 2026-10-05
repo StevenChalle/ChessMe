@@ -55,18 +55,42 @@ export function enginePositions(game: Pick<ReviewGame, 'sanMoves' | 'serverCps'>
   return 1 + game.serverCps.filter((cp) => cp === undefined).length
 }
 
+/**
+ * When the last job ends, each job being taken in order by the first engine free (as
+ * EnginePool.run does): a few long games keep one engine busy while the others wait.
+ */
+export function makespan(durations: number[], workers: number): number {
+  if (durations.length === 0) return 0
+  const busyUntil = Array.from({ length: Math.min(workers, durations.length) }, () => 0)
+  for (const duration of durations) {
+    const first = busyUntil.indexOf(Math.min(...busyUntil))
+    busyUntil[first]! += duration
+  }
+  return Math.max(...busyUntil)
+}
+
+/**
+ * The quick pass on every game, then the deep pass, which starts once the quick one is over
+ * (analyzeGames). Positions Lichess already evaluated are not counted (enginePositions).
+ */
 export function estimateSeconds(
   games: Pick<ReviewGame, 'sanMoves' | 'serverCps'>[],
   criteria: ReviewCriteria,
   device: DeviceProfile,
 ): number {
   const perGame = games.map(enginePositions).filter((positions) => positions > 0)
-  if (perGame.length === 0) return 0
-  const positions = perGame.reduce((sum, count) => sum + count, 0)
-  const nodes = positions * (QUICK_NODES + deepShare(deepCheckMinDrop(criteria)) * DEEP_NODES)
-  // Each engine works on whole games: a single game keeps a single engine busy.
-  const workers = Math.min(device.workers, perGame.length)
-  return nodes / (workers * device.nodesPerSecond)
+  const deepNodes = deepShare(deepCheckMinDrop(criteria)) * DEEP_NODES
+  const seconds = (nodes: number) => nodes / device.nodesPerSecond
+  return (
+    makespan(
+      perGame.map((positions) => seconds(positions * QUICK_NODES)),
+      device.workers,
+    ) +
+    makespan(
+      perGame.map((positions) => seconds(positions * deepNodes)),
+      device.workers,
+    )
+  )
 }
 
 /**

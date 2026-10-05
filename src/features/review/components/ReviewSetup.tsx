@@ -1,7 +1,9 @@
 import type { Color } from 'chessops'
-import { LoaderCircle, RotateCcw, Search } from 'lucide-react'
+import { ChevronRight, RotateCcw } from 'lucide-react'
 import { useId, useState, type ReactNode } from 'react'
+import { InfoTip } from '@/components/InfoTip'
 import { Button } from '@/components/ui/button'
+import { Checkbox } from '@/components/ui/checkbox'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
@@ -11,14 +13,13 @@ import type { GameResult } from '@/features/games/normalize'
 import { SourceDot } from '@/features/player/components/SourceBadge'
 import { categoryLabel } from '@/features/player/sources'
 import { CATEGORIES, SOURCE_LABELS, type Category } from '@/features/player/summary'
-import { formatNumber } from '@/lib/format'
+import { formatDate, formatNumber } from '@/lib/format'
 import type { ApiSource } from '@/lib/http'
 import { cn } from '@/lib/utils'
 import { m } from '@/paraglide/messages'
 import {
   DEFAULT_CRITERIA,
   ERROR_RANGE,
-  isDefaultCriteria,
   LICHESS_MARKERS,
   normalizeCriteria,
   VALID_RANGE,
@@ -31,6 +32,7 @@ import {
   ALL_RESULTS,
   DATE_PRESETS,
   datePresetRange,
+  DEFAULT_RANGE_MAX,
   isSelectionValid,
   LATEST_SHORTCUTS,
   type DatePreset,
@@ -38,10 +40,7 @@ import {
   type GameSelection,
   type RatingKind,
 } from '../selection'
-import type { ReviewSettings } from '../settings'
-
-/** Rated games per platform and time control, from the profiles (an indication). */
-export type GameCounts = Partial<Record<ApiSource, Partial<Record<Category, number>>>>
+import { sameCriteria, sameFilters, sameScope, type ReviewSettings } from '../settings'
 
 const PRESET_LABELS: Record<DatePreset, () => string> = {
   today: m.preset_today,
@@ -93,47 +92,151 @@ function Section({ title, children }: { title: string; children: ReactNode }) {
   )
 }
 
+type SectionAction = { disabled: boolean; onClick: () => void }
+
+/** A part of the form that folds away, with a one-line summary of its values when closed. */
+function Expandable({
+  title,
+  summary,
+  open,
+  reset,
+  defaults,
+  children,
+}: {
+  title: string
+  summary: string
+  open?: boolean
+  /** Puts the section back as in the current analysis (no button without an analysis) */
+  reset?: SectionAction
+  /** Puts the section back to the default values */
+  defaults?: SectionAction
+  children: ReactNode
+}) {
+  const actions = [
+    defaults && { ...defaults, label: m.setup_reset_defaults() },
+    reset && { ...reset, label: m.setup_reset_to_analysis() },
+  ].filter((action) => action !== undefined)
+  return (
+    <details open={open} className="group/expandable rounded-md border border-border">
+      <summary className="flex cursor-pointer list-none items-center gap-3 px-4 py-3 select-none [&::-webkit-details-marker]:hidden">
+        <ChevronRight
+          aria-hidden
+          className="size-4 shrink-0 text-muted-foreground transition-transform group-open/expandable:rotate-90"
+        />
+        <span className="font-medium text-font-clear">{title}</span>
+        <span className="min-w-0 truncate text-sm text-muted-foreground group-open/expandable:hidden">
+          {summary}
+        </span>
+        {actions.length > 0 && (
+          // Not a click on the summary, even on a disabled button: the section stays as it is.
+          <span
+            className="ml-auto flex shrink-0 flex-wrap justify-end gap-1"
+            onClick={(event) => event.preventDefault()}
+          >
+            {actions.map(({ label, disabled, onClick }) => (
+              <Button
+                key={label}
+                type="button"
+                variant="ghost"
+                size="xs"
+                disabled={disabled}
+                onClick={onClick}
+                className="text-muted-foreground"
+              >
+                <RotateCcw data-icon="inline-start" />
+                {label}
+              </Button>
+            ))}
+          </span>
+        )}
+      </summary>
+      <div className="space-y-6 border-t border-border p-4">{children}</div>
+    </details>
+  )
+}
+
+/** Lichess's judgements on our scale, as landmarks under the threshold sliders. */
+function lichessMarkers() {
+  return [
+    { value: LICHESS_MARKERS.inaccuracy, label: m.marker_inaccuracy() },
+    { value: LICHESS_MARKERS.mistake, label: m.marker_mistake() },
+    { value: LICHESS_MARKERS.blunder, label: m.marker_blunder() },
+  ]
+}
+
+type RangeScope = Extract<GameScope, { kind: 'range' }>
+
+function scopeSummary(scope: GameScope): string {
+  if (scope.kind === 'latest') return m.setup_summary_latest({ count: formatNumber(scope.count) })
+  const period = scope.preset
+    ? PRESET_LABELS[scope.preset]()
+    : `${formatDate(new Date(scope.from))} – ${formatDate(new Date(scope.to))}`
+  return scope.max === undefined
+    ? m.setup_summary_period({ period })
+    : m.setup_summary_period_max({ period, max: formatNumber(scope.max) })
+}
+
+/** What the games filters leave out, or "all games". */
+function gamesSummary(selection: GameSelection, accounts: ReviewAccount[]): string {
+  const parts: string[] = []
+  const some = <T,>(chosen: T[], all: readonly T[], label: (item: T) => string) => {
+    if (chosen.length < all.length) parts.push(chosen.map(label).join(', '))
+  }
+  some(
+    selection.sources,
+    accounts.map((account) => account.source),
+    (source) => SOURCE_LABELS[source],
+  )
+  some(selection.ratings, ALL_RATINGS, (rating) => RATING_LABELS[rating]())
+  some(selection.categories, CATEGORIES, categoryLabel)
+  some(selection.colors, ALL_COLORS, (color) => COLOR_LABELS[color]())
+  some(selection.results, ALL_RESULTS, (result) => RESULT_LABELS[result]())
+  if (selection.minMoves > 0) {
+    parts.push(m.setup_summary_min_moves({ count: formatNumber(selection.minMoves) }))
+  }
+  return parts.length > 0 ? parts.join(' · ') : m.setup_summary_all_games()
+}
+
 /**
  * Filters and thresholds of the advanced review, controlled by the analysis session (they survive
- * tab switches). "Find games" asks for the matching games; nothing is fetched before.
+ * tab switches). The filters tab looks for the matching games after every change.
  */
 export function ReviewSetup({
   accounts,
-  gameCounts,
+  gameTotal,
   value: { selection, criteria },
   onChange,
-  finding,
-  onFind,
+  reference,
 }: {
   accounts: ReviewAccount[]
-  gameCounts: GameCounts
+  /** Games played on all the accounts, from the profiles (an indication) */
+  gameTotal: number
   value: ReviewSettings
   onChange: (settings: ReviewSettings) => void
-  finding: boolean
-  onFind: () => void
+  /** The current analysis's settings, if any: each section can go back to them */
+  reference?: ReviewSettings
 }) {
   const update = (change: Partial<GameSelection>) =>
     onChange({ selection: { ...selection, ...change }, criteria })
   const setCriteria = (next: ReviewCriteria) => onChange({ selection, criteria: next })
+  const sectionReset = (
+    same: (ref: ReviewSettings) => boolean,
+    restore: (ref: ReviewSettings) => void,
+  ) => reference && { disabled: same(reference), onClick: () => restore(reference) }
 
-  const total = selection.sources.reduce(
-    (sum, source) =>
-      sum +
-      selection.categories.reduce(
-        (count, category) => count + (gameCounts[source]?.[category] ?? 0),
-        0,
-      ),
-    0,
-  )
   const { scope } = selection
   const valid = isSelectionValid(selection)
   // Both ways of choosing games stay visible: the inactive one keeps its last values, dimmed,
   // and using it makes it the active one.
   const [lastLatest, setLastLatest] = useState(scope.kind === 'latest' ? scope.count : 10)
-  const [lastRange, setLastRange] = useState<Extract<GameScope, { kind: 'range' }>>(() =>
+  const [lastRange, setLastRange] = useState<RangeScope>(() =>
     scope.kind === 'range'
       ? scope
-      : { kind: 'range', preset: 'month', ...datePresetRange('month', Date.now()) },
+      : {
+          kind: 'range',
+          preset: 'month',
+          ...datePresetRange('month', Date.now()),
+        },
   )
   const latest = scope.kind === 'latest' ? scope.count : lastLatest
   const range = scope.kind === 'range' ? scope : lastRange
@@ -141,115 +244,22 @@ export function ReviewSetup({
     setLastLatest(count)
     update({ scope: { kind: 'latest', count } })
   }
-  const setRange = (next: Extract<GameScope, { kind: 'range' }>) => {
+  const setRange = (next: RangeScope) => {
     setLastRange(next)
     update({ scope: next })
   }
 
   return (
-    <form
-      className="space-y-6"
-      onSubmit={(event) => {
-        event.preventDefault()
-        if (valid && !finding) onFind()
-      }}
-    >
-      <div className="grid gap-6 md:grid-cols-[minmax(0,1fr)_minmax(0,1.6fr)_minmax(0,1fr)]">
-        <Section title={m.setup_platforms()}>
-          <ToggleGroup
-            type="multiple"
-            value={selection.sources}
-            onValueChange={(value) => update({ sources: value as ApiSource[] })}
-            className="flex-wrap"
-          >
-            {accounts.map(({ source, username }) => (
-              <ToggleGroupItem key={source} value={source} size="sm" className={CHIP_CLASS}>
-                <SourceDot source={source} />
-                {SOURCE_LABELS[source]}
-                <span className="text-muted-foreground">{username}</span>
-              </ToggleGroupItem>
-            ))}
-          </ToggleGroup>
-        </Section>
-
-        <Section title={m.setup_time_controls()}>
-          <ToggleGroup
-            type="multiple"
-            value={selection.categories}
-            onValueChange={(value) => update({ categories: value as Category[] })}
-            className="flex-wrap"
-          >
-            {CATEGORIES.map((category) => (
-              <ToggleGroupItem key={category} value={category} size="sm" className={CHIP_CLASS}>
-                {categoryLabel(category)}
-              </ToggleGroupItem>
-            ))}
-          </ToggleGroup>
-        </Section>
-
-        <Section title={m.setup_ratings()}>
-          <ToggleGroup
-            type="multiple"
-            value={selection.ratings}
-            onValueChange={(value) => update({ ratings: value as RatingKind[] })}
-            className="flex-wrap"
-          >
-            {ALL_RATINGS.map((rating) => (
-              <ToggleGroupItem key={rating} value={rating} size="sm" className={CHIP_CLASS}>
-                {RATING_LABELS[rating]()}
-              </ToggleGroupItem>
-            ))}
-          </ToggleGroup>
-        </Section>
-      </div>
-
-      <div className="grid gap-6 md:grid-cols-3">
-        <Section title={m.setup_color()}>
-          <ToggleGroup
-            type="multiple"
-            value={selection.colors}
-            onValueChange={(value) => update({ colors: value as Color[] })}
-          >
-            {ALL_COLORS.map((color) => (
-              <ToggleGroupItem key={color} value={color} size="sm" className={CHIP_CLASS}>
-                {COLOR_LABELS[color]()}
-              </ToggleGroupItem>
-            ))}
-          </ToggleGroup>
-        </Section>
-        <Section title={m.setup_result()}>
-          <ToggleGroup
-            type="multiple"
-            value={selection.results}
-            onValueChange={(value) => update({ results: value as GameResult[] })}
-            className="flex-wrap"
-          >
-            {ALL_RESULTS.map((result) => (
-              <ToggleGroupItem key={result} value={result} size="sm" className={CHIP_CLASS}>
-                {RESULT_LABELS[result]()}
-              </ToggleGroupItem>
-            ))}
-          </ToggleGroup>
-        </Section>
-        <Section title={m.setup_min_moves()}>
-          <div className="flex items-center gap-2">
-            <Input
-              type="number"
-              min={0}
-              value={selection.minMoves}
-              onChange={(event) =>
-                update({ minMoves: Math.max(0, Math.floor(event.target.valueAsNumber || 0)) })
-              }
-              aria-label={m.setup_min_moves()}
-              className="h-8 w-20 bg-muted tabular-nums"
-            />
-            <span className="text-sm text-muted-foreground">{m.setup_moves_unit()}</span>
-          </div>
-          <p className="text-xs text-muted-foreground">{m.setup_min_moves_hint()}</p>
-        </Section>
-      </div>
-
-      <Section title={m.setup_games()}>
+    <div className="space-y-3">
+      <Expandable
+        title={m.setup_section_range()}
+        summary={scopeSummary(scope)}
+        open
+        reset={sectionReset(
+          (ref) => sameScope(scope, ref.selection.scope),
+          (ref) => update({ scope: ref.selection.scope }),
+        )}
+      >
         <RadioGroup
           value={scope.kind}
           onValueChange={(kind) => (kind === 'latest' ? setLatest(latest) : setRange(range))}
@@ -267,16 +277,19 @@ export function ReviewSetup({
                 <Input
                   type="number"
                   min={1}
-                  max={total > 0 ? total : undefined}
+                  max={gameTotal > 0 ? gameTotal : undefined}
                   value={Number.isNaN(latest) ? '' : latest}
                   onChange={(event) => setLatest(event.target.valueAsNumber)}
                   aria-label={m.setup_latest()}
                   className="h-8 w-24 bg-muted tabular-nums"
                 />
-                {total > 0 && (
+                {gameTotal > 0 && (
                   <span className="text-xs text-muted-foreground">
-                    {m.setup_latest_total({ total: formatNumber(total) })}
+                    {m.setup_latest_total({ total: formatNumber(gameTotal) })}
                   </span>
+                )}
+                {gameTotal > 0 && accounts.some((account) => account.source === 'chesscom') && (
+                  <InfoTip text={m.chesscom_rated_only()} />
                 )}
               </div>
               <div className="flex gap-1">
@@ -316,7 +329,12 @@ export function ReviewSetup({
                       scope.kind === 'range' && range.preset === preset && SELECTED_SHORTCUT,
                     )}
                     onClick={() =>
-                      setRange({ kind: 'range', preset, ...datePresetRange(preset, Date.now()) })
+                      setRange({
+                        kind: 'range',
+                        preset,
+                        ...datePresetRange(preset, Date.now()),
+                        max: range.max,
+                      })
                     }
                   >
                     {PRESET_LABELS[preset]()}
@@ -329,7 +347,9 @@ export function ReviewSetup({
                   value={toDateInput(range.from)}
                   onChange={(value) => {
                     const from = fromDateInput(value, false)
-                    if (from !== undefined) setRange({ kind: 'range', from, to: range.to })
+                    if (from !== undefined) {
+                      setRange({ kind: 'range', from, to: range.to, max: range.max })
+                    }
                   }}
                 />
                 <DateField
@@ -337,30 +357,147 @@ export function ReviewSetup({
                   value={toDateInput(range.to)}
                   onChange={(value) => {
                     const to = fromDateInput(value, true)
-                    if (to !== undefined) setRange({ kind: 'range', from: range.from, to })
+                    if (to !== undefined) {
+                      setRange({ kind: 'range', from: range.from, to, max: range.max })
+                    }
                   }}
                 />
                 {!range.preset && (
                   <span className="text-xs text-muted-foreground">{m.preset_custom()}</span>
                 )}
               </div>
+              <RangeMaxField value={range.max} onChange={(max) => setRange({ ...range, max })} />
             </div>
           </div>
         </RadioGroup>
-      </Section>
+      </Expandable>
 
-      <Section title={m.setup_thresholds()}>
+      <Expandable
+        title={m.setup_games()}
+        summary={gamesSummary(selection, accounts)}
+        reset={sectionReset(
+          (ref) => sameFilters(selection, ref.selection),
+          (ref) => update({ ...ref.selection, scope }),
+        )}
+      >
+        <div className="grid gap-6 md:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)_minmax(0,1.6fr)]">
+          <Section title={m.setup_platforms()}>
+            <ToggleGroup
+              type="multiple"
+              value={selection.sources}
+              onValueChange={(value) => update({ sources: value as ApiSource[] })}
+              className="flex-wrap"
+            >
+              {accounts.map(({ source, username }) => (
+                <ToggleGroupItem key={source} value={source} size="sm" className={CHIP_CLASS}>
+                  <SourceDot source={source} />
+                  {SOURCE_LABELS[source]}
+                  <span className="text-muted-foreground">{username}</span>
+                </ToggleGroupItem>
+              ))}
+            </ToggleGroup>
+          </Section>
+
+          <Section title={m.setup_ratings()}>
+            <ToggleGroup
+              type="multiple"
+              value={selection.ratings}
+              onValueChange={(value) => update({ ratings: value as RatingKind[] })}
+              className="flex-wrap"
+            >
+              {ALL_RATINGS.map((rating) => (
+                <ToggleGroupItem key={rating} value={rating} size="sm" className={CHIP_CLASS}>
+                  {RATING_LABELS[rating]()}
+                </ToggleGroupItem>
+              ))}
+            </ToggleGroup>
+          </Section>
+
+          <Section title={m.setup_time_controls()}>
+            <ToggleGroup
+              type="multiple"
+              value={selection.categories}
+              onValueChange={(value) => update({ categories: value as Category[] })}
+              className="flex-wrap"
+            >
+              {CATEGORIES.map((category) => (
+                <ToggleGroupItem key={category} value={category} size="sm" className={CHIP_CLASS}>
+                  {categoryLabel(category)}
+                </ToggleGroupItem>
+              ))}
+            </ToggleGroup>
+          </Section>
+        </div>
+
+        <div className="grid gap-6 md:grid-cols-3">
+          <Section title={m.setup_color()}>
+            <ToggleGroup
+              type="multiple"
+              value={selection.colors}
+              onValueChange={(value) => update({ colors: value as Color[] })}
+            >
+              {ALL_COLORS.map((color) => (
+                <ToggleGroupItem key={color} value={color} size="sm" className={CHIP_CLASS}>
+                  {COLOR_LABELS[color]()}
+                </ToggleGroupItem>
+              ))}
+            </ToggleGroup>
+          </Section>
+          <Section title={m.setup_result()}>
+            <ToggleGroup
+              type="multiple"
+              value={selection.results}
+              onValueChange={(value) => update({ results: value as GameResult[] })}
+              className="flex-wrap"
+            >
+              {ALL_RESULTS.map((result) => (
+                <ToggleGroupItem key={result} value={result} size="sm" className={CHIP_CLASS}>
+                  {RESULT_LABELS[result]()}
+                </ToggleGroupItem>
+              ))}
+            </ToggleGroup>
+          </Section>
+          <Section title={m.setup_min_moves()}>
+            <div className="flex items-center gap-2">
+              <Input
+                type="number"
+                min={0}
+                value={selection.minMoves}
+                onChange={(event) =>
+                  update({ minMoves: Math.max(0, Math.floor(event.target.valueAsNumber || 0)) })
+                }
+                aria-label={m.setup_min_moves()}
+                className="h-8 w-20 bg-muted tabular-nums"
+              />
+              <span className="text-sm text-muted-foreground">{m.setup_moves_unit()}</span>
+              <InfoTip text={m.setup_min_moves_hint()} />
+            </div>
+          </Section>
+        </div>
+      </Expandable>
+
+      <Expandable
+        title={m.setup_section_training()}
+        defaults={{
+          disabled: sameCriteria(criteria, DEFAULT_CRITERIA),
+          onClick: () => setCriteria(DEFAULT_CRITERIA),
+        }}
+        reset={sectionReset(
+          (ref) => sameCriteria(criteria, ref.criteria),
+          (ref) => setCriteria(ref.criteria),
+        )}
+        summary={m.setup_summary_training({
+          error: String(criteria.errorMinDrop),
+          valid: String(criteria.validMaxDrop),
+        })}
+      >
         <div className="grid gap-6 md:grid-cols-2">
           <ThresholdSlider
             label={m.setup_error()}
             hint={m.setup_error_hint({ value: String(criteria.errorMinDrop) })}
             value={criteria.errorMinDrop}
             range={ERROR_RANGE}
-            markers={[
-              { value: LICHESS_MARKERS.inaccuracy, label: m.marker_inaccuracy() },
-              { value: LICHESS_MARKERS.mistake, label: m.marker_mistake() },
-              { value: LICHESS_MARKERS.blunder, label: m.marker_blunder() },
-            ]}
+            markers={lichessMarkers()}
             note={m.setup_markers_note()}
             onChange={(errorMinDrop) =>
               setCriteria(normalizeCriteria({ ...criteria, errorMinDrop }, 'errorMinDrop'))
@@ -371,36 +508,61 @@ export function ReviewSetup({
             hint={m.setup_valid_hint({ value: String(criteria.validMaxDrop) })}
             value={criteria.validMaxDrop}
             range={VALID_RANGE}
+            markers={lichessMarkers()}
+            note={m.setup_valid_info()}
             onChange={(validMaxDrop) =>
               setCriteria(normalizeCriteria({ ...criteria, validMaxDrop }, 'validMaxDrop'))
             }
           />
         </div>
-        <Button
-          type="button"
-          variant="ghost"
-          size="xs"
-          disabled={isDefaultCriteria(criteria)}
-          onClick={() => setCriteria(DEFAULT_CRITERIA)}
-          className="text-muted-foreground"
-        >
-          <RotateCcw data-icon="inline-start" />
-          {m.setup_reset()}
-        </Button>
-      </Section>
+      </Expandable>
 
-      <div className="flex flex-wrap items-center gap-3 border-t pt-4">
-        <Button type="submit" size="lg" disabled={!valid || finding}>
-          {finding ? (
-            <LoaderCircle data-icon="inline-start" className="animate-spin" />
-          ) : (
-            <Search data-icon="inline-start" />
-          )}
-          {finding ? m.setup_finding() : m.setup_find()}
-        </Button>
-        {!valid && <span className="text-sm text-bad">{m.setup_invalid()}</span>}
-      </div>
-    </form>
+      {!valid && <p className="text-sm text-bad">{m.setup_invalid()}</p>}
+    </div>
+  )
+}
+
+/**
+ * The period's maximum, behind a checkbox: unchecked means no limit (no need to type 9999). The
+ * last number is kept, dimmed, to check it again. The latest games are kept first.
+ */
+function RangeMaxField({
+  value,
+  onChange,
+}: {
+  value: number | undefined
+  onChange: (max: number | undefined) => void
+}) {
+  const id = useId()
+  const [last, setLast] = useState(value ?? DEFAULT_RANGE_MAX)
+  const limited = value !== undefined
+  const shown = limited ? value : last
+  return (
+    <div className="flex flex-wrap items-center gap-2 text-sm">
+      <Checkbox
+        id={id}
+        checked={limited}
+        onCheckedChange={(checked) => onChange(checked === true ? last : undefined)}
+        className="border-font-dim"
+      />
+      <Label htmlFor={id} className="font-normal text-muted-foreground">
+        {m.setup_range_max()}
+      </Label>
+      <Input
+        type="number"
+        min={1}
+        value={Number.isNaN(shown) ? '' : shown}
+        onChange={(event) => {
+          const max = event.target.valueAsNumber
+          setLast(max)
+          onChange(max)
+        }}
+        aria-label={m.setup_range_max()}
+        className={cn('h-8 w-24 bg-muted tabular-nums', !limited && 'opacity-50')}
+      />
+      <span className="text-muted-foreground">{m.setup_range_max_unit()}</span>
+      <InfoTip text={m.setup_range_max_info()} />
+    </div>
   )
 }
 
@@ -465,7 +627,10 @@ function ThresholdSlider({
   return (
     <div className="space-y-2">
       <div className="flex items-baseline justify-between gap-3">
-        <Label htmlFor={id}>{label}</Label>
+        <span className="flex items-center gap-1.5">
+          <Label htmlFor={id}>{label}</Label>
+          {note && <InfoTip text={note} />}
+        </span>
         <span className="font-medium text-font-clear tabular-nums">{value} %</span>
       </div>
       <Slider
@@ -496,7 +661,6 @@ function ThresholdSlider({
         </div>
       )}
       <p className="text-xs text-muted-foreground">{hint}</p>
-      {note && <p className="text-xs text-muted-foreground/80">{note}</p>}
     </div>
   )
 }

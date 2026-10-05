@@ -5,13 +5,12 @@ import { useConfirm } from '@/hooks/useConfirm'
 import { useKeepAwake } from '@/hooks/useKeepAwake'
 import { m } from '@/paraglide/messages'
 import { analyzeGames, type Mistake } from './analyze'
-import type { GameCounts } from './components/ReviewSetup'
 import { DEFAULT_CRITERIA } from './criteria'
 import { findGames, type FoundGames, type ReviewAccount } from './fetch'
 import { defaultSelection } from './selection'
 import {
   loadReviewSettings,
-  sameSettings,
+  sameSelection,
   saveReviewSettings,
   type ReviewSettings,
 } from './settings'
@@ -42,13 +41,14 @@ function quickSettings(accounts: ReviewAccount[]): ReviewSettings {
  */
 export function AnalysisSessionProvider({
   accounts,
-  gameCounts,
+  gameTotal,
   usernames,
   start,
   children,
 }: {
   accounts: ReviewAccount[]
-  gameCounts: GameCounts
+  /** Games played on all the accounts, an indication */
+  gameTotal: number
   /** The accounts in the URL, kept when switching tabs */
   usernames: PlayerUsernames
   start?: 'last'
@@ -153,14 +153,20 @@ export function AnalysisSessionProvider({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  /** Editing the filters makes the games found stale: they must be found again. */
+  /**
+   * Every edit makes the games found stale: the filters tab
+   * searches again (rules only change the estimate, not the games).
+   */
   const setDraft = useCallback(
     (settings: ReviewSettings) => {
       setDraftState(settings)
       if (search.status === 'finding') {
         searchJob.current?.abort()
         setSearch({ status: 'idle' })
-      } else if (search.status === 'found' && !sameSettings(search.settings, settings)) {
+      } else if (
+        search.status === 'error' ||
+        (search.status === 'found' && !sameSelection(search.selection, settings.selection))
+      ) {
         setSearch({ status: 'idle' })
       }
     },
@@ -168,13 +174,12 @@ export function AnalysisSessionProvider({
   )
 
   const find = useCallback(() => {
-    const settings = draft
-    saveReviewSettings(settings)
+    const { selection } = draft
     const signal = restart(searchJob)
     setSearch({ status: 'finding' })
-    findGames(accounts, settings.selection, { signal }).then(
+    findGames(accounts, selection, { signal }).then(
       (found) => {
-        if (!signal.aborted) setSearch({ status: 'found', found, settings })
+        if (!signal.aborted) setSearch({ status: 'found', found, selection })
       },
       (error: Error) => {
         if (!signal.aborted) setSearch({ status: 'error', error })
@@ -200,10 +205,13 @@ export function AnalysisSessionProvider({
 
   const launch = useCallback(async () => {
     if (search.status !== 'found' || !(await confirmReplace())) return
-    const { found, settings } = search
+    const { found, selection } = search
+    const settings = { selection, criteria: draft.criteria }
+    // Remembered for next time: the settings of the last analysis launched from the filters.
+    saveReviewSettings(settings)
     void runAnalysis(settings, async () => found)
     goTo('/analysis/run')
-  }, [search, confirmReplace, runAnalysis, goTo])
+  }, [search, draft.criteria, confirmReplace, runAnalysis, goTo])
 
   const train = useCallback(
     async (mistakes: Mistake[]) => {
@@ -236,24 +244,19 @@ export function AnalysisSessionProvider({
   }, [navigate, usernames])
 
   const analysisSettings = analysis.status === 'none' ? undefined : analysis.settings
-  const draftChanged = analysisSettings !== undefined && !sameSettings(draft, analysisSettings)
-  const restoreDraft = useCallback(() => {
-    if (analysisSettings) setDraft(analysisSettings)
-  }, [analysisSettings, setDraft])
 
   const value: Session = {
     accounts,
-    gameCounts,
+    gameTotal,
     draft,
     setDraft,
     search,
     analysis,
     training,
-    draftChanged,
+    analysisSettings,
     find,
     launch,
     train,
-    restoreDraft,
     endTraining,
   }
 

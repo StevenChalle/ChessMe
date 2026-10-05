@@ -6,6 +6,7 @@ import {
   deviceProfile,
   enginePositions,
   estimateSeconds,
+  makespan,
 } from './estimate'
 
 const DESKTOP = deviceProfile('desktop', 4)
@@ -27,6 +28,16 @@ describe('enginePositions', () => {
 
   it('needs nothing for a game without moves', () => {
     expect(enginePositions(game(0))).toBe(0)
+  })
+})
+
+describe('makespan', () => {
+  it('gives each job, in order, to the first engine free', () => {
+    expect(makespan([], 4)).toBe(0)
+    expect(makespan([10, 10, 10, 10], 4)).toBe(10)
+    // The fifth job waits for an engine
+    expect(makespan([10, 10, 10, 10, 10], 4)).toBe(20)
+    expect(makespan([30, 10, 10, 10], 2)).toBe(30)
   })
 })
 
@@ -58,6 +69,13 @@ describe('estimateSeconds', () => {
       DESKTOP,
     )
     expect(four).toBeCloseTo(one)
+    // A fifth game waits for a free engine
+    const five = estimateSeconds(
+      Array.from({ length: 5 }, () => game(80)),
+      DEFAULT_CRITERIA,
+      DESKTOP,
+    )
+    expect(five).toBeCloseTo(2 * one)
   })
 
   it('grows when lower error thresholds flag more moves for a deep look', () => {
@@ -73,7 +91,8 @@ describe('estimateSeconds', () => {
 })
 
 describe('desktopSpeedup', () => {
-  const games = Array.from({ length: 10 }, () => game(80))
+  // 8 games: 4 rounds on 2 engines, 2 rounds on 4
+  const games = Array.from({ length: 8 }, () => game(80))
 
   it('tells a phone how much faster a computer would be', () => {
     // 825k vs 250k nodes/s per engine, 4 engines vs 2

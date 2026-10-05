@@ -129,6 +129,49 @@ describe('findGames', () => {
     expect(options?.until).toBe(20 * DAY)
   })
 
+  it('keeps the latest games of a date range up to its maximum', async () => {
+    const all = Array.from({ length: 150 }, (_, i) => lichessGame(`g${i}`, 299 - i))
+    const calls: GameExportOptions[] = []
+    const fetchers = {
+      lichessExport: async (_user: string, options: GameExportOptions) => {
+        calls.push(options)
+        return all
+          .filter((game) => options.until === undefined || game.createdAt <= options.until)
+          .slice(0, options.max)
+      },
+    } as unknown as GameFetchers
+    const selection: GameSelection = {
+      ...defaultSelection(['lichess']),
+      categories: ['blitz'],
+      scope: { kind: 'range', from: 100 * DAY, to: 300 * DAY, max: 30 },
+    }
+    const { games } = await findGames(lichessOnly, selection, { fetchers })
+    expect(games.map((game) => game.id)).toEqual(all.slice(0, 30).map((game) => game.id))
+    expect(calls).toHaveLength(1)
+    expect(calls[0]).toMatchObject({ max: 100, since: 99 * DAY, until: 300 * DAY })
+  })
+
+  it('stops opening Chess.com months once a range has its maximum', async () => {
+    const opened: string[] = []
+    const fetchers = {
+      chessComArchives: async () => ['m1', 'm2', 'm3'],
+      chessComMonth: async (url: string) => {
+        opened.push(url)
+        const day = Number(url.slice(1)) * 30
+        return [chessComGame(`${url}a`, day), chessComGame(`${url}b`, day + 1)]
+      },
+    } as unknown as GameFetchers
+    const selection: GameSelection = {
+      ...defaultSelection(['chesscom']),
+      scope: { kind: 'range', from: 0, to: 1000 * DAY, max: 3 },
+    }
+    const { games } = await findGames([{ source: 'chesscom', username: 'alice' }], selection, {
+      fetchers,
+    })
+    expect(opened).toEqual(['m3', 'm2'])
+    expect(games.map((game) => game.id)).toEqual(['m3b', 'm3a', 'm2b'])
+  })
+
   it('only opens the Chess.com months of the range, newest first', async () => {
     const opened: string[] = []
     const base = 'https://api.chess.com/pub/player/alice/games'

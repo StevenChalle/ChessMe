@@ -14,7 +14,7 @@ import { LARGE_REVIEW } from '../selection'
 
 const SOURCES: ApiSource[] = ['lichess', 'chesscom']
 
-/** What the search found (shown under the filters), how long the analysis should take, and the button to launch it. */
+/** What the search found (shown under the filters), how long the analysis should take, and the button to launch it (top right). */
 export function ReviewRecap({
   found: { games, failures },
   criteria,
@@ -33,6 +33,8 @@ export function ReviewRecap({
     source,
     count: games.filter((game) => game.source === source).length,
   })).filter(({ count }) => count > 0)
+  // Their evaluations are reused: already left out of the estimate.
+  const serverAnalysed = games.filter((game) => game.serverCps !== undefined).length
   const byCategory = CATEGORIES.map((category) => ({
     category,
     count: games.filter((game) => game.category === category).length,
@@ -50,12 +52,20 @@ export function ReviewRecap({
         <p className="text-muted-foreground">{m.recap_none()}</p>
       ) : (
         <div className="space-y-3 rounded-md bg-muted/50 p-4">
-          <p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
-            {m.recap_title()}
-          </p>
-          <p className="text-2xl font-medium text-font-clear tabular-nums">
-            {formatGameCount(games.length)}
-          </p>
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div className="space-y-3">
+              <p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
+                {m.recap_title()}
+              </p>
+              <p className="text-2xl font-medium text-font-clear tabular-nums">
+                {formatGameCount(games.length)}
+              </p>
+            </div>
+            <Button size="lg" onClick={onLaunch}>
+              <Play data-icon="inline-start" />
+              {m.recap_launch()}
+            </Button>
+          </div>
           <p className="flex flex-wrap gap-x-4 gap-y-1 text-sm">
             {bySource.map(({ source, count }) => (
               <span key={source} className="inline-flex items-center gap-1.5">
@@ -81,7 +91,14 @@ export function ReviewRecap({
                 {m.recap_faster_on_desktop({ times: String(speedup) })}
               </p>
             )}
-            <p className="text-xs text-muted-foreground">{m.recap_estimate_hint()}</p>
+            {serverAnalysed > 0 && (
+              <p className="text-xs text-muted-foreground">
+                {m.recap_server_analysed({
+                  count: serverAnalysed,
+                  formatted: formatNumber(serverAnalysed),
+                })}
+              </p>
+            )}
           </div>
           {games.length >= LARGE_REVIEW && (
             <p className="flex gap-2 rounded-md border border-brag/40 bg-brag/10 p-3 text-sm text-font-clear">
@@ -90,13 +107,6 @@ export function ReviewRecap({
             </p>
           )}
         </div>
-      )}
-
-      {games.length > 0 && (
-        <Button size="lg" onClick={onLaunch}>
-          <Play data-icon="inline-start" />
-          {m.recap_launch()}
-        </Button>
       )}
     </div>
   )

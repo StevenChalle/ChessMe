@@ -64,7 +64,7 @@ function AnalysisLayout() {
     <AnalysisSessionProvider
       key={`${lichess ?? ''}|${chesscom ?? ''}`}
       accounts={reviewable.accounts}
-      gameCounts={reviewable.gameCounts}
+      gameTotal={reviewable.gameTotal}
       usernames={usernames}
       start={start}
     >
@@ -97,7 +97,6 @@ function AnalysisPage({
   return (
     <div className="space-y-6">
       <PlayerHeader accounts={accounts} profileLink={usernames} actions={<AnalysisActions />} />
-      <h2 className="text-xl font-medium text-font-clear">{m.review_title()}</h2>
       <AnalysisTabs usernames={usernames} />
       {/* Kept mounted while another tab is shown: the training session goes on where it was.
           Placed before the tab content so the board never moves when that content changes. */}

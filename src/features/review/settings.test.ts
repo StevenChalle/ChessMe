@@ -21,7 +21,7 @@ describe('parseReviewSettings', () => {
         selection: {
           sources: ['chesscom'],
           ratings: ['rated'],
-          scope: { kind: 'range', from: 1, to: 2, preset: 'month' },
+          scope: { kind: 'range', from: 1, to: 2, preset: 'month', max: 40 },
           categories: ['blitz'],
           colors: ['black'],
           results: ['loss'],
@@ -35,7 +35,7 @@ describe('parseReviewSettings', () => {
       selection: {
         sources: ['chesscom'],
         ratings: ['rated'],
-        scope: { kind: 'range', from: 1, to: 2, preset: 'month' },
+        scope: { kind: 'range', from: 1, to: 2, preset: 'month', max: 40 },
         categories: ['blitz'],
         colors: ['black'],
         results: ['loss'],
@@ -62,6 +62,15 @@ describe('parseReviewSettings', () => {
     expect(settings.selection.scope).toEqual({ kind: 'latest', count: 10 })
     // Kept consistent: a valid move stays below an error
     expect(settings.criteria).toEqual({ errorMinDrop: 4, validMaxDrop: 3 })
+  })
+
+  it('drops an invalid period maximum (no limit)', () => {
+    const raw = saved({ selection: { scope: { kind: 'range', from: 1, to: 2, max: 0 } } })
+    expect(parseReviewSettings(raw, [...both]).selection.scope).toEqual({
+      kind: 'range',
+      from: 1,
+      to: 2,
+    })
   })
 
   it('only keeps platforms with an account now', () => {
@@ -103,6 +112,13 @@ describe('sameSettings', () => {
     )
     expect(
       sameSettings(base, { ...base, selection: { ...base.selection, colors: ['white'] } }),
+    ).toBe(false)
+    const range = { kind: 'range' as const, from: 1, to: 2 }
+    expect(
+      sameSettings(
+        { ...base, selection: { ...base.selection, scope: range } },
+        { ...base, selection: { ...base.selection, scope: { ...range, max: 20 } } },
+      ),
     ).toBe(false)
   })
 })

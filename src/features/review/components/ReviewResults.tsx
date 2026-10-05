@@ -17,7 +17,7 @@ const RESULTS_PAGE_SIZE = 20
  * Replaying all the errors is in the page header.
  */
 export function ReviewResults({
-  outcome: { games, failures, criteria },
+  outcome: { games, failures },
   onTrain,
 }: {
   outcome: ReviewOutcome
@@ -36,12 +36,6 @@ export function ReviewResults({
         <p className="text-muted-foreground">{m.review_no_games()}</p>
       ) : (
         <>
-          <p className="text-right text-xs text-muted-foreground">
-            {m.results_criteria({
-              error: String(criteria.errorMinDrop),
-              valid: String(criteria.validMaxDrop),
-            })}
-          </p>
           <GamesTable
             games={pageSlice(games, page, RESULTS_PAGE_SIZE)}
             extra={{
