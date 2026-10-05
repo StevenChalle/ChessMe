@@ -1,16 +1,21 @@
 import { Timer } from 'lucide-react'
 import { useEffect, useState } from 'react'
+import type { ActiveTime } from '@/lib/activeTime'
 import { formatClock } from '@/lib/format'
 import { m } from '@/paraglide/messages'
 
-/** Discreet time since the analysis started (Unix ms), frozen at `endedAt` once it ends. */
-export function Stopwatch({ startedAt, endedAt }: { startedAt: number; endedAt?: number }) {
-  const [now, setNow] = useState(() => Date.now())
+/**
+ * Discreet duration of the analysis: ticking from `clock` while it runs, then the final
+ * `durationMs`. Time spent with the page hidden is left out (the analysis pauses then).
+ */
+export function Stopwatch({ clock, durationMs }: { clock?: ActiveTime; durationMs?: number }) {
+  const [, tick] = useState(0)
   useEffect(() => {
-    if (endedAt !== undefined) return
-    const timer = setInterval(() => setNow(Date.now()), 1000)
+    if (!clock) return
+    const timer = setInterval(() => tick((count) => count + 1), 1000)
     return () => clearInterval(timer)
-  }, [endedAt])
+  }, [clock])
+  const elapsedMs = durationMs ?? clock?.elapsedMs() ?? 0
 
   return (
     <p
@@ -19,7 +24,7 @@ export function Stopwatch({ startedAt, endedAt }: { startedAt: number; endedAt?:
     >
       <Timer aria-hidden className="size-3" />
       <span className="sr-only">{m.review_elapsed()}</span>
-      {formatClock(Math.max(0, (endedAt ?? now) - startedAt) / 1000)}
+      {formatClock(Math.max(0, elapsedMs) / 1000)}
     </p>
   )
 }

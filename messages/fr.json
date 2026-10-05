@@ -317,5 +317,6 @@
       }
     }
   ],
-  "chesscom_rated_only": "Chess.com ne publie que le bilan des parties classées : les parties amicales jouées là-bas ne sont pas comptées."
+  "chesscom_rated_only": "Chess.com ne publie que le bilan des parties classées : les parties amicales jouées là-bas ne sont pas comptées.",
+  "analysis_keep_open": "Garde l'appli ouverte, écran allumé : l'analyse se met en pause en arrière-plan ou écran éteint."
 }

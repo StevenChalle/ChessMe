@@ -317,5 +317,6 @@
       }
     }
   ],
-  "chesscom_rated_only": "Chess.com only publishes the records of rated games: casual games played there are not counted."
+  "chesscom_rated_only": "Chess.com only publishes the records of rated games: casual games played there are not counted.",
+  "analysis_keep_open": "Keep the app open with the screen on: the analysis pauses in the background or when the screen turns off."
 }

@@ -1,4 +1,5 @@
 import type { Color } from 'chessops'
+import { trackActiveTime } from '@/lib/activeTime'
 import { defaultPoolSize, EnginePool } from '@/lib/engine/pool'
 import type { Stockfish } from '@/lib/engine/stockfish'
 import type { ApiSource } from '@/lib/http'
@@ -135,10 +136,10 @@ export async function analyzeGames(
 
   onProgress({ phase: 'starting-engine', games: games.length })
   const pool = await EnginePool.start(Math.min(poolSize, quickJobs.length), signal)
+  // The speed is measured over the whole analysis, so the deep pass gets a time estimate right
+  // away from the quick pass; only while the page is shown (a phone freezes a hidden page).
+  const active = trackActiveTime()
   try {
-    // The speed is measured over the whole analysis, so the deep pass gets a time estimate
-    // right away from the quick pass.
-    const startedAt = performance.now()
     let doneNodes = 0
     const quick = quickJobs.map((work) => ({ work, indexes: missing(work) }))
     const quickTotal = quick.reduce((sum, job) => sum + job.indexes.length, 0)
@@ -156,7 +157,7 @@ export async function analyzeGames(
           total,
           remainingSeconds: remainingSeconds({
             doneNodes,
-            elapsedMs: performance.now() - startedAt,
+            elapsedMs: active.time.elapsedMs(),
             remainingNodes: (total - done) * nodes,
           }),
         })
@@ -168,6 +169,7 @@ export async function analyzeGames(
           work.byEngine.add(index)
           done++
           doneNodes += nodes
+          active.time.markProgress()
           report()
         }
       })
@@ -179,6 +181,7 @@ export async function analyzeGames(
       .filter((job) => job.indexes.length > 0)
     if (deepJobs.length > 0) await runPass('deep', deepJobs, DEEP_NODES)
   } finally {
+    active.stop()
     pool.terminate()
   }
 

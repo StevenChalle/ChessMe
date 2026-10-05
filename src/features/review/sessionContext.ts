@@ -1,3 +1,4 @@
+import type { ActiveTime } from '@/lib/activeTime'
 import { createContext, useContext } from 'react'
 import type { Mistake, ReviewOutcome } from './analyze'
 import type { FoundGames, ReviewAccount } from './fetch'
@@ -16,18 +17,15 @@ export type SearchState =
   | { status: 'found'; found: FoundGames; selection: GameSelection }
   | { status: 'error'; error: Error }
 
-/** `startedAt` / `endedAt` (Unix ms) drive the stopwatch, which survives tab switches. */
+/**
+ * The stopwatch survives tab switches: `clock` while running, then the final `durationMs`. Both
+ * leave out the time the page was hidden (a phone pauses the analysis then, see ActiveTime).
+ */
 export type AnalysisState =
   | { status: 'none' }
-  | { status: 'running'; progress: ReviewProgress; settings: ReviewSettings; startedAt: number }
-  | {
-      status: 'done'
-      outcome: ReviewOutcome
-      settings: ReviewSettings
-      startedAt: number
-      endedAt: number
-    }
-  | { status: 'error'; error: Error; settings: ReviewSettings; startedAt: number; endedAt: number }
+  | { status: 'running'; progress: ReviewProgress; settings: ReviewSettings; clock: ActiveTime }
+  | { status: 'done'; outcome: ReviewOutcome; settings: ReviewSettings; durationMs: number }
+  | { status: 'error'; error: Error; settings: ReviewSettings; durationMs: number }
 
 /** `id` changes with every new session: TrainingView remounts (fresh puzzles and engine). */
 export type TrainingSession = { id: number; mistakes: Mistake[]; validMaxDrop: number }

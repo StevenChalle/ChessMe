@@ -377,3 +377,13 @@ Le message « Couldn't start Stockfish » signalé n'a pas été reproduit aprè
 - « Lancer l'analyse » passe en haut à droite de l'encadré « Parties trouvées ». Le titre « Analyse approfondie » et le rappel des seuils au-dessus des résultats sont retirés.
 - **Estimation** : elle déduisait déjà les positions évaluées par Lichess ; la phrase « les parties déjà analysées par Lichess vont plus vite » laissait croire le contraire. Elle est remplacée par « Dont N parties déjà analysées par Lichess : leurs évaluations sont reprises ». Le calcul simule désormais la répartition des parties entre les moteurs (`makespan`, comme `EnginePool.run`), puis la passe approfondie après la rapide : 5 parties sur 4 moteurs prennent deux tours. Une mesure (10 parties Chess.com, PC 20 cœurs) : ≈ 50 s estimées, 58 s réelles ; la vitesse du moteur n'a pas été recalibrée.
 - Le bouton « Quitter » de l'entraînement est retiré : les onglets suffisent pour en sortir, et le bilan de fin ramène toujours aux résultats.
+
+---
+
+## 2026-10-06 : analyse et mise en veille du téléphone
+
+Un téléphone **gèle** la page (et ses Web Workers, donc Stockfish) dès que l'écran s'éteint ou que l'app passe en arrière-plan : l'analyse se met en pause et reprend au retour. Calculer en arrière-plan est impossible en web (une PWA n'a pas de calcul en tâche de fond, le service worker est coupé au bout de quelques secondes) ; seule une app native le permettrait.
+
+- **Écran gardé allumé** pendant l'analyse (Screen Wake Lock, `useKeepAwake`, déjà en place) : la mise en veille automatique n'interrompt plus l'analyse. Elle ne peut rien contre une veille demandée (bouton d'alimentation) ni un changement d'appli, et le navigateur peut la refuser (économiseur de batterie). D'où une phrase pendant l'analyse : « Garde l'appli ouverte, écran allumé : l'analyse se met en pause en arrière-plan ou écran éteint ».
+- **Temps actif** (`src/lib/activeTime.ts`) pour le chrono et pour la vitesse qui sert au temps restant : le temps passé page masquée ne compte que si l'analyse a avancé pendant ce temps (au moins 2 positions évaluées). Sur téléphone, une pause n'allonge plus le chrono et ne fait plus exploser l'estimation ; sur PC, un onglet en arrière-plan continue de calculer et ce temps compte. Le seuil de 2 évite qu'un résultat déjà en route au moment du gel ne transforme toute la pause en travail.
+- Piste suivante : enregistrer les évaluations au fil de l'eau (Dexie) pour reprendre une analyse si le système ferme la page au lieu de la geler.

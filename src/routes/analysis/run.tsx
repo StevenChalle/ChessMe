@@ -37,9 +37,12 @@ function AnalysisTab() {
       ) : (
         <ReviewResults outcome={analysis.outcome} onTrain={(mistakes) => void train(mistakes)} />
       )}
+      {analysis.status === 'running' && (
+        <p className="text-sm text-muted-foreground">{m.analysis_keep_open()}</p>
+      )}
       <Stopwatch
-        startedAt={analysis.startedAt}
-        endedAt={analysis.status === 'running' ? undefined : analysis.endedAt}
+        clock={analysis.status === 'running' ? analysis.clock : undefined}
+        durationMs={analysis.status === 'running' ? undefined : analysis.durationMs}
       />
     </div>
   )
