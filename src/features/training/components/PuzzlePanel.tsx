@@ -225,7 +225,8 @@ function Prompt({
         <SideSquare color={puzzle.color} className="size-5" />
         {puzzle.color === 'white' ? m.training_white_to_play() : m.training_black_to_play()}
       </p>
-      <p className="text-base text-muted-foreground">
+      {/* Explanations are left out on phones, for the board and the feedback to fit. */}
+      <p className="hidden text-base text-muted-foreground md:block">
         {exploring ? m.training_explore_hint() : m.training_find_move()}
       </p>
       {positionCp !== undefined && (
@@ -304,7 +305,7 @@ export function PuzzlePanel({
       <div className="space-y-4">
         <Feedback tone="bad" icon={<X />} title={m.training_wrong_title()}>
           {yourMove}
-          <p className="text-sm text-foreground">
+          <p className="hidden text-sm text-foreground md:block">
             {tried && sameMove(puzzle.fen, tried, puzzle.played.uci)
               ? m.training_wrong_game_move()
               : m.training_wrong_hint()}
@@ -351,7 +352,7 @@ export function PuzzlePanel({
         <Feedback tone="good" icon={<Check />} title={m.training_solved_title()}>
           {yourMove}
           {foundBest ? (
-            <p className="text-sm text-foreground">{m.training_solved_best()}</p>
+            <p className="hidden text-sm text-foreground md:block">{m.training_solved_best()}</p>
           ) : (
             bestMove
           )}

@@ -106,6 +106,7 @@ function AnalysisPage({
             key={training.id}
             mistakes={training.mistakes}
             validMaxDrop={training.validMaxDrop}
+            active={onTrainingTab}
             onExit={endTraining}
           />
         </div>

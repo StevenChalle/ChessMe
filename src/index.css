@@ -133,3 +133,44 @@
     cursor: pointer;
   }
 }
+
+/*
+ * Board coordinates, sized and placed relative to the board (chessground's defaults are fixed
+ * pixel offsets). As on Lichess, ranks inside the right column, top right of each square (where
+ * the brown theme's alternating colors expect them); files inside the bottom row, bottom right. `cg-container` raises the specificity above
+ * chessground.base.css, which is loaded after this file.
+ */
+.cg-wrap {
+  container-type: inline-size;
+}
+.cg-wrap cg-container coords {
+  font-family: inherit;
+  font-size: clamp(8px, 2.4cqw, 15px);
+  font-weight: 600;
+  line-height: 1;
+  opacity: 1;
+}
+.cg-wrap cg-container coords.ranks {
+  top: 0;
+  right: 0;
+  left: auto;
+  width: 12.5%;
+  height: 100%;
+}
+.cg-wrap cg-container coords.ranks coord {
+  flex: 1 1 0;
+  padding: 0.3em 0.3em 0 0;
+  text-align: right;
+  transform: none;
+}
+.cg-wrap cg-container coords.files {
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: auto;
+}
+.cg-wrap cg-container coords.files coord {
+  flex: 1 1 0;
+  padding: 0 0.3em 0.25em 0;
+  text-align: right;
+}

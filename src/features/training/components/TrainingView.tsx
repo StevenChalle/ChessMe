@@ -1,13 +1,13 @@
 import type { Config } from '@lichess-org/chessground/config'
 import type { DrawShape } from '@lichess-org/chessground/draw'
 import type { Key } from '@lichess-org/chessground/types'
-import { useEffect, useMemo, useReducer, useState } from 'react'
+import { useEffect, useMemo, useReducer, useRef, useState } from 'react'
+import { useRouter } from '@tanstack/react-router'
 import { Board } from '@/components/board/Board'
 import type { Mistake } from '@/features/review/analyze'
 import { VALID_MAX_DROP } from '@/features/review/errors'
 import { Progress } from '@/components/ui/progress'
 import { formatNumber } from '@/lib/format'
-import { cn } from '@/lib/utils'
 import { m } from '@/paraglide/messages'
 import { Coach, validMovesOf } from '../coach'
 import { ValidMaxDropContext } from '../criteria'
@@ -23,6 +23,7 @@ import {
 import { currentPuzzle, startTraining, trainingReducer, type TrainingState } from '../session'
 import { PuzzlePanel } from './PuzzlePanel'
 import { TrainingSummary } from './TrainingSummary'
+import { SIDE_BY_SIDE, useBoardSize } from '../useBoardSize'
 
 const squares = (uci: string) => moveSquares(uci) as [Key, Key]
 const arrow = (uci: string, brush: string): DrawShape => {
@@ -68,16 +69,42 @@ function boardView(state: TrainingState, puzzle: Mistake) {
 export function TrainingView({
   mistakes,
   validMaxDrop = VALID_MAX_DROP,
+  active = true,
   onExit,
 }: {
   mistakes: Mistake[]
   validMaxDrop?: number
+  /** The training is on screen (its tab is shown) */
+  active?: boolean
   onExit: () => void
 }) {
   const [state, dispatch] = useReducer(trainingReducer, mistakes, (all) => startTraining(all))
   const [engineFailed, setEngineFailed] = useState(false)
   const [coach] = useState(() => new Coach(validMaxDrop))
+  const layoutRef = useRef<HTMLDivElement>(null)
+  const boardSize = useBoardSize(layoutRef)
+  const boardRef = useRef<HTMLDivElement>(null)
   const puzzle = currentPuzzle(state)
+
+  // Whenever the board waits for a move (training shown, next mistake, retry, explore), bring it
+  // back on screen in full: on a phone, at the top of the screen, the feedback right below it; on a
+  // computer, the page scrolled to the top, which the board's size is computed for.
+  const router = useRouter()
+  useEffect(() => {
+    if (!active || state.status !== 'thinking') return
+    const bring = () => {
+      if (window.matchMedia(SIDE_BY_SIDE).matches) window.scrollTo({ top: 0, behavior: 'smooth' })
+      else boardRef.current?.scrollIntoView({ block: 'start', behavior: 'smooth' })
+    }
+    bring()
+    // Arriving on the tab is a navigation: the router's scroll restoration runs after this effect
+    // (on "onRendered") and would undo it. Do it again once then.
+    const unsubscribe = router.subscribe('onRendered', () => {
+      unsubscribe()
+      bring()
+    })
+    return unsubscribe
+  }, [active, state.index, state.status, router])
 
   // One engine for the whole training, stopped when leaving it (or closing the dialog).
   useEffect(() => {
@@ -152,25 +179,22 @@ export function TrainingView({
   }
 
   const remaining = state.puzzles.length - state.index
-  // The board's frame echoes the outcome of the try.
-  const frame =
-    state.status === 'solved'
-      ? 'ring-good'
-      : state.status === 'wrong'
-        ? 'ring-bad'
-        : state.status === 'revealed'
-          ? 'ring-primary'
-          : 'ring-transparent'
   return (
-    <div className="grid gap-6 md:grid-cols-[minmax(0,1fr)_20rem]">
-      <Board
-        config={config}
-        className={cn(
-          'mx-auto max-w-[min(100%,32rem)] rounded-sm ring-4 transition-shadow duration-200',
-          frame,
-        )}
-      />
-      <div className="flex flex-col gap-5">
+    // On a computer, as large as the window and the page's column allow (see useBoardSize), the
+    // panel centered vertically next to it. On a phone, at least a screen high, so that the page
+    // can always scroll the board up to the top of the screen.
+    <div
+      ref={layoutRef}
+      className="flex min-h-dvh flex-col gap-6 md:min-h-0 md:flex-row md:items-center md:justify-center"
+    >
+      <div
+        ref={boardRef}
+        className="mx-auto w-full max-w-[32rem] scroll-mt-2 md:mx-0 md:max-w-none"
+        style={{ width: boardSize }}
+      >
+        <Board config={config} className="rounded-sm" />
+      </div>
+      <div className="flex flex-col gap-5 md:w-80 md:shrink-0">
         <div className="space-y-2">
           <p className="flex items-baseline justify-between gap-2 tabular-nums">
             <span className="font-medium text-font-clear">
