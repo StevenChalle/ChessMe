@@ -54,8 +54,6 @@ const RATING_LABELS: Record<RatingKind, () => string> = {
   rated: m.rating_rated,
   casual: m.rating_casual,
 }
-/** The count slider stops here (enough for the usual choices); the field takes any number. */
-const LATEST_SLIDER_MAX = 200
 const COLOR_LABELS: Record<Color, () => string> = { white: m.color_white, black: m.color_black }
 const RESULT_LABELS: Record<GameResult, () => string> = {
   win: m.result_wins,
@@ -147,7 +145,6 @@ export function ReviewSetup({
     setLastRange(next)
     update({ scope: next })
   }
-  const sliderMax = total > 0 ? Math.min(total, LATEST_SLIDER_MAX) : LATEST_SLIDER_MAX
 
   return (
     <form
@@ -282,15 +279,6 @@ export function ReviewSetup({
                   </span>
                 )}
               </div>
-              <Slider
-                min={1}
-                max={sliderMax}
-                step={1}
-                value={[Math.min(Number.isNaN(latest) ? 1 : latest, sliderMax)]}
-                onValueChange={([next]) => next !== undefined && setLatest(next)}
-                aria-label={m.setup_latest()}
-                className="max-w-xs"
-              />
               <div className="flex gap-1">
                 {LATEST_SHORTCUTS.map((count) => (
                   <Button

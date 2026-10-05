@@ -342,7 +342,7 @@ La modale enchaînait réglages, récapitulatif, progression, résultats et entr
 
 - Plateformes, cadences et type de partie : des **pastilles** activables, toutes actives par défaut (les plateformes étaient des cases à cocher).
 - Ordre des rangées : plateformes / cadences / type de partie, puis couleur / résultat / longueur minimale, puis **Parties**, puis les seuils.
-- **Parties** : « Dernières parties » et « Période » côte à côte, **toujours visibles**. L'option inactive garde ses dernières valeurs, atténuée, et s'active dès qu'on l'utilise. « Dernières parties » a un **curseur** (1 à 200, ou au total du profil s'il est plus petit), un champ pour toute autre valeur, et des raccourcis 10 / 25 / 50 / 100 qui placent le curseur. La période gagne le raccourci **Aujourd'hui** (depuis minuit, heure locale).
+- **Parties** : « Dernières parties » et « Période » côte à côte, **toujours visibles**. L'option inactive garde ses dernières valeurs, atténuée, et s'active dès qu'on l'utilise. « Dernières parties » : un champ numérique et des raccourcis 10 / 25 / 50 / 100. Un curseur a été essayé puis retiré : sur des comptes de dizaines de milliers de parties, il ne permettait pas de régler finement. La période gagne le raccourci **Aujourd'hui** (depuis minuit, heure locale).
 - **« Revenir aux filtres de l'analyse en cours »** est toujours affiché, désactivé tant que les réglages n'ont pas changé.
 - Le bouton rapide n'apparaît plus sur la page d'analyse : l'en-tête n'y garde que « Rejouer mes erreurs (N) ». Le nom du joueur est un lien vers le profil partout, y compris sur le profil.
 
