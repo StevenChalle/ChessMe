@@ -2,7 +2,6 @@ import type { Config } from '@lichess-org/chessground/config'
 import type { DrawShape } from '@lichess-org/chessground/draw'
 import type { Key } from '@lichess-org/chessground/types'
 import { useEffect, useMemo, useReducer, useRef, useState } from 'react'
-import { useRouter } from '@tanstack/react-router'
 import { Board } from '@/components/board/Board'
 import type { Mistake } from '@/features/review/analyze'
 import { VALID_MAX_DROP } from '@/features/review/errors'
@@ -62,6 +61,11 @@ function boardView(state: TrainingState, puzzle: Mistake) {
   return { fen: puzzle.fen, lastMove: puzzle.lastMove, shapes }
 }
 
+function bringBoard(board: HTMLElement | null) {
+  if (window.matchMedia(SIDE_BY_SIDE).matches) window.scrollTo({ top: 0, behavior: 'smooth' })
+  else board?.scrollIntoView({ block: 'start', behavior: 'smooth' })
+}
+
 /**
  * Replays the player's errors one by one, in random order, then shows a summary.
  * `validMaxDrop`: the valid-move threshold of the review (see isValidMove).
@@ -86,25 +90,18 @@ export function TrainingView({
   const boardRef = useRef<HTMLDivElement>(null)
   const puzzle = currentPuzzle(state)
 
-  // Whenever the board waits for a move (training shown, next mistake, retry, explore), bring it
-  // back on screen in full: on a phone, at the top of the screen, the feedback right below it; on a
-  // computer, the page scrolled to the top, which the board's size is computed for.
-  const router = useRouter()
+  // The board back on screen in full: on a phone, at the top of the screen, the feedback right
+  // below it; on a computer, the page scrolled to the top, which the board's size is computed for.
+  // Arriving on the tab (or a new training), whatever the puzzle's state. The navigations to it
+  // keep the scroll position (`resetScroll: false`), so the router does not undo this.
   useEffect(() => {
-    if (!active || state.status !== 'thinking') return
-    const bring = () => {
-      if (window.matchMedia(SIDE_BY_SIDE).matches) window.scrollTo({ top: 0, behavior: 'smooth' })
-      else boardRef.current?.scrollIntoView({ block: 'start', behavior: 'smooth' })
-    }
-    bring()
-    // Arriving on the tab is a navigation: the router's scroll restoration runs after this effect
-    // (on "onRendered") and would undo it. Do it again once then.
-    const unsubscribe = router.subscribe('onRendered', () => {
-      unsubscribe()
-      bring()
-    })
-    return unsubscribe
-  }, [active, state.index, state.status, router])
+    if (active) bringBoard(boardRef.current)
+  }, [active])
+  // On the tab, whenever the board waits for a move again: next mistake, retry, explore. Not after
+  // a move: the feedback shows right below the board.
+  useEffect(() => {
+    if (active && state.status === 'thinking') bringBoard(boardRef.current)
+  }, [active, state.index, state.status])
 
   // One engine for the whole training, stopped when leaving it (or closing the dialog).
   useEffect(() => {

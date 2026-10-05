@@ -7,21 +7,30 @@ import { useAnalysisSession } from '../sessionContext'
 const TAB_CLASS =
   '-mb-px inline-flex items-center gap-2 border-b-2 border-transparent px-1 pb-2 text-sm transition-colors hover:text-font-clear data-[status=active]:border-highlight data-[status=active]:text-font-clear'
 
-/** Filters are always there; the analysis and training tabs appear once there is one. */
+/**
+ * Filters are always there; the analysis and training tabs appear once there is one. Switching
+ * tabs keeps the scroll position (`resetScroll={false}`): the training tab places its board itself.
+ */
 export function AnalysisTabs({ usernames }: { usernames: PlayerUsernames }) {
   const { analysis, training } = useAnalysisSession()
   return (
     <nav className="flex gap-6 border-b" aria-label={m.analysis_tabs_label()}>
-      <Link to="/analysis" search={usernames} activeOptions={{ exact: true }} className={TAB_CLASS}>
+      <Link
+        resetScroll={false}
+        to="/analysis"
+        search={usernames}
+        activeOptions={{ exact: true }}
+        className={TAB_CLASS}
+      >
         {m.tab_filters()}
       </Link>
       {analysis.status !== 'none' && (
-        <Link to="/analysis/run" search={usernames} className={TAB_CLASS}>
+        <Link resetScroll={false} to="/analysis/run" search={usernames} className={TAB_CLASS}>
           {m.tab_analysis()}
         </Link>
       )}
       {training && (
-        <Link to="/analysis/training" search={usernames} className={TAB_CLASS}>
+        <Link resetScroll={false} to="/analysis/training" search={usernames} className={TAB_CLASS}>
           {m.tab_training()}
         </Link>
       )}

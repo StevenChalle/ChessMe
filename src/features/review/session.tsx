@@ -202,8 +202,10 @@ export function AnalysisSessionProvider({
     })
   }, [analysis.status, confirm])
 
+  // Like the tabs, keeps the scroll position: the training tab places its board itself.
   const goTo = useCallback(
-    (to: '/analysis/run' | '/analysis/training') => void navigate({ to, search: usernames }),
+    (to: '/analysis/run' | '/analysis/training') =>
+      void navigate({ to, search: usernames, resetScroll: false }),
     [navigate, usernames],
   )
 
