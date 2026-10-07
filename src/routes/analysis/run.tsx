@@ -11,7 +11,7 @@ export const Route = createFileRoute('/analysis/run')({
 
 /** The analysis: its steps while it runs, then the games and their errors. */
 function AnalysisTab() {
-  const { analysis, train } = useAnalysisSession()
+  const { analysis, trainGame } = useAnalysisSession()
   const search = Route.useSearch()
 
   // Nothing in memory (page reloaded, link shared): back to the filters.
@@ -35,7 +35,7 @@ function AnalysisTab() {
       ) : analysis.status === 'error' ? (
         <p className="text-bad">{m.review_failed()}</p>
       ) : (
-        <ReviewResults outcome={analysis.outcome} onTrain={(mistakes) => void train(mistakes)} />
+        <ReviewResults outcome={analysis.outcome} onTrain={trainGame} />
       )}
       {analysis.status === 'running' && (
         <p className="text-sm text-muted-foreground">{m.analysis_keep_open()}</p>

@@ -24,7 +24,7 @@ describe('shuffle', () => {
 })
 
 describe('trainingReducer', () => {
-  const start = () => startTraining([mistake('a'), mistake('b')], () => 0.999)
+  const start = () => startTraining([mistake('a'), mistake('b')])
 
   it('validates a good move, then moves to the next position', () => {
     const state = run(

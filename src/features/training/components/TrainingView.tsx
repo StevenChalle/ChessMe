@@ -1,7 +1,7 @@
 import type { Config } from '@lichess-org/chessground/config'
 import type { DrawShape } from '@lichess-org/chessground/draw'
 import type { Key } from '@lichess-org/chessground/types'
-import { useEffect, useMemo, useReducer, useRef, useState } from 'react'
+import { useEffect, useEffectEvent, useMemo, useReducer, useRef, useState } from 'react'
 import { Board } from '@/components/board/Board'
 import type { Mistake } from '@/features/review/analyze'
 import { VALID_MAX_DROP } from '@/features/review/errors'
@@ -32,16 +32,14 @@ const arrow = (uci: string, brush: string): DrawShape => {
 
 /**
  * What the board shows. Before the position is solved, the player's tried move stays on the
- * board, with the engine's reply in red after a miss. Once solved with another move than the
- * best, or once the solution is shown, the board goes back to the position with arrows: best move
- * (green), the game's move (red), theirs (blue).
+ * board, with the engine's reply in red after a miss. Once solved (even with the best move) or
+ * once the solution is shown, the board goes back to the position with arrows: the game's move
+ * (red), always, to compare; the best move (green); theirs (blue), unless it is the best.
  */
 function boardView(state: TrainingState, puzzle: Mistake) {
   const { status, tried, best } = state
   const triedIsBest = Boolean(tried && best && sameMove(puzzle.fen, tried, best))
-  const showsTried =
-    tried !== undefined &&
-    (status === 'checking' || status === 'wrong' || (status === 'solved' && (triedIsBest || !best)))
+  const showsTried = tried !== undefined && (status === 'checking' || status === 'wrong')
   if (showsTried) {
     // A miss shows how it gets punished: the engine's reply, in red.
     const punishment = status === 'wrong' && state.triedReply
@@ -55,7 +53,7 @@ function boardView(state: TrainingState, puzzle: Mistake) {
   const shapes: DrawShape[] = []
   if (status === 'solved' || status === 'revealed') {
     shapes.push(arrow(puzzle.played.uci, 'red'))
-    if (tried) shapes.push(arrow(tried, 'blue'))
+    if (tried && !triedIsBest) shapes.push(arrow(tried, 'blue'))
     if (best) shapes.push(arrow(best, 'green'))
   }
   return { fen: puzzle.fen, lastMove: puzzle.lastMove, shapes }
@@ -71,18 +69,26 @@ function bringBoard(board: HTMLElement | null) {
  * `validMaxDrop`: the valid-move threshold of the review (see isValidMove).
  */
 export function TrainingView({
-  mistakes,
+  puzzles,
   validMaxDrop = VALID_MAX_DROP,
   active = true,
+  onFinishedChange,
+  onRestart,
   onExit,
 }: {
-  mistakes: Mistake[]
+  /** The positions to replay, in this order (see trainingPuzzles) */
+  puzzles: Mistake[]
   validMaxDrop?: number
   /** The training is on screen (its tab is shown) */
   active?: boolean
+  /** Every position has been played (or not anymore) */
+  onFinishedChange?: (finished: boolean) => void
+  /** The same training again, from the summary */
+  onRestart?: () => void
+  /** Back to the analysis results, from the summary */
   onExit: () => void
 }) {
-  const [state, dispatch] = useReducer(trainingReducer, mistakes, (all) => startTraining(all))
+  const [state, dispatch] = useReducer(trainingReducer, puzzles, startTraining)
   const [engineFailed, setEngineFailed] = useState(false)
   const [coach] = useState(() => new Coach(validMaxDrop))
   const layoutRef = useRef<HTMLDivElement>(null)
@@ -103,16 +109,26 @@ export function TrainingView({
     if (active && state.status === 'thinking') bringBoard(boardRef.current)
   }, [active, state.index, state.status])
 
-  // One engine for the whole training, stopped when leaving it (or closing the dialog).
+  // Told only when it changes (the callback may be a new function on every render).
+  const finished = state.status === 'summary'
+  const tellFinished = useEffectEvent((value: boolean) => onFinishedChange?.(value))
   useEffect(() => {
+    tellFinished(finished)
+  }, [finished])
+
+  // The engine only runs while the training is on screen: several trainings may be open. Hidden,
+  // it is stopped (searches under way are dropped) and starts again once shown.
+  useEffect(() => {
+    if (!active) return
     coach.activate()
     return () => coach.terminate()
-  }, [coach])
+  }, [coach, active])
 
-  // Look for the best move while the player thinks.
+  // Look for the best move while the player thinks (again if the training was hidden meanwhile).
+  const hasBest = state.best !== undefined
   useEffect(() => {
-    if (!puzzle) return
-    let active = true
+    if (!puzzle || !active || hasBest) return
+    let current = true
     coach.reference(puzzle).then(
       (reference) => {
         const valid = validMovesOf(reference, puzzle, validMaxDrop)
@@ -126,15 +142,34 @@ export function TrainingView({
         })
       },
       (error: unknown) => {
-        if (!active) return
+        if (!current) return
         console.error('Training: reference search failed', error)
         setEngineFailed(true)
       },
     )
     return () => {
-      active = false
+      current = false
     }
-  }, [coach, puzzle, validMaxDrop])
+  }, [coach, puzzle, validMaxDrop, active, hasBest])
+
+  // Judge the move tried (again if the training was hidden while it was being checked).
+  const { status, tried } = state
+  useEffect(() => {
+    if (!puzzle || !active || status !== 'checking' || !tried) return
+    let current = true
+    coach.check(puzzle, tried).then(
+      ({ valid, afterCp, reply }) =>
+        dispatch({ type: 'verdict', puzzleId: puzzle.id, valid, afterCp, reply }),
+      (error: unknown) => {
+        if (!current) return
+        console.error('Training: move check failed', error)
+        setEngineFailed(true)
+      },
+    )
+    return () => {
+      current = false
+    }
+  }, [coach, puzzle, active, status, tried])
 
   const config = useMemo((): Config | undefined => {
     if (!puzzle) return undefined
@@ -153,26 +188,17 @@ export function TrainingView({
         dests: thinking ? legalDests(fen) : new Map(),
         events: {
           after: (orig, dest) => {
-            const uci = boardMoveToUci(puzzle.fen, orig, dest)
-            dispatch({ type: 'try', uci })
-            coach.check(puzzle, uci).then(
-              ({ valid, afterCp, reply }) =>
-                dispatch({ type: 'verdict', puzzleId: puzzle.id, valid, afterCp, reply }),
-              (error: unknown) => {
-                console.error('Training: move check failed', error)
-                setEngineFailed(true)
-              },
-            )
+            dispatch({ type: 'try', uci: boardMoveToUci(puzzle.fen, orig, dest) })
           },
         },
       },
       premovable: { enabled: false },
       drawable: { autoShapes: shapes },
     }
-  }, [coach, state, puzzle])
+  }, [state, puzzle])
 
   if (!puzzle || !config) {
-    return <TrainingSummary results={state.results} onFinish={onExit} />
+    return <TrainingSummary results={state.results} onRestart={onRestart} onFinish={onExit} />
   }
 
   const remaining = state.puzzles.length - state.index
@@ -189,7 +215,14 @@ export function TrainingView({
         className="mx-auto w-full max-w-[32rem] scroll-mt-2 md:mx-0 md:max-w-none"
         style={{ width: boardSize }}
       >
-        <Board config={config} className="rounded-sm" />
+        {/* Only the training on screen has a board: chessground's arrowheads are SVG markers with
+            page-wide ids, which would resolve to a hidden board's (and not show). The board is
+            rebuilt from the training's state when its tab is shown again. */}
+        {active ? (
+          <Board config={config} className="rounded-sm" />
+        ) : (
+          <div className="aspect-square w-full" />
+        )}
       </div>
       <div className="flex flex-col gap-5 md:w-80 md:shrink-0">
         <div className="space-y-2">

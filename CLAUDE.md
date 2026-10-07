@@ -39,11 +39,11 @@ src/
   features/<nom>/     # code propre à une fonctionnalité (import, stats, training…), à créer au besoin
   features/player/    # profil croisé : summary.ts (normalisation), search.ts (paramètres ?lichess=&chesscom=), hook, composants
   features/review/    # analyse : critères, sélection, recherche, estimation, session de la page /analysis (session.tsx)
-  routes/analysis/    # page d'analyse : onglets Filtres (index), Analyse (run), Entraînement (training)
+  routes/analysis/    # page d'analyse : onglets Filtres (index), Analyse (run), un onglet fermable par entraînement (training.$number)
   features/games/     # résumé commun d'une partie (normalize.ts) et table des parties (GamesTable)
   features/history/   # onglet Parties : feed.ts (fusion paginée Lichess + Chess.com), queries.ts
   features/review/    # analyse des dernières parties : errors.ts (erreur, coup valide), analyze.ts (deux passes)
-  features/training/  # rejouer ses erreurs : session.ts (reducer), coach.ts (Stockfish), moves.ts (FEN/UCI)
+  features/training/  # rejouer ses erreurs : session.ts (reducer), order.ts (ordre de jeu, options), settings.ts (options mémorisées), coach.ts (Stockfish), moves.ts (FEN/UCI)
   lib/lichess/        # client HTTP, types, queryOptions de l'API Lichess
   lib/chesscom/       # idem pour l'API Chess.com
   lib/engine/         # Stockfish WASM : protocole UCI, Worker, pool de moteurs

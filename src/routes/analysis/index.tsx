@@ -1,9 +1,9 @@
 import { createFileRoute } from '@tanstack/react-router'
-import { LoaderCircle } from 'lucide-react'
-import { useEffect } from 'react'
+import { useEffect, useRef, type KeyboardEvent } from 'react'
 import { ReviewRecap } from '@/features/review/components/ReviewRecap'
 import { ReviewSetup } from '@/features/review/components/ReviewSetup'
 import { isSelectionValid } from '@/features/review/selection'
+import type { ReviewSettings } from '@/features/review/settings'
 import { useAnalysisSession } from '@/features/review/sessionContext'
 import { m } from '@/paraglide/messages'
 
@@ -31,8 +31,30 @@ function FiltersTab() {
     return () => clearTimeout(timer)
   }, [canSearch, analysisFetching, find])
 
+  // Enter in a field launches the analysis: right away if the games are known, else as soon as
+  // they are (searching now rather than after the delay). Remembered with the filters it was
+  // pressed on: changing them again cancels it.
+  const launchFor = useRef<ReviewSettings | undefined>(undefined)
+  useEffect(() => {
+    if (launchFor.current !== draft || search.status === 'finding' || search.status === 'idle')
+      return
+    launchFor.current = undefined
+    if (search.status === 'found' && search.found.games.length > 0) void launch()
+  }, [draft, search, launch])
+  const onKeyDown = (event: KeyboardEvent) => {
+    if (event.key !== 'Enter' || !(event.target instanceof HTMLInputElement)) return
+    event.preventDefault()
+    if (!isSelectionValid(draft.selection)) return
+    if (search.status === 'found') {
+      if (search.found.games.length > 0) void launch()
+      return
+    }
+    launchFor.current = draft
+    if (canSearch && !analysisFetching) find()
+  }
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-6" onKeyDown={onKeyDown}>
       <ReviewSetup
         accounts={accounts}
         gameTotal={gameTotal}
@@ -40,16 +62,11 @@ function FiltersTab() {
         onChange={setDraft}
         reference={analysisSettings}
       />
-      {search.status === 'finding' && (
-        <p className="flex items-center gap-2 text-sm text-muted-foreground" role="status">
-          <LoaderCircle aria-hidden className="size-4 animate-spin" />
-          {m.setup_finding()}
-        </p>
-      )}
       {search.status === 'error' && <p className="text-bad">{m.search_failed()}</p>}
-      {search.status === 'found' && (
+      {/* While the games are looked for again (or about to be), the box shows a loader. */}
+      {(search.status === 'found' || search.status === 'finding' || canSearch) && (
         <ReviewRecap
-          found={search.found}
+          found={search.status === 'found' ? search.found : undefined}
           criteria={draft.criteria}
           onLaunch={() => void launch()}
         />

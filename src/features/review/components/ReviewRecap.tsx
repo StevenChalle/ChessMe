@@ -1,4 +1,5 @@
-import { Play, TriangleAlert } from 'lucide-react'
+import { LoaderCircle, Play, TriangleAlert } from 'lucide-react'
+import type { ReactNode } from 'react'
 import { Button } from '@/components/ui/button'
 import { SourceLabel } from '@/features/player/components/SourceBadge'
 import { categoryLabel, sourceErrorMessage } from '@/features/player/sources'
@@ -16,6 +17,57 @@ const SOURCES: ApiSource[] = ['lichess', 'chesscom']
 
 /** What the search found (shown under the filters), how long the analysis should take, and the button to launch it (top right). */
 export function ReviewRecap({
+  found,
+  criteria,
+  onLaunch,
+}: {
+  /** undefined while the games are being looked for: the box shows a loader instead */
+  found?: FoundGames
+  criteria: ReviewCriteria
+  onLaunch: () => void
+}) {
+  if (!found) {
+    return (
+      <div className="rounded-md bg-muted/50 p-4" role="status">
+        <RecapHeader launchDisabled onLaunch={onLaunch}>
+          <span className="flex items-center gap-2 text-lg text-muted-foreground">
+            <LoaderCircle aria-hidden className="size-5 animate-spin" />
+            {m.setup_finding()}
+          </span>
+        </RecapHeader>
+      </div>
+    )
+  }
+  return <FoundRecap found={found} criteria={criteria} onLaunch={onLaunch} />
+}
+
+/** The box's top: its title and what it holds, the button launching the analysis on the right. */
+function RecapHeader({
+  launchDisabled = false,
+  onLaunch,
+  children,
+}: {
+  launchDisabled?: boolean
+  onLaunch: () => void
+  children: ReactNode
+}) {
+  return (
+    <div className="flex flex-wrap items-start justify-between gap-3">
+      <div className="space-y-3">
+        <p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
+          {m.recap_title()}
+        </p>
+        {children}
+      </div>
+      <Button size="lg" disabled={launchDisabled} onClick={onLaunch}>
+        <Play data-icon="inline-start" />
+        {m.recap_launch()}
+      </Button>
+    </div>
+  )
+}
+
+function FoundRecap({
   found: { games, failures },
   criteria,
   onLaunch,
@@ -52,20 +104,11 @@ export function ReviewRecap({
         <p className="text-muted-foreground">{m.recap_none()}</p>
       ) : (
         <div className="space-y-3 rounded-md bg-muted/50 p-4">
-          <div className="flex flex-wrap items-start justify-between gap-3">
-            <div className="space-y-3">
-              <p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
-                {m.recap_title()}
-              </p>
-              <p className="text-2xl font-medium text-font-clear tabular-nums">
-                {formatGameCount(games.length)}
-              </p>
-            </div>
-            <Button size="lg" onClick={onLaunch}>
-              <Play data-icon="inline-start" />
-              {m.recap_launch()}
-            </Button>
-          </div>
+          <RecapHeader onLaunch={onLaunch}>
+            <p className="text-2xl font-medium text-font-clear tabular-nums">
+              {formatGameCount(games.length)}
+            </p>
+          </RecapHeader>
           <p className="flex flex-wrap gap-x-4 gap-y-1 text-sm">
             {bySource.map(({ source, count }) => (
               <span key={source} className="inline-flex items-center gap-1.5">

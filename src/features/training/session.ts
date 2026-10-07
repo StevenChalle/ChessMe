@@ -65,11 +65,12 @@ export function shuffle<T>(items: T[], random: () => number = Math.random): T[] 
   return shuffled
 }
 
-export function startTraining(mistakes: Mistake[], random?: () => number): TrainingState {
+/** A training on these positions, in this order (see trainingPuzzles, order.ts). */
+export function startTraining(puzzles: Mistake[]): TrainingState {
   return {
-    puzzles: shuffle(mistakes, random),
+    puzzles,
     index: 0,
-    status: mistakes.length > 0 ? 'thinking' : 'summary',
+    status: puzzles.length > 0 ? 'thinking' : 'summary',
     attempts: 0,
     results: [],
   }

@@ -1,9 +1,16 @@
-import { useNavigate } from '@tanstack/react-router'
+import { useNavigate, useRouter } from '@tanstack/react-router'
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import type { PlayerUsernames } from '@/features/player/search'
 import { useConfirm } from '@/hooks/useConfirm'
 import { useKeepAwake } from '@/hooks/useKeepAwake'
 import { ActiveTime, trackActiveTime } from '@/lib/activeTime'
+import { trainingPuzzles } from '@/features/training/order'
+import {
+  DEFAULT_TRAINING_SETTINGS,
+  saveTrainingSettings,
+  toTrainingOptions,
+  type TrainingSettings,
+} from '@/features/training/settings'
 import { m } from '@/paraglide/messages'
 import { analyzeGames, type Mistake } from './analyze'
 import { DEFAULT_CRITERIA } from './criteria'
@@ -20,7 +27,7 @@ import {
   type AnalysisState,
   type SearchState,
   type Session,
-  type TrainingSession,
+  type TrainingTab,
 } from './sessionContext'
 
 /** The quick review: the last game, default rules. */
@@ -76,10 +83,16 @@ export function AnalysisSessionProvider({
         }
       : { status: 'none' },
   )
-  const [training, setTraining] = useState<TrainingSession | undefined>()
+  const [trainings, setTrainings] = useState<TrainingTab[]>([])
+  const [analysisId, setAnalysisId] = useState(0)
   const searchJob = useRef<AbortController | undefined>(undefined)
   const analysisJob = useRef<AbortController | undefined>(undefined)
+  const analysisCount = useRef(0)
+  /** Training tabs opened on this page: their numbers are never reused */
   const trainingCount = useRef(0)
+  /** Training restarts, to remount the board each time */
+  const runCount = useRef(0)
+  const router = useRouter()
 
   useKeepAwake(analysis.status === 'running')
 
@@ -95,11 +108,17 @@ export function AnalysisSessionProvider({
     return job.current.signal
   }
 
-  /** Runs an analysis, fetching the games first, and replaces any other (and its training). */
+  /**
+   * Runs an analysis, fetching the games first, and replaces any other. Trainings already
+   * launched stay, with their own errors (from an older analysis now); those still on their
+   * options depended on the replaced one and close.
+   */
   const runAnalysis = useCallback(
     async (settings: ReviewSettings, getFound: (signal: AbortSignal) => Promise<FoundGames>) => {
       const signal = restart(analysisJob)
-      setTraining(undefined)
+      analysisCount.current += 1
+      setAnalysisId(analysisCount.current)
+      setTrainings((tabs) => tabs.filter((tab) => tab.phase.kind === 'running'))
       const active = trackActiveTime()
       const clock = active.time
       setAnalysis({ status: 'running', progress: { phase: 'fetching' }, settings, clock })
@@ -204,8 +223,7 @@ export function AnalysisSessionProvider({
 
   // Like the tabs, keeps the scroll position: the training tab places its board itself.
   const goTo = useCallback(
-    (to: '/analysis/run' | '/analysis/training') =>
-      void navigate({ to, search: usernames, resetScroll: false }),
+    (to: '/analysis/run') => void navigate({ to, search: usernames, resetScroll: false }),
     [navigate, usernames],
   )
 
@@ -219,35 +237,163 @@ export function AnalysisSessionProvider({
     goTo('/analysis/run')
   }, [search, draft.criteria, confirmReplace, runAnalysis, goTo])
 
-  const train = useCallback(
-    async (mistakes: Mistake[]) => {
+  const showTraining = useCallback(
+    (number: number) =>
+      void navigate({
+        to: '/analysis/training/$number',
+        params: { number: String(number) },
+        search: usernames,
+        resetScroll: false,
+      }),
+    [navigate, usernames],
+  )
+
+  /** A new tab on the errors of the current analysis, on its options or already running. */
+  const openTraining = useCallback(
+    (mistakes: Mistake[], running: boolean) => {
       if (analysis.status !== 'done') return
+      // Numbers are never reused while trainings are open; with none left, they start over.
+      if (trainings.length === 0) trainingCount.current = 0
+      trainingCount.current += 1
+      runCount.current += 1
+      const { criteria } = analysis.outcome
+      const tab: TrainingTab = {
+        number: trainingCount.current,
+        analysisId,
+        mistakes,
+        validMaxDrop: criteria.validMaxDrop,
+        errorMinDrop: criteria.errorMinDrop,
+        phase: running
+          ? {
+              kind: 'running',
+              settings: DEFAULT_TRAINING_SETTINGS,
+              puzzles: trainingPuzzles(
+                mistakes,
+                toTrainingOptions(DEFAULT_TRAINING_SETTINGS, criteria.errorMinDrop),
+              ),
+              run: runCount.current,
+            }
+          : { kind: 'options' },
+        finished: false,
+      }
+      setTrainings((tabs) => [...tabs, tab])
+      showTraining(tab.number)
+    },
+    [analysis, analysisId, trainings.length, showTraining],
+  )
+
+  const newTraining = useCallback(() => {
+    if (analysis.status !== 'done') return
+    openTraining(
+      analysis.outcome.games.flatMap((game) => game.mistakes),
+      false,
+    )
+  }, [analysis, openTraining])
+
+  const trainGame = useCallback(
+    (mistakes: Mistake[]) => openTraining(mistakes, true),
+    [openTraining],
+  )
+
+  const updateTraining = useCallback(
+    (number: number, change: (tab: TrainingTab) => TrainingTab) =>
+      setTrainings((tabs) => tabs.map((tab) => (tab.number === number ? change(tab) : tab))),
+    [],
+  )
+
+  const launchTraining = useCallback(
+    (number: number, settings: TrainingSettings) => {
+      saveTrainingSettings(settings)
+      runCount.current += 1
+      const run = runCount.current
+      updateTraining(number, (tab) => ({
+        ...tab,
+        phase: {
+          kind: 'running',
+          settings,
+          puzzles: trainingPuzzles(tab.mistakes, toTrainingOptions(settings, tab.errorMinDrop)),
+          run,
+        },
+        finished: false,
+      }))
+    },
+    [updateTraining],
+  )
+
+  const restartTraining = useCallback(
+    (number: number) => {
+      runCount.current += 1
+      const run = runCount.current
+      updateTraining(number, (tab) =>
+        tab.phase.kind === 'running'
+          ? {
+              ...tab,
+              phase: {
+                ...tab.phase,
+                puzzles: trainingPuzzles(
+                  tab.mistakes,
+                  toTrainingOptions(tab.phase.settings, tab.errorMinDrop),
+                ),
+                run,
+              },
+              finished: false,
+            }
+          : tab,
+      )
+    },
+    [updateTraining],
+  )
+
+  const setTrainingFinished = useCallback((number: number, finished: boolean) => {
+    setTrainings((tabs) =>
+      tabs.some((tab) => tab.number === number && tab.finished !== finished)
+        ? tabs.map((tab) => (tab.number === number ? { ...tab, finished } : tab))
+        : tabs,
+    )
+  }, [])
+
+  const showResults = useCallback(() => goTo('/analysis/run'), [goTo])
+
+  /** Closing the tab on screen shows its neighbor, else the results (or the filters). */
+  const closeTraining = useCallback(
+    async (number: number) => {
+      const index = trainings.findIndex((tab) => tab.number === number)
+      const tab = trainings[index]
+      if (!tab) return
+      // Only a training under way has something to lose (not its options, nor once finished).
       if (
-        training &&
+        tab.phase.kind === 'running' &&
+        !tab.finished &&
         !(await confirm({
-          title: m.confirm_training_title(),
-          description: m.confirm_training_body(),
-          confirmLabel: m.confirm_training_action(),
+          title: m.confirm_close_training_title(),
+          description: m.confirm_close_training_body(),
+          confirmLabel: m.confirm_close_training_action(),
           cancelLabel: m.confirm_cancel(),
         }))
       ) {
         return
       }
-      trainingCount.current += 1
-      setTraining({
-        id: trainingCount.current,
-        mistakes,
-        validMaxDrop: analysis.outcome.criteria.validMaxDrop,
-      })
-      goTo('/analysis/training')
+      // Leave the tab first: without its training, it would redirect elsewhere.
+      const shown = router.state.location.pathname === `/analysis/training/${number}`
+      const neighbor = trainings[index + 1] ?? trainings[index - 1]
+      const leave = !shown
+        ? Promise.resolve()
+        : neighbor
+          ? navigate({
+              to: '/analysis/training/$number',
+              params: { number: String(neighbor.number) },
+              search: usernames,
+              resetScroll: false,
+            })
+          : navigate({
+              to: analysis.status === 'none' ? '/analysis' : '/analysis/run',
+              search: usernames,
+              resetScroll: false,
+            })
+      void leave.then(() => setTrainings((tabs) => tabs.filter((item) => item.number !== number)))
     },
-    [analysis, training, confirm, goTo],
+    [trainings, confirm, router, analysis.status, navigate, usernames],
   )
-
-  // Leave the training tab first: without a session, it would send back to the filters.
-  const endTraining = useCallback(() => {
-    void navigate({ to: '/analysis/run', search: usernames }).then(() => setTraining(undefined))
-  }, [navigate, usernames])
 
   const analysisSettings = analysis.status === 'none' ? undefined : analysis.settings
 
@@ -258,12 +404,18 @@ export function AnalysisSessionProvider({
     setDraft,
     search,
     analysis,
-    training,
+    analysisId,
+    trainings,
     analysisSettings,
     find,
     launch,
-    train,
-    endTraining,
+    newTraining,
+    trainGame,
+    launchTraining,
+    restartTraining,
+    closeTraining,
+    setTrainingFinished,
+    showResults,
   }
 
   return (

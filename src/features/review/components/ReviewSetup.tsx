@@ -2,12 +2,11 @@ import type { Color } from 'chessops'
 import { ChevronRight, RotateCcw } from 'lucide-react'
 import { useId, useState, type ReactNode } from 'react'
 import { InfoTip } from '@/components/InfoTip'
+import { LimitField } from '@/components/LimitField'
 import { Button } from '@/components/ui/button'
-import { Checkbox } from '@/components/ui/checkbox'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
-import { Slider } from '@/components/ui/slider'
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group'
 import type { GameResult } from '@/features/games/normalize'
 import { SourceDot } from '@/features/player/components/SourceBadge'
@@ -20,11 +19,12 @@ import { m } from '@/paraglide/messages'
 import {
   DEFAULT_CRITERIA,
   ERROR_RANGE,
-  LICHESS_MARKERS,
   normalizeCriteria,
   VALID_RANGE,
   type ReviewCriteria,
 } from '../criteria'
+import { lichessMarkers } from '../markers'
+import { ThresholdSlider } from './ThresholdSlider'
 import type { ReviewAccount } from '../fetch'
 import {
   ALL_COLORS,
@@ -153,15 +153,6 @@ function Expandable({
       <div className="space-y-6 border-t border-border p-4">{children}</div>
     </details>
   )
-}
-
-/** Lichess's judgements on our scale, as landmarks under the threshold sliders. */
-function lichessMarkers() {
-  return [
-    { value: LICHESS_MARKERS.inaccuracy, label: m.marker_inaccuracy() },
-    { value: LICHESS_MARKERS.mistake, label: m.marker_mistake() },
-    { value: LICHESS_MARKERS.blunder, label: m.marker_blunder() },
-  ]
 }
 
 type RangeScope = Extract<GameScope, { kind: 'range' }>
@@ -522,10 +513,7 @@ export function ReviewSetup({
   )
 }
 
-/**
- * The period's maximum, behind a checkbox: unchecked means no limit (no need to type 9999). The
- * last number is kept, dimmed, to check it again. The latest games are kept first.
- */
+/** The period's maximum: unchecked means no limit (see LimitField). The latest games come first. */
 function RangeMaxField({
   value,
   onChange,
@@ -533,36 +521,19 @@ function RangeMaxField({
   value: number | undefined
   onChange: (max: number | undefined) => void
 }) {
-  const id = useId()
   const [last, setLast] = useState(value ?? DEFAULT_RANGE_MAX)
-  const limited = value !== undefined
-  const shown = limited ? value : last
   return (
-    <div className="flex flex-wrap items-center gap-2 text-sm">
-      <Checkbox
-        id={id}
-        checked={limited}
-        onCheckedChange={(checked) => onChange(checked === true ? last : undefined)}
-        className="border-font-dim"
-      />
-      <Label htmlFor={id} className="font-normal text-muted-foreground">
-        {m.setup_range_max()}
-      </Label>
-      <Input
-        type="number"
-        min={1}
-        value={Number.isNaN(shown) ? '' : shown}
-        onChange={(event) => {
-          const max = event.target.valueAsNumber
-          setLast(max)
-          onChange(max)
-        }}
-        aria-label={m.setup_range_max()}
-        className={cn('h-8 w-24 bg-muted tabular-nums', !limited && 'opacity-50')}
-      />
-      <span className="text-muted-foreground">{m.setup_range_max_unit()}</span>
-      <InfoTip text={m.setup_range_max_info()} />
-    </div>
+    <LimitField
+      label={m.setup_range_max()}
+      unit={m.setup_range_max_unit()}
+      info={m.setup_range_max_info()}
+      limited={value !== undefined}
+      count={value ?? last}
+      onChange={({ limited, count }) => {
+        setLast(count)
+        onChange(limited ? count : undefined)
+      }}
+    />
   )
 }
 
@@ -601,66 +572,5 @@ function DateField({
         className="h-8 w-auto bg-muted [color-scheme:dark]"
       />
     </span>
-  )
-}
-
-/** A threshold in % of winning chances, with optional landmarks under the track. */
-function ThresholdSlider({
-  label,
-  hint,
-  value,
-  range,
-  markers = [],
-  note,
-  onChange,
-}: {
-  label: string
-  hint: string
-  value: number
-  range: { min: number; max: number }
-  markers?: { value: number; label: string }[]
-  note?: string
-  onChange: (value: number) => void
-}) {
-  const id = useId()
-  const position = (at: number) => ((at - range.min) / (range.max - range.min)) * 100
-  return (
-    <div className="space-y-2">
-      <div className="flex items-baseline justify-between gap-3">
-        <span className="flex items-center gap-1.5">
-          <Label htmlFor={id}>{label}</Label>
-          {note && <InfoTip text={note} />}
-        </span>
-        <span className="font-medium text-font-clear tabular-nums">{value} %</span>
-      </div>
-      <Slider
-        id={id}
-        min={range.min}
-        max={range.max}
-        step={1}
-        value={[value]}
-        onValueChange={([next]) => next !== undefined && onChange(next)}
-        aria-label={label}
-      />
-      {markers.length > 0 && (
-        <div className="relative h-8 text-[0.7rem] text-muted-foreground" aria-hidden>
-          {markers.map((marker) => (
-            <span
-              key={marker.value}
-              className={cn(
-                'absolute top-0 flex -translate-x-1/2 flex-col items-center leading-tight',
-                marker.value === value && 'text-font-clear',
-              )}
-              style={{ left: `${position(marker.value)}%` }}
-            >
-              <span className="h-1.5 w-px bg-current" />
-              <span>{marker.label}</span>
-              <span className="tabular-nums">{marker.value}</span>
-            </span>
-          ))}
-        </div>
-      )}
-      <p className="text-xs text-muted-foreground">{hint}</p>
-    </div>
   )
 }

@@ -5,6 +5,7 @@ import type { FoundGames, ReviewAccount } from './fetch'
 import type { ReviewProgress } from './progress'
 import type { GameSelection } from './selection'
 import type { ReviewSettings } from './settings'
+import type { TrainingSettings } from '@/features/training/settings'
 
 /**
  * The analysis page's state, shared by its tabs (filters, analysis, training): see
@@ -27,8 +28,28 @@ export type AnalysisState =
   | { status: 'done'; outcome: ReviewOutcome; settings: ReviewSettings; durationMs: number }
   | { status: 'error'; error: Error; settings: ReviewSettings; durationMs: number }
 
-/** `id` changes with every new session: TrainingView remounts (fresh puzzles and engine). */
-export type TrainingSession = { id: number; mistakes: Mistake[]; validMaxDrop: number }
+/**
+ * A training tab: first its options, then the board. `run` changes with every restart, which
+ * remounts TrainingView (fresh draw and engine).
+ */
+export type TrainingPhase =
+  | { kind: 'options' }
+  | { kind: 'running'; puzzles: Mistake[]; settings: TrainingSettings; run: number }
+
+export type TrainingTab = {
+  /** Fixed for the tab's life, never reused on the page: its title and route */
+  number: number
+  /** The analysis its errors come from: an older one once another analysis is launched */
+  analysisId: number
+  /** The errors it can replay, kept even when another analysis replaces them */
+  mistakes: Mistake[]
+  /** The analysis's rules: valid moves when replaying, and the lowest error */
+  validMaxDrop: number
+  errorMinDrop: number
+  phase: TrainingPhase
+  /** Every position has been played: closing it asks nothing */
+  finished: boolean
+}
 
 export type Session = {
   accounts: ReviewAccount[]
@@ -39,17 +60,28 @@ export type Session = {
   setDraft: (settings: ReviewSettings) => void
   search: SearchState
   analysis: AnalysisState
-  training: TrainingSession | undefined
+  /** Increases with every analysis launched: trainings from an older one are told apart */
+  analysisId: number
+  trainings: TrainingTab[]
   /** The settings of the current analysis, which each section of the form can go back to */
   analysisSettings: ReviewSettings | undefined
   /** Looks for the games of the filters being edited (the filters tab calls it on every change) */
   find: () => void
   /** Analyses the games found, with the rules being edited (asks first if an analysis exists), then shows the analysis tab */
   launch: () => Promise<void>
-  /** Replays these mistakes (asks first if a training session is open) */
-  train: (mistakes: Mistake[]) => Promise<void>
-  /** Closes the training session (its tab goes away) and shows the results */
-  endTraining: () => void
+  /** Opens a training tab on its options, for the errors of the current analysis */
+  newTraining: () => void
+  /** Opens a training tab replaying these errors right away, with the default options */
+  trainGame: (mistakes: Mistake[]) => void
+  /** Starts the training of a tab with these options, remembered for next time */
+  launchTraining: (number: number, settings: TrainingSettings) => void
+  /** The same training again, in a new draw */
+  restartTraining: (number: number) => void
+  /** Closes a training tab (asks first unless every position has been played) */
+  closeTraining: (number: number) => Promise<void>
+  setTrainingFinished: (number: number, finished: boolean) => void
+  /** Back to the analysis results */
+  showResults: () => void
 }
 
 export const SessionContext = createContext<Session | undefined>(undefined)

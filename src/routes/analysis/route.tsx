@@ -80,14 +80,15 @@ function AnalysisPage({
   usernames: PlayerUsernames
   accounts: AccountSummary[]
 }) {
-  const { analysis, training, endTraining } = useAnalysisSession()
-  const onTrainingTab = useLocation({
-    select: (location) => location.pathname === '/analysis/training',
-  })
+  const { analysis, trainings, restartTraining, setTrainingFinished, showResults } =
+    useAnalysisSession()
+  const pathname = useLocation({ select: (location) => location.pathname })
 
-  // Nothing is saved yet: leaving the page during an analysis or a training asks first.
-  // Switching tabs inside the page is never blocked.
-  const busy = analysis.status === 'running' || training !== undefined
+  // Nothing is saved yet: leaving the page during an analysis or an unfinished training asks
+  // first. Switching tabs inside the page is never blocked.
+  const busy =
+    analysis.status === 'running' ||
+    trainings.some((tab) => tab.phase.kind === 'running' && !tab.finished)
   const blocker = useBlocker({
     shouldBlockFn: ({ next }) => busy && !next.pathname.startsWith('/analysis'),
     enableBeforeUnload: () => busy,
@@ -98,19 +99,26 @@ function AnalysisPage({
     <div className="space-y-6">
       <PlayerHeader accounts={accounts} profileLink={usernames} actions={<AnalysisActions />} />
       <AnalysisTabs usernames={usernames} />
-      {/* Kept mounted while another tab is shown: the training session goes on where it was.
-          Placed before the tab content so the board never moves when that content changes. */}
-      {training && (
-        <div hidden={!onTrainingTab}>
-          <TrainingView
-            key={training.id}
-            mistakes={training.mistakes}
-            validMaxDrop={training.validMaxDrop}
-            active={onTrainingTab}
-            onExit={endTraining}
-          />
-        </div>
-      )}
+      {/* Trainings stay mounted while another tab is shown: each goes on where it was (only the
+          one on screen runs its engine). Placed before the tab content so the board never moves
+          when that content changes. */}
+      {trainings.map((tab) => {
+        if (tab.phase.kind !== 'running') return null
+        const shown = pathname === `/analysis/training/${tab.number}`
+        return (
+          <div key={tab.number} hidden={!shown}>
+            <TrainingView
+              key={tab.phase.run}
+              puzzles={tab.phase.puzzles}
+              validMaxDrop={tab.validMaxDrop}
+              active={shown}
+              onFinishedChange={(finished) => setTrainingFinished(tab.number, finished)}
+              onRestart={() => restartTraining(tab.number)}
+              onExit={showResults}
+            />
+          </div>
+        )
+      })}
       <Outlet />
       <ConfirmDialog
         open={blocker.status === 'blocked'}

@@ -1,3 +1,4 @@
+import { RotateCcw } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { formatNumber } from '@/lib/format'
 import { cn } from '@/lib/utils'
@@ -13,9 +14,12 @@ const ROWS: { result: PuzzleResult; label: () => string; className: string }[] =
 /** Totals once every error has been replayed. */
 export function TrainingSummary({
   results,
+  onRestart,
   onFinish,
 }: {
   results: PuzzleResult[]
+  /** The same positions again, in a new draw */
+  onRestart?: () => void
   onFinish: () => void
 }) {
   const totals = summarize(results)
@@ -32,9 +36,17 @@ export function TrainingSummary({
           </div>
         ))}
       </dl>
-      <Button size="lg" className="w-full" onClick={onFinish}>
-        {m.training_finish()}
-      </Button>
+      <div className="grid gap-2">
+        {onRestart && (
+          <Button size="lg" className="w-full" onClick={onRestart}>
+            <RotateCcw data-icon="inline-start" />
+            {m.training_restart()}
+          </Button>
+        )}
+        <Button size="lg" variant="outline" className="w-full" onClick={onFinish}>
+          {m.training_finish()}
+        </Button>
+      </div>
     </div>
   )
 }

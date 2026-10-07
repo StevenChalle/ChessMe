@@ -20,6 +20,8 @@ export const DEEP_NODES = 1_000_000
 export type Mistake = {
   /** Unique across games: `${source}-${gameId}-${ply}` */
   id: string
+  /** Half-move number of the position before the error, in the game: its order among the others */
+  ply: number
   game: Pick<ReviewGame, 'source' | 'url' | 'playedAt' | 'opponent'>
   color: Color
   /** Position before the error */
@@ -91,6 +93,7 @@ function finish(works: Work[], criteria: ReviewCriteria): ReviewedGame[] {
       .filter((move) => isError(move.beforeCp, move.afterCp, criteria.errorMinDrop))
       .map(({ ply, beforeCp, afterCp }) => ({
         id: `${game.source}-${game.id}-${ply}`,
+        ply,
         game: {
           source: game.source,
           url: game.url,

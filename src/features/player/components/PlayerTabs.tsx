@@ -1,4 +1,5 @@
 import { Link } from '@tanstack/react-router'
+import { LayoutGrid, List } from 'lucide-react'
 import type { ApiSource } from '@/lib/http'
 import { cn } from '@/lib/utils'
 import { m } from '@/paraglide/messages'
@@ -6,8 +7,9 @@ import type { SourceState } from '../usePlayerAccounts'
 import { SourceDot } from './SourceBadge'
 
 // TanStack Router sets data-status="active" on the current link.
+// Icons stay discreet: small and dimmed, in the tab's color.
 const TAB_CLASS =
-  '-mb-px inline-flex items-center gap-2 border-b-2 border-transparent px-1 pb-2 text-sm transition-colors hover:text-font-clear data-[status=active]:border-highlight data-[status=active]:text-font-clear'
+  '-mb-px inline-flex items-center gap-2 [&>svg]:size-3.5 [&>svg]:opacity-70 border-b-2 border-transparent px-1 pb-2 text-sm transition-colors hover:text-font-clear data-[status=active]:border-highlight data-[status=active]:text-font-clear'
 
 const SOURCE_TABS = {
   lichess: { to: '/player/lichess', label: 'Lichess' },
@@ -24,9 +26,11 @@ export function PlayerTabs({
   return (
     <nav className="flex gap-6 border-b" aria-label={m.tabs_label()}>
       <Link to="/player" search={true} activeOptions={{ exact: true }} className={TAB_CLASS}>
+        <LayoutGrid aria-hidden />
         {m.tab_overview()}
       </Link>
       <Link to="/player/history" search={true} className={TAB_CLASS}>
+        <List aria-hidden />
         {m.tab_history()}
       </Link>
       {linked.map((source) => {

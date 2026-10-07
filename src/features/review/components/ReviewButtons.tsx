@@ -2,7 +2,6 @@ import { Link } from '@tanstack/react-router'
 import { History, SlidersHorizontal, Swords } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import type { PlayerUsernames } from '@/features/player/search'
-import { formatNumber } from '@/lib/format'
 import { m } from '@/paraglide/messages'
 import { useAnalysisSession } from '../sessionContext'
 
@@ -29,15 +28,15 @@ export function ReviewButtons({ usernames }: { usernames: PlayerUsernames }) {
   )
 }
 
-/** Analysis page header: replaying every error of the analysis. */
+/** Analysis page header: a new training on the errors of the analysis, set up in its own tab. */
 export function AnalysisActions() {
-  const { analysis, train } = useAnalysisSession()
-  const mistakes =
-    analysis.status === 'done' ? analysis.outcome.games.flatMap((game) => game.mistakes) : []
+  const { analysis, newTraining } = useAnalysisSession()
+  const hasMistakes =
+    analysis.status === 'done' && analysis.outcome.games.some((game) => game.mistakes.length > 0)
   return (
-    <Button size="lg" disabled={mistakes.length === 0} onClick={() => void train(mistakes)}>
+    <Button size="lg" disabled={!hasMistakes} onClick={newTraining}>
       <Swords data-icon="inline-start" />
-      {m.training_start({ count: formatNumber(mistakes.length) })}
+      {m.training_new()}
     </Button>
   )
 }
