@@ -1,0 +1,178 @@
+/*
+ * Board looks other than chessground's own (brown board, cburnett pieces), see boardStyle.ts.
+ * Squares are drawn with a conic gradient: a tile of 2×2 squares, light at the top left, so that
+ * a1 and h8 are dark whatever the orientation. Each board color only sets the variables below.
+ */
+.board-blue {
+  --sq-light: #dee3e6;
+  --sq-dark: #8ca2ad;
+}
+.board-green {
+  /* Green and cream, as tournament vinyl boards: not any site's exact values */
+  --sq-light: #eeefd5;
+  --sq-dark: #7a9a58;
+}
+.board-purple {
+  --sq-light: #e5dbee;
+  --sq-dark: #8d6eaa;
+}
+.board-grey {
+  --sq-light: #dcdcdc;
+  --sq-dark: #9c9c9c;
+}
+
+.board-custom {
+  --sq-last-move: rgba(255, 255, 51, 0.42);
+  --sq-selected: rgba(255, 255, 51, 0.58);
+}
+.board-custom cg-board {
+  background-color: var(--sq-light);
+  background-image: repeating-conic-gradient(var(--sq-dark) 0 25%, var(--sq-light) 0 50%);
+  background-size: 25% 25%;
+}
+.board-custom cg-board square.last-move {
+  background-color: var(--sq-last-move);
+}
+.board-custom cg-board square.selected {
+  background-color: var(--sq-selected);
+}
+/* Coordinates in the color of the other squares (same alternation as the brown theme). */
+.board-custom .orientation-white .ranks :nth-child(odd),
+.board-custom .orientation-white .files :nth-child(even),
+.board-custom .orientation-black .ranks :nth-child(even),
+.board-custom .orientation-black .files :nth-child(odd) {
+  color: var(--sq-dark);
+}
+.board-custom .orientation-white .ranks :nth-child(even),
+.board-custom .orientation-white .files :nth-child(odd),
+.board-custom .orientation-black .ranks :nth-child(odd),
+.board-custom .orientation-black .files :nth-child(even) {
+  color: var(--sq-light);
+}
+
+/* Piece sets (public/piece/<set>/, licenses in public/piece/LICENSES.md). */
+.pieces-merida .cg-wrap piece.king.white {
+  background-image: url('/piece/merida/wK.svg');
+}
+.pieces-merida .cg-wrap piece.queen.white {
+  background-image: url('/piece/merida/wQ.svg');
+}
+.pieces-merida .cg-wrap piece.rook.white {
+  background-image: url('/piece/merida/wR.svg');
+}
+.pieces-merida .cg-wrap piece.bishop.white {
+  background-image: url('/piece/merida/wB.svg');
+}
+.pieces-merida .cg-wrap piece.knight.white {
+  background-image: url('/piece/merida/wN.svg');
+}
+.pieces-merida .cg-wrap piece.pawn.white {
+  background-image: url('/piece/merida/wP.svg');
+}
+.pieces-merida .cg-wrap piece.king.black {
+  background-image: url('/piece/merida/bK.svg');
+}
+.pieces-merida .cg-wrap piece.queen.black {
+  background-image: url('/piece/merida/bQ.svg');
+}
+.pieces-merida .cg-wrap piece.rook.black {
+  background-image: url('/piece/merida/bR.svg');
+}
+.pieces-merida .cg-wrap piece.bishop.black {
+  background-image: url('/piece/merida/bB.svg');
+}
+.pieces-merida .cg-wrap piece.knight.black {
+  background-image: url('/piece/merida/bN.svg');
+}
+.pieces-merida .cg-wrap piece.pawn.black {
+  background-image: url('/piece/merida/bP.svg');
+}
+.pieces-chessnut .cg-wrap piece.king.white {
+  background-image: url('/piece/chessnut/wK.svg');
+}
+.pieces-chessnut .cg-wrap piece.queen.white {
+  background-image: url('/piece/chessnut/wQ.svg');
+}
+.pieces-chessnut .cg-wrap piece.rook.white {
+  background-image: url('/piece/chessnut/wR.svg');
+}
+.pieces-chessnut .cg-wrap piece.bishop.white {
+  background-image: url('/piece/chessnut/wB.svg');
+}
+.pieces-chessnut .cg-wrap piece.knight.white {
+  background-image: url('/piece/chessnut/wN.svg');
+}
+.pieces-chessnut .cg-wrap piece.pawn.white {
+  background-image: url('/piece/chessnut/wP.svg');
+}
+.pieces-chessnut .cg-wrap piece.king.black {
+  background-image: url('/piece/chessnut/bK.svg');
+}
+.pieces-chessnut .cg-wrap piece.queen.black {
+  background-image: url('/piece/chessnut/bQ.svg');
+}
+.pieces-chessnut .cg-wrap piece.rook.black {
+  background-image: url('/piece/chessnut/bR.svg');
+}
+.pieces-chessnut .cg-wrap piece.bishop.black {
+  background-image: url('/piece/chessnut/bB.svg');
+}
+.pieces-chessnut .cg-wrap piece.knight.black {
+  background-image: url('/piece/chessnut/bN.svg');
+}
+.pieces-chessnut .cg-wrap piece.pawn.black {
+  background-image: url('/piece/chessnut/bP.svg');
+}
+.pieces-mpchess .cg-wrap piece.king.white {
+  background-image: url('/piece/mpchess/wK.svg');
+}
+.pieces-mpchess .cg-wrap piece.queen.white {
+  background-image: url('/piece/mpchess/wQ.svg');
+}
+.pieces-mpchess .cg-wrap piece.rook.white {
+  background-image: url('/piece/mpchess/wR.svg');
+}
+.pieces-mpchess .cg-wrap piece.bishop.white {
+  background-image: url('/piece/mpchess/wB.svg');
+}
+.pieces-mpchess .cg-wrap piece.knight.white {
+  background-image: url('/piece/mpchess/wN.svg');
+}
+.pieces-mpchess .cg-wrap piece.pawn.white {
+  background-image: url('/piece/mpchess/wP.svg');
+}
+.pieces-mpchess .cg-wrap piece.king.black {
+  background-image: url('/piece/mpchess/bK.svg');
+}
+.pieces-mpchess .cg-wrap piece.queen.black {
+  background-image: url('/piece/mpchess/bQ.svg');
+}
+.pieces-mpchess .cg-wrap piece.rook.black {
+  background-image: url('/piece/mpchess/bR.svg');
+}
+.pieces-mpchess .cg-wrap piece.bishop.black {
+  background-image: url('/piece/mpchess/bB.svg');
+}
+.pieces-mpchess .cg-wrap piece.knight.black {
+  background-image: url('/piece/mpchess/bN.svg');
+}
+.pieces-mpchess .cg-wrap piece.pawn.black {
+  background-image: url('/piece/mpchess/bP.svg');
+}
+
+/* Board color swatches (settings menu): a 2×2 tile of the board's colors. */
+.board-brown {
+  --sq-light: #f0d9b5;
+  --sq-dark: #b58863;
+}
+.board-swatch {
+  background-image: repeating-conic-gradient(var(--sq-dark) 0 25%, var(--sq-light) 0 50%);
+  background-size: 50% 50%;
+}
+
+/* Merida's drawings fill more of their square than cburnett's: a little smaller. */
+.pieces-merida .cg-wrap piece {
+  background-size: 92%;
+  background-position: center;
+  background-repeat: no-repeat;
+}

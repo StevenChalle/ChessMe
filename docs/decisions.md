@@ -449,3 +449,16 @@ Chaque erreur reçoit des **thèmes**, qui sont des étiquettes et non des caté
   - **Options des thèmes** : une section entre « Thèmes » et « Ordre », qui n'apparaît que si un thème coché a des réglages. Pour l'instant, seul « Ouverture » en a un : le coup limite.
 - **Résultats de l'analyse** : « Erreurs par thème » en **barres horizontales**, un seul niveau de couleur, triées par nombre, avec le nombre et la part des erreurs. Un camembert a été écarté : les thèmes se chevauchent, et ses parts dépasseraient 100 %.
 - Écartés pour l'instant : les motifs tactiques (fourchette, clouage…), qui demandent d'analyser les variantes ; « rater une prise », « rater un échec », « reprendre », qui demandent de garder le meilleur coup.
+
+---
+
+## 2026-10-18 : menu des paramètres, apparence des échiquiers
+
+- Une **roue dentée** en haut à droite remplace les boutons EN / FR. Elle ouvre un menu avec trois rubriques :
+  - **Langue** (English / Français ; la page se recharge, c'est le modèle de Paraglide) ;
+  - **Style** en un clic : « Lichess » (échiquier marron, pièces cburnett, le défaut) ou « Chess.com » (échiquier vert, pièces Merida, les plus ressemblantes) ;
+  - le détail **Échiquier** (marron, bleu, vert, violet, gris) et **Pièces** (cburnett, Merida, Chessnut, MPChess ; RhosGFX, essayé, a été retiré).
+- Le sélecteur ajouté un temps sous le panneau d'entraînement est retiré.
+- **Pièces** : jeux libres de la collection de Lichess, téléchargés dans `public/piece/<jeu>/`. Les jeux sous CC BY-NC-SA (Staunty, Maestro, Cardinal…), incompatibles avec la GPL, sont écartés. Les licences sont dans `public/piece/LICENSES.md`, et les crédits sur `/legal`. Les pièces de Chess.com (« Neo ») sont propriétaires, et dessiner un jeu qui leur ressemble aurait été risqué : le style Chess.com utilise Merida (GPL), un dessin classique indépendant, jugé le plus ressemblant.
+- **Couleurs** : les cases sont dessinées en CSS (`repeating-conic-gradient`, une tuile de 2 × 2 cases) à partir de deux variables par couleur (`components/board/boardStyles.css`). Le dernier coup est surligné en jaune et les coordonnées sont assorties. Le marron et cburnett restent ceux de chessground. Le vert reprend l'esprit des échiquiers de tournoi en vinyle, avec des valeurs volontairement différentes de celles de Chess.com.
+- Le choix est mémorisé (`chessme:board-style`, déclarée sur `/legal`, effacée avec les autres données locales) et partagé par tous les échiquiers de la page (`components/board/boardStyle.ts`).

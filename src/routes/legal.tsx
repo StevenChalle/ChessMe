@@ -47,6 +47,7 @@ function LegalPage() {
           <li>{m.legal_privacy_local_recent()}</li>
           <li>{m.legal_privacy_local_review()}</li>
           <li>{m.legal_privacy_local_training()}</li>
+          <li>{m.legal_privacy_local_board()}</li>
           <li>{m.legal_privacy_local_app()}</li>
         </ul>
         <h3 className="pt-2 font-medium text-font-clear">{m.legal_privacy_thirdparty_title()}</h3>
@@ -107,6 +108,7 @@ function LegalPage() {
             cburnett{' — '}
             {m.legal_credits_pieces()}
           </li>
+          <li>{m.legal_credits_pieces_others()}</li>
           <li>
             Noto Sans{' — '}
             {m.legal_credits_font()}

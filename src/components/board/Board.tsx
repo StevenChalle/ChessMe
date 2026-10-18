@@ -4,6 +4,8 @@ import type { Config } from '@lichess-org/chessground/config'
 import '@lichess-org/chessground/assets/chessground.base.css'
 import '@lichess-org/chessground/assets/chessground.brown.css'
 import '@lichess-org/chessground/assets/chessground.cburnett.css'
+import { useBoardStyle } from './boardStyle'
+import './boardStyles.css'
 import { useEffect, useRef } from 'react'
 import { cn } from '@/lib/utils'
 
@@ -17,6 +19,7 @@ type BoardProps = {
  * Chessground owns its DOM: we create it once, then push config updates with api.set().
  */
 export function Board({ config, className }: BoardProps) {
+  const style = useBoardStyle()
   const elementRef = useRef<HTMLDivElement>(null)
   const apiRef = useRef<Api | null>(null)
 
@@ -50,7 +53,13 @@ export function Board({ config, className }: BoardProps) {
 
   return (
     <div
-      className={cn('aspect-square w-full', className)}
+      className={cn(
+        'aspect-square w-full',
+        // Brown and cburnett are chessground's own; the others are in boardStyles.css.
+        style.board !== 'brown' && `board-custom board-${style.board}`,
+        style.pieces !== 'cburnett' && `pieces-${style.pieces}`,
+        className,
+      )}
       // Chessground also caches where the board is on screen, and only refreshes it on window
       // resize or scroll. A layout shift (content above appearing or going away) would make clicks
       // land on the wrong squares: forget the cached position before each press.
