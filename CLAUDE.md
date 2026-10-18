@@ -42,7 +42,7 @@ src/
   routes/analysis/    # page d'analyse : onglets Filtres (index), Analyse (run), un onglet fermable par entraînement (training.$number)
   features/games/     # résumé commun d'une partie (normalize.ts) et table des parties (GamesTable)
   features/history/   # onglet Parties : feed.ts (fusion paginée Lichess + Chess.com), queries.ts
-  features/review/    # analyse des dernières parties : errors.ts (erreur, coup valide), analyze.ts (deux passes)
+  features/review/    # analyse des dernières parties : errors.ts (erreur, coup valide), analyze.ts (deux passes), themes.ts (thèmes des erreurs)
   features/training/  # rejouer ses erreurs : session.ts (reducer), order.ts (ordre de jeu, options), settings.ts (options mémorisées), coach.ts (Stockfish), moves.ts (FEN/UCI)
   lib/lichess/        # client HTTP, types, queryOptions de l'API Lichess
   lib/chesscom/       # idem pour l'API Chess.com

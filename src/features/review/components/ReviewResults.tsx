@@ -9,6 +9,7 @@ import { pageSlice } from '@/lib/pagination'
 import { cn } from '@/lib/utils'
 import { m } from '@/paraglide/messages'
 import type { Mistake, ReviewedGame, ReviewOutcome } from '../analyze'
+import { ThemeBars } from './ThemeBars'
 
 const RESULTS_PAGE_SIZE = 20
 
@@ -36,6 +37,7 @@ export function ReviewResults({
         <p className="text-muted-foreground">{m.review_no_games()}</p>
       ) : (
         <>
+          <ThemeBars mistakes={games.flatMap((game) => game.mistakes)} />
           <GamesTable
             games={pageSlice(games, page, RESULTS_PAGE_SIZE)}
             extra={{

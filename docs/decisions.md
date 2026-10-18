@@ -409,7 +409,7 @@ Un téléphone **gèle** la page (et ses Web Workers, donc Stockfish) dès que l
 - **Ordre de jeu** (`order.ts`, testé) :
   - Par défaut, les parties sont tirées au hasard et jouées une à une, chacune dans l'ordre de ses coups (nouveau champ `Mistake.ply`).
   - « Entremêler les parties » intercale les positions de plusieurs parties, chacune gardant son ordre. La fusion est aléatoire, au prorata des positions restantes, pour que chaque entrelacement soit également probable.
-  - « Mélanger les positions de chaque partie » (première option affichée) ignore l'ordre des coups.
+  - « Mélanger les positions de chaque partie » (seconde option affichée, après « Entremêler les parties ») ignore l'ordre des coups.
   - Les deux cochées reproduisent l'ancien mélange total.
 - **Autres options** : « Limiter à [N] parties », décochée par défaut (les N premières parties de l'ordre de jeu, donc tirées au hasard), et « Perte minimale », du seuil d'erreur de l'analyse (toutes les erreurs, par défaut) jusqu'à 30 %, avec les repères de Lichess. Un récapitulatif suit les options en direct.
 - **Options mémorisées** au lancement (`chessme:training-settings`, déclarée sur `/legal`, effacée avec les autres données locales), avec un bouton « Valeurs par défaut ». La perte minimale n'est jamais ramenée sous le seuil de l'analyse en cours.
@@ -422,3 +422,30 @@ Un téléphone **gèle** la page (et ses Web Workers, donc Stockfish) dès que l
 - La barre d'onglets défile horizontalement quand elle déborde, par exemple avec plusieurs entraînements sur mobile.
 - **Récapitulatif des filtres pendant une recherche** : l'encadré « Parties trouvées » reste en place, avec un indicateur de chargement à la place du nombre de parties, et « Lancer l'analyse » est désactivé jusqu'au résultat.
 - **Entrée dans un champ** lance l'étape suivante. Dans les filtres, elle lance l'analyse : tout de suite si les parties sont connues, sinon dès qu'elles le sont (la recherche part sans attendre le délai), sauf si un filtre change entre-temps. Dans les options d'entraînement, elle lance l'entraînement.
+
+---
+
+## 2026-10-18 : thèmes des erreurs
+
+Chaque erreur reçoit des **thèmes**, qui sont des étiquettes et non des catégories : un mat raté en finale de tours en a trois. Ils se calculent **sans passe de moteur supplémentaire**, à partir de la position avant l'erreur, des évaluations avant et après (du point de vue du joueur) et de la pendule (`features/review/themes.ts`, testé).
+
+| Thème                                                    | Règle                                                                                                                                                                                |
+| -------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Ouverture                                                | Coup n° N ou avant, N réglable de 1 à 20 dans les options d'entraînement (12 par défaut, et toujours 12 dans les résultats)                                                          |
+| Garder l'avantage                                        | Au moins 63 % de chances de gain avant le coup (environ +1,5)                                                                                                                        |
+| Résilience                                               | Au plus 37 % (environ −1,5). Limite : une fois la partie très compromise, une gaffe de plus change peu les chances de gain, donc ces positions comptent rarement comme des erreurs.  |
+| Finale                                                   | Au plus 6 pièces hors rois et pions, les deux camps réunis (règle de Lichess ; « plus de dame » excluait les finales de dames et comptait les milieux de jeu sans dames)             |
+| Finales de pions, de tours, de pièces mineures, de dames | Seulement ce type de pièces en plus des rois et des pions (regroupées pour l'instant)                                                                                                |
+| Trouver les mats                                         | Le joueur avait un mat forcé, de n'importe quelle longueur, et ne l'a plus après son coup. Les mats sont enregistrés comme ±10 000, sans leur longueur.                              |
+| Éviter les mats                                          | Après le coup, l'adversaire a un mat forcé, ce qui n'était pas le cas avant                                                                                                          |
+| Zeitnot                                                  | Moins de 10 % du temps de la partie à la pendule avant le coup. Le temps de la partie est le temps initial plus 40 incréments, l'estimation de Lichess. Rien pour la correspondance. |
+
+- **Pendules** : l'export Lichess demande `clocks=true` (pendule du joueur après chaque coup, en centisecondes) ; pour Chess.com, elles sont lues dans les commentaires `[%clk …]` des PGN. Une partie dont un coup n'a pas de pendule n'en a pour aucun coup (`ReviewGame.clock`, puis `Mistake.clock`).
+- **Options d'entraînement** : une pastille par thème, avec une info-bulle qui en explique la règle et les limites.
+  - Les pastilles se combinent en **« ET »** : seules les erreurs qui ont tous les thèmes cochés sont gardées. Aucune cochée : toutes.
+  - Le nombre d'une pastille non cochée est celui qui resterait en la cochant aussi. Une pastille cochée affiche le nombre gardé.
+  - Une pastille qui ne laisserait rien est désactivée.
+  - Les thèmes cochés et le coup limite de l'ouverture sont mémorisés avec les autres options.
+  - **Options des thèmes** : une section entre « Thèmes » et « Ordre », qui n'apparaît que si un thème coché a des réglages. Pour l'instant, seul « Ouverture » en a un : le coup limite.
+- **Résultats de l'analyse** : « Erreurs par thème » en **barres horizontales**, un seul niveau de couleur, triées par nombre, avec le nombre et la part des erreurs. Un camembert a été écarté : les thèmes se chevauchent, et ses parts dépasseraient 100 %.
+- Écartés pour l'instant : les motifs tactiques (fourchette, clouage…), qui demandent d'analyser les variantes ; « rater une prise », « rater un échec », « reprendre », qui demandent de garder le meilleur coup.

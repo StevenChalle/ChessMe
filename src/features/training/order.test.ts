@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest'
 import type { Mistake } from '@/features/review/analyze'
+import type { Theme } from '@/features/review/themes'
 import { defaultTrainingOptions, mistakesByGame, trainingPuzzles } from './order'
+
+const START = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1'
 
 /** An error of game `game` at `ply`, losing about `drop` % (from +1.00 to a lower evaluation). */
 function mistake(game: string, ply: number, afterCp = -300): Mistake {
@@ -34,7 +37,7 @@ const DEFAULTS = defaultTrainingOptions(10)
 
 describe('mistakesByGame', () => {
   it('groups by game, each in the order of its moves', () => {
-    expect(mistakesByGame(ALL, 10).map(ids)).toEqual([
+    expect(mistakesByGame(ALL, DEFAULTS).map(ids)).toEqual([
       ['a-10', 'a-20', 'a-30'],
       ['b-5', 'b-15'],
       ['c-8'],
@@ -43,8 +46,20 @@ describe('mistakesByGame', () => {
 
   it('leaves out errors below the minimum drop', () => {
     const small = mistake('a', 40, 50) // +1.00 → +0.50: a few % only
-    expect(ids(mistakesByGame([...ALL, small], 10).flat())).not.toContain('a-40')
-    expect(ids(mistakesByGame([...ALL, small], 1).flat())).toContain('a-40')
+    expect(ids(mistakesByGame([...ALL, small], DEFAULTS).flat())).not.toContain('a-40')
+    expect(ids(mistakesByGame([...ALL, small], { ...DEFAULTS, minDrop: 1 }).flat())).toContain(
+      'a-40',
+    )
+  })
+
+  it('keeps only the errors having every theme asked for', () => {
+    const opening = { ...mistake('d', 4), fen: START }
+    const late = { ...mistake('d', 60), fen: START }
+    const kept = (themes: Theme[]) =>
+      ids(mistakesByGame([opening, late], { ...DEFAULTS, themes }).flat())
+    expect(kept([])).toEqual(['d-4', 'd-60'])
+    expect(kept(['opening'])).toEqual(['d-4'])
+    expect(kept(['opening', 'endgame'])).toEqual([])
   })
 })
 

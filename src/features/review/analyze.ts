@@ -5,7 +5,7 @@ import type { Stockfish } from '@/lib/engine/stockfish'
 import type { ApiSource } from '@/lib/http'
 import { deepCheckMinDrop, type ReviewCriteria } from './criteria'
 import { fromSideToMove, isError, playerMoves, toCp, winChanceDrop } from './errors'
-import type { ReviewGame } from './games'
+import { clockBefore, type ReviewGame } from './games'
 import { replay, type GamePosition } from './positions'
 import { remainingSeconds, type AnalysisPass, type ReviewProgress } from './progress'
 
@@ -32,6 +32,8 @@ export type Mistake = {
   /** From the player's side */
   beforeCp: number
   afterCp: number
+  /** The player's clock before the error and the expected length of the game (seconds) */
+  clock?: { remaining: number; total: number }
 }
 
 export type ReviewedGame = ReviewGame & { mistakes: Mistake[] }
@@ -106,9 +108,15 @@ function finish(works: Work[], criteria: ReviewCriteria): ReviewedGame[] {
         played: positions[ply + 1]!.move!,
         beforeCp,
         afterCp,
+        clock: mistakeClock(game, ply),
       }))
     return { ...game, mistakes }
   })
+}
+
+function mistakeClock(game: ReviewGame, ply: number): Mistake['clock'] {
+  const remaining = game.clock && clockBefore(game.clock, ply)
+  return remaining === undefined ? undefined : { remaining, total: game.clock!.total }
 }
 
 async function evaluate(engine: Stockfish, position: GamePosition, nodes: number) {

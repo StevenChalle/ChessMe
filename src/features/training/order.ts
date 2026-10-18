@@ -1,5 +1,6 @@
 import type { Mistake } from '@/features/review/analyze'
 import { winChanceDrop } from '@/features/review/errors'
+import { mistakeThemes, OPENING_MOVES, type Theme } from '@/features/review/themes'
 import { shuffle } from './session'
 
 /** How a training picks and orders the errors of an analysis (the training's options). */
@@ -12,11 +13,24 @@ export type TrainingOptions = {
   maxGames?: number
   /** Errors losing less than this (% of winning chances) are left out */
   minDrop: number
+  /** Only the errors having every one of these themes; none: every error */
+  themes: Theme[]
+  /** Moves counted as the opening (its theme) */
+  openingMoves: number
 }
+
+/** What picks the errors of a training, before ordering them. */
+export type MistakeFilter = Pick<TrainingOptions, 'minDrop' | 'themes' | 'openingMoves'>
 
 /** The defaults: game after game (games in a random order), each in the order of its moves. */
 export function defaultTrainingOptions(errorMinDrop: number): TrainingOptions {
-  return { interleaveGames: false, shuffleWithinGame: false, minDrop: errorMinDrop }
+  return {
+    interleaveGames: false,
+    shuffleWithinGame: false,
+    minDrop: errorMinDrop,
+    themes: [],
+    openingMoves: OPENING_MOVES.default,
+  }
 }
 
 /** How much winning chance an error gave away (% points). */
@@ -24,11 +38,19 @@ export function mistakeDrop(mistake: Mistake): number {
   return winChanceDrop(mistake.beforeCp, mistake.afterCp)
 }
 
-/** The errors kept by the severity filter, grouped by game, each game in the order of its moves. */
-export function mistakesByGame(mistakes: Mistake[], minDrop: number): Mistake[][] {
+/** Serious enough, and having every theme asked for. */
+export function keepsMistake(mistake: Mistake, filter: MistakeFilter): boolean {
+  if (mistakeDrop(mistake) < filter.minDrop) return false
+  if (filter.themes.length === 0) return true
+  const themes = mistakeThemes(mistake, filter.openingMoves)
+  return filter.themes.every((theme) => themes.includes(theme))
+}
+
+/** The errors kept by the filter, grouped by game, each game in the order of its moves. */
+export function mistakesByGame(mistakes: Mistake[], filter: MistakeFilter): Mistake[][] {
   const games = new Map<string, Mistake[]>()
   for (const mistake of mistakes) {
-    if (mistakeDrop(mistake) < minDrop) continue
+    if (!keepsMistake(mistake, filter)) continue
     const game = games.get(mistake.game.url)
     if (game) game.push(mistake)
     else games.set(mistake.game.url, [mistake])
@@ -63,7 +85,7 @@ export function trainingPuzzles(
   options: TrainingOptions,
   random: () => number = Math.random,
 ): Mistake[] {
-  let games = shuffle(mistakesByGame(mistakes, options.minDrop), random)
+  let games = shuffle(mistakesByGame(mistakes, options), random)
   if (options.maxGames !== undefined) games = games.slice(0, options.maxGames)
   if (options.shuffleWithinGame) games = games.map((game) => shuffle(game, random))
   return options.interleaveGames ? interleave(games, random) : games.flat()

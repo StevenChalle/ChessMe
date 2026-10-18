@@ -1,6 +1,7 @@
 import type { Color } from 'chessops'
 import { ChevronRight, RotateCcw } from 'lucide-react'
 import { useId, useState, type ReactNode } from 'react'
+import { CHIP_CLASS } from '@/components/chip'
 import { InfoTip } from '@/components/InfoTip'
 import { LimitField } from '@/components/LimitField'
 import { Button } from '@/components/ui/button'
@@ -59,10 +60,6 @@ const RESULT_LABELS: Record<GameResult, () => string> = {
   draw: m.result_draws,
   loss: m.result_losses,
 }
-
-// Chips: clearly on or off (the default toggle style is too subtle on the dark theme).
-const CHIP_CLASS =
-  'border border-border px-3 text-muted-foreground data-[state=on]:border-primary data-[state=on]:bg-primary/15 data-[state=on]:text-font-clear'
 
 const SELECTED_SHORTCUT = 'bg-primary/15 text-font-clear ring-1 ring-primary hover:bg-primary/20'
 

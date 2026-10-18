@@ -87,6 +87,8 @@ export type LichessGame = {
   daysPerTurn?: number
   /** Only for games analysed by the Lichess servers, with `evals=true` */
   analysis?: LichessMoveAnalysis[]
+  /** With `clocks=true`: the mover's clock after each move (centiseconds), for timed games */
+  clocks?: number[]
 }
 
 export type LichessUser = {

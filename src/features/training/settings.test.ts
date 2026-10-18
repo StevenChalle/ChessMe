@@ -22,10 +22,20 @@ describe('parseTrainingSettings', () => {
       limitGames: true,
       gamesLimit: 3,
       minDrop: 15,
+      themes: ['endgame', 'findMate'],
+      openingMoves: 8,
     }
     expect(parseTrainingSettings(saved(settings))).toEqual(settings)
     expect(
-      parseTrainingSettings(saved({ interleaveGames: 'yes', gamesLimit: 0, minDrop: 99 })),
+      parseTrainingSettings(
+        saved({
+          interleaveGames: 'yes',
+          gamesLimit: 0,
+          minDrop: 99,
+          themes: 'endgame',
+          openingMoves: 40,
+        }),
+      ),
     ).toEqual(DEFAULT_TRAINING_SETTINGS)
   })
 })

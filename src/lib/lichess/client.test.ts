@@ -39,6 +39,7 @@ describe('exportParams', () => {
     expect(exportParams({ perfTypes: ['ultraBullet', 'bullet'] })).toEqual({
       perfType: 'ultraBullet,bullet',
       evals: 'true',
+      clocks: 'true',
     })
   })
 
@@ -56,6 +57,7 @@ describe('exportParams', () => {
       rated: 'true',
       perfType: 'blitz',
       evals: 'true',
+      clocks: 'true',
       max: '50',
       since: '1',
       until: '2',

@@ -1,6 +1,7 @@
-import { parsePgn } from 'chessops/pgn'
+import { parseComment, parsePgn } from 'chessops/pgn'
 import {
   isStandardGame,
+  parseChessComTimeControl,
   summarizeChessComGame,
   summarizeLichessGame,
   type GameSummary,
@@ -19,6 +20,30 @@ export type ReviewGame = GameSummary & {
    * of the position after each move (index i = after move i + 1).
    */
   serverCps?: (number | undefined)[]
+  /** Timed games whose clocks are known (not correspondence) */
+  clock?: GameClock
+}
+
+/** Seconds. `remaining[i]`: the mover's clock right after move i + 1. */
+export type GameClock = {
+  initial: number
+  /** Initial time plus 40 increments: the expected length of the game (Lichess's estimate) */
+  total: number
+  remaining: number[]
+}
+
+/** The player's clock before the move at `ply` (the one after their previous move). */
+export function clockBefore(clock: GameClock, ply: number): number | undefined {
+  return ply < 2 ? clock.initial : clock.remaining[ply - 2]
+}
+
+function gameClock(
+  initial: number,
+  increment: number,
+  remaining: (number | undefined)[],
+): GameClock | undefined {
+  if (remaining.length === 0 || remaining.some((value) => value === undefined)) return undefined
+  return { initial, total: initial + 40 * increment, remaining: remaining as number[] }
 }
 
 /** undefined for games outside the review: variants, aborted, or without the player. */
@@ -36,6 +61,14 @@ export function fromLichessGame(game: LichessGame, username: string): ReviewGame
           ? toCp({ mate: entry.mate })
           : undefined,
     ),
+    clock:
+      game.clock && game.clocks
+        ? gameClock(
+            game.clock.initial,
+            game.clock.increment,
+            game.clocks.map((centiseconds) => centiseconds / 100),
+          )
+        : undefined,
   }
 }
 
@@ -49,10 +82,25 @@ export function fromChessComGame(game: ChessComGame, username: string): ReviewGa
   const summary = summarizeChessComGame(game, username)
   if (!summary) return undefined
   const pgn = parsePgn(game.pgn!)[0]
+  const nodes = pgn ? [...pgn.moves.mainline()] : []
+  // Clocks are in the moves' comments: {[%clk 0:02:58.5]}.
+  const timeControl = parseChessComTimeControl(game.time_control)
   return {
     ...summary,
-    sanMoves: pgn ? [...pgn.moves.mainline()].map((node) => node.san) : [],
+    sanMoves: nodes.map((node) => node.san),
     initialFen: pgn?.headers.get('SetUp') === '1' ? pgn.headers.get('FEN') : undefined,
+    clock:
+      timeControl.kind === 'clock'
+        ? gameClock(
+            timeControl.initial,
+            timeControl.increment,
+            nodes.map((node) =>
+              node.comments
+                ?.map((comment) => parseComment(comment).clock)
+                .find((clock) => clock !== undefined),
+            ),
+          )
+        : undefined,
   }
 }
 

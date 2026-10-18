@@ -3,7 +3,13 @@ import type { ChessComGame } from '@/lib/chesscom/types'
 import type { LichessGame } from '@/lib/lichess/types'
 import { MATE_CP } from './errors'
 import { parseChessComTimeControl, timeControlLabel } from '@/features/games/normalize'
-import { fromChessComGame, fromLichessGame, latestGames, type ReviewGame } from './games'
+import {
+  clockBefore,
+  fromChessComGame,
+  fromLichessGame,
+  latestGames,
+  type ReviewGame,
+} from './games'
 
 function lichessGame(overrides: Partial<LichessGame> = {}): LichessGame {
   return {
@@ -136,5 +142,34 @@ describe('latestGames', () => {
   it('keeps the most recent games, all platforms together', () => {
     const at = (day: number) => ({ playedAt: new Date(2026, 0, day) }) as ReviewGame
     expect(latestGames([at(1), at(5), at(3)], 2)).toEqual([at(5), at(3)])
+  })
+})
+
+describe('clocks', () => {
+  it('reads Lichess clocks (centiseconds) with the expected length of the game', () => {
+    const game = fromLichessGame(lichessGame({ clocks: [18000, 17950, 17520] }), 'alice')!
+    expect(game.clock).toEqual({ initial: 180, total: 260, remaining: [180, 179.5, 175.2] })
+    // Before White's second move: White's clock after the first one
+    expect(clockBefore(game.clock!, 0)).toBe(180)
+    expect(clockBefore(game.clock!, 2)).toBe(180)
+    expect(clockBefore(game.clock!, 3)).toBe(179.5)
+  })
+
+  it('reads Chess.com clocks from the PGN comments, only when every move has one', () => {
+    const pgn =
+      '[Event "Live Chess"]\n\n1. e4 {[%clk 0:02:59]} 1... e5 {[%clk 0:02:58.5]} 2. Nf3 {[%clk 0:02:50]} 1-0'
+    expect(fromChessComGame(chessComGame({ pgn }), 'alice')!.clock).toEqual({
+      initial: 180,
+      total: 260,
+      remaining: [179, 178.5, 170],
+    })
+    // The default PGN lacks some clocks; daily games have none
+    expect(fromChessComGame(chessComGame(), 'alice')!.clock).toBeUndefined()
+    expect(
+      fromChessComGame(
+        chessComGame({ pgn, time_control: '1/86400', time_class: 'daily' }),
+        'alice',
+      )!.clock,
+    ).toBeUndefined()
   })
 })

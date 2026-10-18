@@ -47,11 +47,12 @@ export type GameExportOptions = {
   rated?: boolean
 }
 
-/** Query parameters of a standard games export, with moves and Lichess evaluations. */
+/** Query parameters of a standard games export, with moves, Lichess evaluations and clocks. */
 export function exportParams(options: GameExportOptions): Record<string, string> {
   const params: Record<string, string> = {
     perfType: options.perfTypes.join(','),
     evals: 'true',
+    clocks: 'true',
   }
   if (options.rated !== undefined) params.rated = String(options.rated)
   if (options.max !== undefined) params.max = String(options.max)
