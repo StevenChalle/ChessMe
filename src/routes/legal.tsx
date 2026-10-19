@@ -1,9 +1,9 @@
-import { createFileRoute } from '@tanstack/react-router'
+import { createFileRoute, Link } from '@tanstack/react-router'
 import { useState, type ReactNode } from 'react'
 import { Button } from '@/components/ui/button'
 import { ExternalLink } from '@/features/player/components/ExternalLink'
 import { clearLocalData } from '@/lib/localData'
-import { HOST, ISSUES_URL, SOURCE_CODE_URL } from '@/lib/project'
+import { HOST, SOURCE_CODE_URL } from '@/lib/project'
 import { m } from '@/paraglide/messages'
 
 export const Route = createFileRoute('/legal')({
@@ -29,7 +29,9 @@ function LegalPage() {
       <Section title={m.legal_publisher_title()}>
         <p>{m.legal_publisher_body()}</p>
         <p>
-          <ExternalLink href={ISSUES_URL}>{m.legal_contact()}</ExternalLink>
+          <Link to="/contact" className="underline underline-offset-4">
+            {m.legal_contact()}
+          </Link>
         </p>
       </Section>
 
@@ -52,6 +54,7 @@ function LegalPage() {
         </ul>
         <h3 className="pt-2 font-medium text-font-clear">{m.legal_privacy_thirdparty_title()}</h3>
         <p>{m.legal_privacy_thirdparty_body()}</p>
+        <p>{m.legal_privacy_thirdparty_form()}</p>
         <p>{m.legal_privacy_public_data()}</p>
         <p>{m.legal_privacy_host_logs()}</p>
         <p className="flex flex-wrap gap-x-4">

@@ -10,6 +10,7 @@ import {
 import { TanStackRouterDevtools } from '@tanstack/react-router-devtools'
 import { Search } from 'lucide-react'
 import { Footer } from '@/components/Footer'
+import { FeedbackButton } from '@/components/FeedbackLink'
 import { SettingsMenu } from '@/components/SettingsMenu'
 import { UpdateBanner } from '@/components/UpdateBanner'
 import { AccountSearchForm } from '@/features/player/components/AccountSearchForm'
@@ -41,6 +42,7 @@ function RootLayout() {
         </Link>
         <div className="ml-auto flex items-center gap-4">
           {!isHome && <HeaderSearch />}
+          <FeedbackButton />
           <SettingsMenu />
         </div>
       </header>

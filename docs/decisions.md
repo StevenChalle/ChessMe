@@ -462,3 +462,22 @@ Chaque erreur reçoit des **thèmes**, qui sont des étiquettes et non des caté
 - **Pièces** : jeux libres de la collection de Lichess, téléchargés dans `public/piece/<jeu>/`. Les jeux sous CC BY-NC-SA (Staunty, Maestro, Cardinal…), incompatibles avec la GPL, sont écartés. Les licences sont dans `public/piece/LICENSES.md`, et les crédits sur `/legal`. Les pièces de Chess.com (« Neo ») sont propriétaires, et dessiner un jeu qui leur ressemble aurait été risqué : le style Chess.com utilise Merida (GPL), un dessin classique indépendant, jugé le plus ressemblant.
 - **Couleurs** : les cases sont dessinées en CSS (`repeating-conic-gradient`, une tuile de 2 × 2 cases) à partir de deux variables par couleur (`components/board/boardStyles.css`). Le dernier coup est surligné en jaune et les coordonnées sont assorties. Le marron et cburnett restent ceux de chessground. Le vert reprend l'esprit des échiquiers de tournoi en vinyle, avec des valeurs volontairement différentes de celles de Chess.com.
 - Le choix est mémorisé (`chessme:board-style`, déclarée sur `/legal`, effacée avec les autres données locales) et partagé par tous les échiquiers de la page (`components/board/boardStyle.ts`).
+
+---
+
+## 2026-10-18 : page de contact et retours
+
+- **`/contact`** : présentation rapide (pseudo OugaBouga), principe du projet, appel à tous les retours (plaintes, bugs, fonctionnalités, idées vagues), formulaire, et adresse e-mail en solution de repli. **Les textes sont provisoires** (marqués « [Provisoire] »).
+- **Accès partout** :
+  - « Un avis ? » dans l'en-tête, à côté de la roue des paramètres (icône seule sur mobile) ;
+  - « Contact et retours » dans le pied de page ;
+  - une ligne discrète à la fin d'un entraînement et sous les résultats d'analyse, là où l'on a un avis ;
+  - le contact de la page `/legal`, qui renvoyait aux issues GitHub.
+- **Formulaire sans serveur** : **Web3Forms** reçoit le message et le fait suivre par e-mail. Il a été préféré à Formspree pour son palier gratuit plus large et sa clé publique par conception (elle ne permet d'écrire qu'à l'adresse du compte). Ont été écartés : le mailto seul (beaucoup abandonnent faute de logiciel de mail, et l'adresse est exposée au spam), les formulaires Google ou Tally intégrés (traceurs et marque d'un tiers), et les issues GitHub (compte requis).
+  - Champs : type de retour en pastilles (bug, idée, autre ; « quelque chose ne va pas » a été retiré, doublon du bug), message, e-mail facultatif, et une case pour joindre des infos techniques (page, navigateur, langue, taille d'écran), **cochée automatiquement pour un bug** et décochée pour les autres types (l'utilisateur peut toujours la changer). Un champ piège invisible arrête les robots.
+  - Un échec garde le message et propose l'adresse e-mail.
+  - Service tiers **déclaré sur `/legal`** ; rien n'est envoyé sans action de l'utilisateur.
+- **Maquette, en attendant le compte** :
+  - sans clé (`VITE_WEB3FORMS_KEY`, voir `.env.example`), le développement fait semblant d'envoyer (journalisé dans la console) ;
+  - un build de production refuse et renvoie vers l'adresse e-mail ;
+  - l'adresse de contact est **chessme.dev@gmail.com** (`CONTACT_EMAIL` dans `lib/project.ts`), celle du compte Web3Forms.

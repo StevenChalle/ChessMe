@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AnalysisRouteRouteImport } from './routes/analysis/route'
+import { Route as ContactRouteImport } from './routes/contact'
 import { Route as LegalRouteImport } from './routes/legal'
 import { Route as PlayerRouteRouteImport } from './routes/player/route'
 import { Route as AnalysisIndexRouteImport } from './routes/analysis/index'
@@ -29,6 +30,11 @@ const IndexRoute = IndexRouteImport.update({
 const AnalysisRouteRoute = AnalysisRouteRouteImport.update({
   id: '/analysis',
   path: '/analysis',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ContactRoute = ContactRouteImport.update({
+  id: '/contact',
+  path: '/contact',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LegalRoute = LegalRouteImport.update({
@@ -81,6 +87,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/analysis': typeof AnalysisRouteRouteWithChildren
   '/player': typeof PlayerRouteRouteWithChildren
+  '/contact': typeof ContactRoute
   '/legal': typeof LegalRoute
   '/analysis/run': typeof AnalysisRunRoute
   '/player/chesscom': typeof PlayerChesscomRoute
@@ -92,6 +99,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/contact': typeof ContactRoute
   '/legal': typeof LegalRoute
   '/analysis/run': typeof AnalysisRunRoute
   '/player/chesscom': typeof PlayerChesscomRoute
@@ -106,6 +114,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/analysis': typeof AnalysisRouteRouteWithChildren
   '/player': typeof PlayerRouteRouteWithChildren
+  '/contact': typeof ContactRoute
   '/legal': typeof LegalRoute
   '/analysis/run': typeof AnalysisRunRoute
   '/player/chesscom': typeof PlayerChesscomRoute
@@ -121,6 +130,7 @@ export interface FileRouteTypes {
     | '/'
     | '/analysis'
     | '/player'
+    | '/contact'
     | '/legal'
     | '/analysis/run'
     | '/player/chesscom'
@@ -132,6 +142,7 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/contact'
     | '/legal'
     | '/analysis/run'
     | '/player/chesscom'
@@ -145,6 +156,7 @@ export interface FileRouteTypes {
     | '/'
     | '/analysis'
     | '/player'
+    | '/contact'
     | '/legal'
     | '/analysis/run'
     | '/player/chesscom'
@@ -159,6 +171,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AnalysisRouteRoute: typeof AnalysisRouteRouteWithChildren
   PlayerRouteRoute: typeof PlayerRouteRouteWithChildren
+  ContactRoute: typeof ContactRoute
   LegalRoute: typeof LegalRoute
 }
 
@@ -176,6 +189,13 @@ declare module '@tanstack/react-router' {
       path: '/analysis'
       fullPath: '/analysis'
       preLoaderRoute: typeof AnalysisRouteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/contact': {
+      id: '/contact'
+      path: '/contact'
+      fullPath: '/contact'
+      preLoaderRoute: typeof ContactRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/legal': {
@@ -282,6 +302,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AnalysisRouteRoute: AnalysisRouteRouteWithChildren,
   PlayerRouteRoute: PlayerRouteRouteWithChildren,
+  ContactRoute: ContactRoute,
   LegalRoute: LegalRoute,
 }
 export const routeTree = rootRouteImport

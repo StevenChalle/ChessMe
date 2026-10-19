@@ -1,4 +1,5 @@
 import { RotateCcw } from 'lucide-react'
+import { FeedbackNudge } from '@/components/FeedbackLink'
 import { Button } from '@/components/ui/button'
 import { formatNumber } from '@/lib/format'
 import { cn } from '@/lib/utils'
@@ -47,6 +48,7 @@ export function TrainingSummary({
           {m.training_finish()}
         </Button>
       </div>
+      <FeedbackNudge text={m.feedback_nudge_training()} />
     </div>
   )
 }

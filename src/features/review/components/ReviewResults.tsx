@@ -1,5 +1,6 @@
 import { Swords } from 'lucide-react'
 import { useState } from 'react'
+import { FeedbackNudge } from '@/components/FeedbackLink'
 import { TablePagination } from '@/components/TablePagination'
 import { Button } from '@/components/ui/button'
 import { GamesTable } from '@/features/games/components/GamesTable'
@@ -71,6 +72,7 @@ export function ReviewResults({
             total={games.length}
             onPageChange={setPage}
           />
+          <FeedbackNudge text={m.feedback_nudge_results()} />
         </>
       )}
     </div>

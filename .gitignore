@@ -28,3 +28,7 @@ dev-dist
 
 # TanStack Router plugin temp files
 .tanstack
+
+# Local environment (see .env.example)
+.env
+.env.local

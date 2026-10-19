@@ -16,6 +16,9 @@ export function Footer() {
           >
             {m.footer_source()}
           </a>
+          <Link to="/contact" className="hover:text-font-clear">
+            {m.footer_contact()}
+          </Link>
           <Link to="/legal" className="hover:text-font-clear">
             {m.footer_legal()}
           </Link>
