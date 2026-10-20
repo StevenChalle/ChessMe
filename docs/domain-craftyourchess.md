@@ -57,8 +57,8 @@ Dans Cloudflare → `craftyourchess.com` → **DNS → Records → Add record**,
 
 ## 8. Finitions (10 min)
 
-- [ ] Ancien service Render `chessme` → **Redirects/Rewrites** : faire pointer la redirection vers `https://craftyourchess.com/*` (301).
-- [ ] Garder l'adresse `craftyourchess-2rcp.onrender.com` active pour l'instant : la désactiver (**Settings → Render Subdomain**) renverrait une erreur 404 au lieu de rediriger.
+- [x] Ancien service Render `chessme` : supprimé.
+- [x] Garder l'adresse `craftyourchess-2rcp.onrender.com` active pour l'instant : la désactiver (**Settings → Render Subdomain**) renverrait une erreur 404 au lieu de rediriger.
 - [ ] GitHub → dépôt `CraftYourChess` → roue crantée de « About » → **Website** : `https://craftyourchess.com`.
 
 ## 9. Optionnel : contact@craftyourchess.com (10 min, gratuit)
