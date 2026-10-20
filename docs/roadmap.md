@@ -34,3 +34,4 @@
 - Import des parties Chess.com (archives mensuelles)
 - Mémoriser les comptes liés (profil « moi »), à distinguer des recherches récentes
 - Backend, si comptes ou synchro entre appareils
+- Environnement de staging sur `staging.craftyourchess.com`, déployé depuis `develop` : second service dans `render.yaml`, CI aussi sur `develop`, en-tête `noindex`, nom de PWA distinct, pas de clé Web3Forms

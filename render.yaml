@@ -6,6 +6,9 @@ services:
     name: craftyourchess
     branch: main
     autoDeployTrigger: checksPass
+    # Cloudflare Registrar, DNS-only CNAMEs to the onrender.com host. Render adds www (redirected).
+    domains:
+      - craftyourchess.com
     # corepack runs the pnpm version pinned in package.json ("packageManager")
     buildCommand: corepack pnpm install --frozen-lockfile && corepack pnpm build
     staticPublishPath: ./dist

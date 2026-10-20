@@ -50,7 +50,7 @@ Limite connue : sur iOS, le stockage d'une PWA peut être effacé si l'applicati
 
 ### Hébergement : Render (site statique)
 
-Site en ligne : https://craftyourchess.onrender.com/. La configuration est versionnée dans [`render.yaml`](../render.yaml) (un Blueprint Render) :
+Site en ligne : https://craftyourchess.com/ (le service Render reste joignable sur https://craftyourchess-2rcp.onrender.com/). La configuration est versionnée dans [`render.yaml`](../render.yaml) (un Blueprint Render) :
 
 - branche `main`, avec `autoDeployTrigger: checksPass` : chaque push sur `main` redéploie le site, **mais seulement une fois la CI GitHub verte** ;
 - build : `corepack pnpm install --frozen-lockfile && corepack pnpm build`. corepack utilise le pnpm épinglé dans `packageManager`, et Node 24 est fixé par `.node-version` ;
@@ -487,5 +487,13 @@ Chaque erreur reçoit des **thèmes**, qui sont des étiquettes et non des caté
 - Nom affiché partout : en-tête, titre, manifeste PWA, textes, page `/legal`, sujet des e-mails Web3Forms. Identifiants en minuscules : `craftyourchess` (paquet, préfixe des clés `localStorage`).
 - **Clés `localStorage` renommées** (`chessme:*` → `craftyourchess:*`) : `migrateLegacyKeys()` (`lib/localData.ts`), appelée au démarrage, recopie une fois les anciennes valeurs pour ne perdre aucun réglage. À retirer quand plus personne n'a l'ancienne version. `PARAGLIDE_LOCALE` n'avait pas de préfixe et ne change pas.
 - Hors du code : dépôt GitHub, service Render (et son URL), compte Web3Forms, adresse de contact : renommés ou remplacés à la main (voir ci-dessous).
-- **Nouvelle adresse** : un nouveau service Render `craftyourchess` (https://craftyourchess.onrender.com/) remplace `chessme-k8py.onrender.com`, qui redirige vers lui le temps de la transition. Le stockage local étant propre à chaque origine, les visiteurs repartent d'un site vierge et réinstallent la PWA : acceptable pour un prototype. Écarté : garder l'ancienne URL, qui porte l'ancien nom.
+- **Nouvelle adresse** : un nouveau service Render `craftyourchess` (https://craftyourchess-2rcp.onrender.com/) remplace `chessme-k8py.onrender.com`, qui redirige vers lui le temps de la transition. Le stockage local étant propre à chaque origine, les visiteurs repartent d'un site vierge et réinstallent la PWA : acceptable pour un prototype. Écarté : garder l'ancienne URL, qui porte l'ancien nom.
 - **Adresse de contact** : craftyourchess@gmail.com, désormais celle du compte Web3Forms.
+
+## 2026-10-20 : domaine craftyourchess.com
+
+- **Domaine à soi** : https://craftyourchess.com/. L'adresse ne dépend plus de l'hébergeur, et c'est la dernière fois que l'origine change (le stockage local et la PWA installée y sont liés).
+- **Cloudflare Registrar** : prix coûtant sans hausse au renouvellement, WHOIS masqué gratuitement, DNS rapide et redirection e-mail gratuite (pour un futur `contact@craftyourchess.com`). Écartés : Porkbun (bon aussi, l'alternative si l'on quitte Cloudflare), OVHcloud (interface lourde), Namecheap (renouvellement plus cher), GoDaddy et Gandi (chers).
+- **DNS** : deux `CNAME` (`@` et `www`) vers `craftyourchess-2rcp.onrender.com`, en **DNS only** (sans le proxy de Cloudflare) : Render émet et renouvelle lui-même le certificat. `www` redirige vers la racine.
+- Le domaine est déclaré dans `render.yaml` (`domains`). La CI et le déploiement ne changent pas : un push sur `main` redéploie une fois la CI verte.
+- L'adresse `onrender.com` reste active le temps de la transition : la désactiver (`renderSubdomainPolicy`) renverrait une 404 au lieu de rediriger.
