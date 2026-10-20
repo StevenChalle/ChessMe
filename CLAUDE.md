@@ -7,6 +7,7 @@ Application web (PWA installable) pour explorer les stats et les parties d'un jo
 - Design (thème sombre Lichess) : [docs/design.md](docs/design.md)
 - APIs Lichess / Chess.com, limites de débit : [docs/apis.md](docs/apis.md)
 - Feuille de route : [docs/roadmap.md](docs/roadmap.md)
+- Checklists en cours, à supprimer une fois terminées : [docs/domain-craftyourchess.md](docs/domain-craftyourchess.md) (finitions du domaine), [docs/staging.md](docs/staging.md) (environnement de staging, reporté)
 
 ## Commandes
 
@@ -26,7 +27,7 @@ pnpm uniquement (pas npm ni yarn). Node ≥ 24.
 
 ## Stack
 
-Vite + React 19 + TypeScript (strict, `noUncheckedIndexedAccess`) · Paraglide JS (i18n) · TanStack Router (routes sous forme de fichiers) + TanStack Query · Tailwind v4 + shadcn/ui (Radix, icônes Lucide) · `@lichess-org/chessground` (plateau) + chessops (règles, PGN) · Dexie (IndexedDB) · ECharts · vite-plugin-pwa · Vitest + Testing Library · oxlint + Prettier.
+Vite + React 19 + TypeScript (strict, `noUncheckedIndexedAccess`) · Paraglide JS (i18n) · TanStack Router (routes sous forme de fichiers) + TanStack Query · Tailwind v4 + shadcn/ui (Radix, icônes Lucide) · `@lichess-org/chessground` (plateau) + chessops (règles, PGN) · Stockfish 19 lite (WASM mono-thread) · Dexie (IndexedDB) et ECharts, installés mais pas encore utilisés · vite-plugin-pwa · Vitest + Testing Library · oxlint + Prettier.
 
 ## Organisation du code
 
@@ -35,20 +36,24 @@ src/
   paraglide/          # GÉNÉRÉ par Paraglide depuis messages/*.json (git-ignoré, ne pas éditer)
   routes/             # une route par fichier (TanStack Router), routeTree.gen.ts est généré automatiquement
   components/ui/      # composants shadcn, générés par la CLI, modifiables
-  components/         # composants applicatifs partagés (board/, PlayerSearch…)
-  features/<nom>/     # code propre à une fonctionnalité (import, stats, training…), à créer au besoin
-  features/player/    # profil croisé : summary.ts (normalisation), search.ts (paramètres ?lichess=&chesscom=), hook, composants
-  features/review/    # analyse : critères, sélection, recherche, estimation, session de la page /analysis (session.tsx)
   routes/analysis/    # page d'analyse : onglets Filtres (index), Analyse (run), un onglet fermable par entraînement (training.$number)
+  components/         # composants applicatifs partagés (board/, SettingsMenu, Footer, FeedbackLink…)
+  hooks/              # hooks transverses (useConfirm, useKeepAwake)
+  features/<nom>/     # code propre à une fonctionnalité, à créer au besoin
+  features/player/    # profil croisé : summary.ts (normalisation), search.ts (paramètres ?lichess=&chesscom=), recentSearches.ts, hook, composants
   features/games/     # résumé commun d'une partie (normalize.ts) et table des parties (GamesTable)
   features/history/   # onglet Parties : feed.ts (fusion paginée Lichess + Chess.com), queries.ts
-  features/review/    # analyse des dernières parties : errors.ts (erreur, coup valide), analyze.ts (deux passes), themes.ts (thèmes des erreurs)
-  features/training/  # rejouer ses erreurs : session.ts (reducer), order.ts (ordre de jeu, options), settings.ts (options mémorisées), coach.ts (Stockfish), moves.ts (FEN/UCI)
+  features/review/    # analyse : criteria.ts, selection.ts, fetch.ts (recherche), estimate.ts, errors.ts (erreur, coup valide), analyze.ts (deux passes), themes.ts (thèmes des erreurs), settings.ts, session de la page /analysis (session.tsx)
+  features/training/  # rejouer ses erreurs : session.ts (reducer), order.ts (ordre de jeu, options), settings.ts (options mémorisées), coach.ts (Stockfish), moves.ts (FEN/UCI), evaluation.ts
+  features/contact/   # formulaire de retours (FeedbackForm)
   lib/lichess/        # client HTTP, types, queryOptions de l'API Lichess
   lib/chesscom/       # idem pour l'API Chess.com
   lib/engine/         # Stockfish WASM : protocole UCI, Worker, pool de moteurs
   lib/http.ts         # fetchJson, ApiError, null sur 404, politique de retry
-  lib/format.ts       # formats fr-FR (nombres, dates, pays…)
+  lib/format.ts       # formats (nombres, dates, pays…) dans la langue courante
+  lib/contact.ts      # envoi des retours via Web3Forms (clé VITE_WEB3FORMS_KEY)
+  lib/localData.ts    # clearLocalData() et migration des anciennes clés chessme:*
+  lib/project.ts      # lien du code source, hébergeur, adresse de contact
   lib/                # utilitaires transverses
   test/setup.ts       # setup Vitest (jest-dom, fake-indexeddb)
 messages/en.json, fr.json  # traductions (source de vérité)
@@ -83,7 +88,8 @@ L'interface existe en **anglais (langue de base) et en français**. Langue initi
 
 - **API Lichess : une seule requête à la fois**. Sur un 429, attendre 60 s. Ne jamais paralléliser les exports de parties.
 - Licence : **GPL-3.0** (fichier `LICENSE`), imposée par chessground, chessops et Stockfish. Le lien « Code source » du pied de page doit rester visible (`lib/project.ts`), et toute nouvelle dépendance doit être compatible avec la GPL.
-- **Vie privée** : tout nouveau stockage local (clé `localStorage`, base IndexedDB) ou tout nouveau service tiers appelé doit être **déclaré sur la page `/legal`**, et le stockage doit être **effacé par `clearLocalData()`** (`lib/localData.ts`).
+- **Vie privée** : tout nouveau stockage local (clé `localStorage` préfixée `craftyourchess:`, base IndexedDB) ou tout nouveau service tiers appelé doit être **déclaré sur la page `/legal`**, et le stockage doit être **effacé par `clearLocalData()`** (`lib/localData.ts`).
 - Stockfish multi-thread exige les en-têtes COOP/COEP : à configurer à la fois dans Vite et chez l'hébergeur le jour où on l'ajoute (voir docs/decisions.md).
 - pnpm 11 refuse par défaut les versions publiées très récemment : c'est voulu, ne pas forcer.
-- **Déploiement** : Render, configuré dans `render.yaml`. Un push sur `main` redéploie le site une fois la CI verte. On travaille sur `develop` et on ne merge sur `main` que ce qui doit partir en ligne.
+- **Déploiement** : Render (site statique), configuré dans `render.yaml`, servi sur **https://craftyourchess.com** (domaine chez Cloudflare, `CNAME` en DNS only vers `craftyourchess-2rcp.onrender.com`). Un push sur `main` redéploie le site une fois la CI GitHub verte. On travaille sur `develop` et on ne merge sur `main` (en fast-forward) que ce qui doit partir en ligne, **après accord explicite**. La clé `VITE_WEB3FORMS_KEY` est définie dans l'environnement du service Render et dans le `.env` local (git-ignoré).
+- Adresse de contact : `craftyourchess@gmail.com`, aussi celle du compte Web3Forms.

@@ -14,6 +14,12 @@
 - [x] Analyse des 10 dernières parties avec Stockfish WASM : nombre d'erreurs par partie (sans cache)
 - [x] Rejouer ses erreurs sur un échiquier, dans un ordre aléatoire, avec bilan
 - [x] Onglet Parties : historique toutes plateformes, paginé, avec l'Elo et sa variation (sans stockage)
+- [x] Mises à jour de la PWA installée, licence GPL-3.0, page `/legal` avec effacement des données locales
+- [x] Entraînements en onglets, avec un écran d'options
+- [x] Thèmes des erreurs : filtre d'entraînement et barres dans les résultats
+- [x] Menu des paramètres : langue et apparence des échiquiers
+- [x] Page de contact avec un formulaire de retours (Web3Forms)
+- [x] Renommage ChessMe → CraftYourChess, domaine https://craftyourchess.com
 
 ## V1 : à cadrer
 
@@ -22,14 +28,13 @@
 - [ ] Synchro incrémentale (`since`) et gestion du 429
 - [ ] Courbe Elo (ECharts)
 - [ ] Liste des parties filtrable, et visionneuse de partie (chessground + chessops)
-- [ ] Bouton « supprimer mes données locales »
+- [ ] Étendre l'effacement des données locales (page `/legal`) aux parties importées
 
 ## Plus tard
 
 - Mesurer l'analyse sur un vrai téléphone et ajuster l'estimation
-- Mettre en cache les évaluations (une analyse interrompue ou relancée ne repart pas de zéro)
-
-- Analyse des parties : mettre en cache les évaluations (Dexie), détailler les erreurs (positions, meilleur coup), filtrer par cadence
+- Mettre en cache les évaluations dans Dexie (une analyse interrompue ou relancée ne repart pas de zéro)
+- Analyse des parties : détailler les erreurs (positions, meilleur coup)
 - Entraînement : mémoriser les résultats, revoir en priorité les positions ratées, sélecteur de promotion
 - Import des parties Chess.com (archives mensuelles)
 - Mémoriser les comptes liés (profil « moi »), à distinguer des recherches récentes

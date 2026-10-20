@@ -477,8 +477,8 @@ Chaque erreur reçoit des **thèmes**, qui sont des étiquettes et non des caté
   - Champs : type de retour en pastilles (idée ou fonctionnalité, ressenti, bug, autre chose ; la liste d'exemples de la page suit le même ordre), message, e-mail facultatif, et une case pour joindre des infos techniques (page, navigateur, langue, taille d'écran), **cochée automatiquement pour un bug** et décochée pour les autres types (l'utilisateur peut toujours la changer). Un champ piège invisible arrête les robots.
   - Un échec garde le message et propose l'adresse e-mail.
   - Service tiers **déclaré sur `/legal`** ; rien n'est envoyé sans action de l'utilisateur.
-- **Maquette, en attendant le compte** :
-  - sans clé (`VITE_WEB3FORMS_KEY`, voir `.env.example`), le développement fait semblant d'envoyer (journalisé dans la console) ;
+- **Clé Web3Forms** (`VITE_WEB3FORMS_KEY`, voir `.env.example`) : dans l'environnement du service Render et dans le `.env` local. Sans clé :
+  - le développement fait semblant d'envoyer (journalisé dans la console) ;
   - un build de production refuse et renvoie vers l'adresse e-mail ;
   - l'adresse de contact est **craftyourchess@gmail.com** (`CONTACT_EMAIL` dans `lib/project.ts`), celle du compte Web3Forms.
 
