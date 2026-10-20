@@ -1,5 +1,5 @@
 import { createFileRoute } from '@tanstack/react-router'
-import { Heart, MessageSquare } from 'lucide-react'
+import { MessageSquare } from 'lucide-react'
 import type { ReactNode } from 'react'
 import { FeedbackForm } from '@/features/contact/FeedbackForm'
 import { CONTACT_EMAIL } from '@/lib/project'
@@ -59,26 +59,17 @@ function ContactPage() {
               />
             </p>
             <p>{m.contact_project_body()}</p>
+            <hr className="mx-auto my-5 w-16 border-border" />
             <p>{m.contact_project_curious()}</p>
             <p>{m.contact_project_reach()}</p>
           </Section>
 
-          <Section title={m.contact_feedback_title()}>
-            <p>{m.contact_feedback_body()}</p>
-            <ul className="list-disc space-y-1 pl-5 text-sm">
-              <li>{m.contact_feedback_features()}</li>
-              <li>{m.contact_feedback_complaints()}</li>
-              <li>{m.contact_feedback_bugs()}</li>
-              <li>{m.contact_feedback_ideas()}</li>
-            </ul>
-            <p>{m.contact_lead()}</p>
-            <div className="pt-4">
-              <p className="flex items-center gap-3 rounded-lg bg-card p-4 text-lg text-font-clear">
-                <Heart aria-hidden className="size-6 shrink-0 fill-current text-bad" />
-                {m.contact_feedback_thanks()}
-              </p>
-            </div>
-          </Section>
+          <p className="flex items-center gap-3 rounded-lg bg-card p-4 text-lg text-font-clear">
+            <span aria-hidden className="shrink-0 text-5xl leading-none">
+              🤸‍♂️
+            </span>
+            {m.contact_feedback_thanks()}
+          </p>
         </div>
 
         <div className="min-w-0 space-y-6 lg:sticky lg:top-6 lg:self-start">
