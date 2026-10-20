@@ -1,6 +1,6 @@
 # CraftYourChess
 
-Application web (PWA installable) pour explorer les stats et les parties d'un joueur sur Lichess et Chess.com. Projet perso, prototype qui évolue vite. 100 % navigateur, local-first, sans backend.
+Application web (PWA installable) pour explorer les stats et les parties d'un joueur sur Lichess et Chess.com. Projet perso, prototype qui évolue vite. 100 % navigateur, local-first, sans backend. En ligne sur https://craftyourchess.com, en lancement très discret : gratuit, open source, sans compte, sans pub ni traçage (des dons peut-être plus tard, voir la vision).
 
 - Vision produit (réflexions en cours, rien de définitif) : [docs/vision.md](docs/vision.md)
 - Décisions et justifications : [docs/decisions.md](docs/decisions.md). **À mettre à jour à chaque nouveau choix structurant.**

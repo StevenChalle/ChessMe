@@ -14,6 +14,14 @@ Ce n'est ni un Lichess ni un Chessable en moins bien. Ce qui le distingue :
 - **aucun compte à créer**, tout reste dans le navigateur ;
 - des **recommandations accompagnées de preuves** tirées de tes parties, et non des conseils génériques.
 
+## Lancement et modèle
+
+_Discussion du 2026-10-21._
+
+- **Lancement très discret.** Pas de campagne : l'application est en ligne sur https://craftyourchess.com, on la fait connaître petit à petit (entourage, quelques joueurs, éventuellement les communautés Lichess) et on s'appuie sur les retours de la page `/contact` pour l'améliorer.
+- **Gratuit et open source, pour l'instant.** Code sous GPL-3.0 sur GitHub, sans compte, sans publicité, sans traçage ni mesure d'audience. L'absence de backend garde le coût d'hébergement quasi nul (le site statique sur Render, le domaine à environ 10 $ par an), donc rien n'oblige à monétiser.
+- **Plus tard, peut-être un modèle de dons** (GitHub Sponsors, Ko-fi, Liberapay…) : une contribution volontaire, sans fonctionnalité réservée aux donateurs. À rediscuter si le projet trouve son public ou si des coûts apparaissent (un backend, par exemple).
+
 ## Le plan d'entraînement, au centre
 
 L'idée qui structure tout : un **plan d'entraînement personnel**, proposé chaque semaine ou à une autre cadence. C'est ce qu'on ouvre régulièrement. Le reste sert à l'alimenter ou à l'appliquer :
