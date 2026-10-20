@@ -486,6 +486,6 @@ Chaque erreur reçoit des **thèmes**, qui sont des étiquettes et non des caté
 
 - Nom affiché partout : en-tête, titre, manifeste PWA, textes, page `/legal`, sujet des e-mails Web3Forms. Identifiants en minuscules : `craftyourchess` (paquet, préfixe des clés `localStorage`).
 - **Clés `localStorage` renommées** (`chessme:*` → `craftyourchess:*`) : `migrateLegacyKeys()` (`lib/localData.ts`), appelée au démarrage, recopie une fois les anciennes valeurs pour ne perdre aucun réglage. À retirer quand plus personne n'a l'ancienne version. `PARAGLIDE_LOCALE` n'avait pas de préfixe et ne change pas.
-- Hors du code : dépôt GitHub, service Render (et son URL), compte Web3Forms, adresse de contact : voir la liste de [rename-craftyourchess.md](rename-craftyourchess.md).
+- Hors du code : dépôt GitHub, service Render (et son URL), compte Web3Forms, adresse de contact : renommés ou remplacés à la main (voir ci-dessous).
 - **Nouvelle adresse** : un nouveau service Render `craftyourchess` (https://craftyourchess.onrender.com/) remplace `chessme-k8py.onrender.com`, qui redirige vers lui le temps de la transition. Le stockage local étant propre à chaque origine, les visiteurs repartent d'un site vierge et réinstallent la PWA : acceptable pour un prototype. Écarté : garder l'ancienne URL, qui porte l'ancien nom.
 - **Adresse de contact** : craftyourchess@gmail.com, désormais celle du compte Web3Forms.
