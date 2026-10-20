@@ -9,9 +9,9 @@ Liste à suivre dans l'ordre. Cocher au fur et à mesure ; supprimer ce fichier 
 - [x] Identifiants : paquet `craftyourchess`, clés `localStorage` `craftyourchess:*`, avec migration automatique des anciennes clés `chessme:*` (`migrateLegacyKeys`, `lib/localData.ts`).
 - [x] Docs : `CLAUDE.md`, `README.md`, `docs/*`, licences des pièces, commentaire du favicon.
 - [x] Lien « Code source » : `https://github.com/StevenChalle/CraftYourChess` (fonctionne dès l'étape 2).
-- [ ] Restent volontairement en attente : l'URL Render (étape 3) et l'adresse e-mail (étape 5).
+- [x] URL Render (`craftyourchess.onrender.com`, option A) et adresse `craftyourchess@gmail.com` reportées dans le code et la doc.
 
-## 2. GitHub (2 min) — avant de pousser
+## 2. GitHub : fait
 
 1. https://github.com/StevenChalle/ChessMe/settings → **Repository name** : `CraftYourChess` → **Rename**.
    GitHub redirige automatiquement les anciennes URL (web, clone, push).
@@ -24,7 +24,7 @@ Liste à suivre dans l'ordre. Cocher au fur et à mesure ; supprimer ce fichier 
 3. Optionnel : mettre à jour la description et le lien « Website » du dépôt (roue crantée de la section « About »).
 4. Me dire « GitHub OK » : je pousse `develop` puis `main`.
 
-## 3. Render
+## 3. Render : option A retenue (`craftyourchess.onrender.com`)
 
 L'URL actuelle `chessme-k8py.onrender.com` contient l'ancien nom. Deux possibilités :
 
@@ -48,13 +48,13 @@ Conséquence : le stockage local est propre à chaque adresse. Les visiteurs act
 1. https://app.web3forms.com → le formulaire → renommer en `CraftYourChess`.
 2. Si l'adresse e-mail change (étape 5) : créer une nouvelle clé d'accès avec la nouvelle adresse, puis la mettre dans `VITE_WEB3FORMS_KEY` sur Render et dans le `.env` local, et redéployer. L'ancienne clé continue d'écrire à l'ancienne adresse.
 
-## 5. Adresse de contact (optionnel)
+## 5. Adresse de contact : `craftyourchess@gmail.com` (reste le transfert, 5.2)
 
 1. Créer `craftyourchess.dev@gmail.com`, ou un autre nom.
 2. Dans l'ancienne boîte : **Paramètres → Transfert** vers la nouvelle, pour ne rien perdre.
 3. Me donner l'adresse : je mets à jour `CONTACT_EMAIL` (`lib/project.ts`) et la doc. Puis faire l'étape 4.2.
 
-## 6. Dossier local (à la toute fin, hors de Claude Code)
+## 6. Dossier local : fait
 
 Fermer cette session et l'éditeur, puis :
 

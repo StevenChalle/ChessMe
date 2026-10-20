@@ -3,7 +3,7 @@
 services:
   - type: web
     runtime: static
-    name: chessme
+    name: craftyourchess
     branch: main
     autoDeployTrigger: checksPass
     # corepack runs the pnpm version pinned in package.json ("packageManager")

@@ -2,7 +2,7 @@
 
 Explore les statistiques et les parties d'un joueur sur Lichess et Chess.com. Application web installable (PWA), qui stocke tout dans le navigateur.
 
-**En ligne : https://chessme-k8py.onrender.com/** (déployé automatiquement à chaque push sur `main`, une fois la CI verte).
+**En ligne : https://craftyourchess.onrender.com/** (déployé automatiquement à chaque push sur `main`, une fois la CI verte).
 
 ```bash
 make dev     # serveur de dev

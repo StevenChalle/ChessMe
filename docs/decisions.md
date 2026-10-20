@@ -50,7 +50,7 @@ Limite connue : sur iOS, le stockage d'une PWA peut être effacé si l'applicati
 
 ### Hébergement : Render (site statique)
 
-Site en ligne : https://chessme-k8py.onrender.com/. La configuration est versionnée dans [`render.yaml`](../render.yaml) (un Blueprint Render) :
+Site en ligne : https://craftyourchess.onrender.com/. La configuration est versionnée dans [`render.yaml`](../render.yaml) (un Blueprint Render) :
 
 - branche `main`, avec `autoDeployTrigger: checksPass` : chaque push sur `main` redéploie le site, **mais seulement une fois la CI GitHub verte** ;
 - build : `corepack pnpm install --frozen-lockfile && corepack pnpm build`. corepack utilise le pnpm épinglé dans `packageManager`, et Node 24 est fixé par `.node-version` ;
@@ -480,10 +480,12 @@ Chaque erreur reçoit des **thèmes**, qui sont des étiquettes et non des caté
 - **Maquette, en attendant le compte** :
   - sans clé (`VITE_WEB3FORMS_KEY`, voir `.env.example`), le développement fait semblant d'envoyer (journalisé dans la console) ;
   - un build de production refuse et renvoie vers l'adresse e-mail ;
-  - l'adresse de contact est **chessme.dev@gmail.com** (`CONTACT_EMAIL` dans `lib/project.ts`), celle du compte Web3Forms.
+  - l'adresse de contact est **craftyourchess@gmail.com** (`CONTACT_EMAIL` dans `lib/project.ts`), celle du compte Web3Forms.
 
 ## 2026-10-20 : ChessMe devient CraftYourChess
 
 - Nom affiché partout : en-tête, titre, manifeste PWA, textes, page `/legal`, sujet des e-mails Web3Forms. Identifiants en minuscules : `craftyourchess` (paquet, préfixe des clés `localStorage`).
 - **Clés `localStorage` renommées** (`chessme:*` → `craftyourchess:*`) : `migrateLegacyKeys()` (`lib/localData.ts`), appelée au démarrage, recopie une fois les anciennes valeurs pour ne perdre aucun réglage. À retirer quand plus personne n'a l'ancienne version. `PARAGLIDE_LOCALE` n'avait pas de préfixe et ne change pas.
 - Hors du code : dépôt GitHub, service Render (et son URL), compte Web3Forms, adresse de contact : voir la liste de [rename-craftyourchess.md](rename-craftyourchess.md).
+- **Nouvelle adresse** : un nouveau service Render `craftyourchess` (https://craftyourchess.onrender.com/) remplace `chessme-k8py.onrender.com`, qui redirige vers lui le temps de la transition. Le stockage local étant propre à chaque origine, les visiteurs repartent d'un site vierge et réinstallent la PWA : acceptable pour un prototype. Écarté : garder l'ancienne URL, qui porte l'ancien nom.
+- **Adresse de contact** : craftyourchess@gmail.com, désormais celle du compte Web3Forms.

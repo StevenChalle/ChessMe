@@ -10,4 +10,4 @@ export const HOST = {
 }
 
 /** Where feedback goes (also the Web3Forms account's address). */
-export const CONTACT_EMAIL = 'chessme.dev@gmail.com'
+export const CONTACT_EMAIL = 'craftyourchess@gmail.com'
