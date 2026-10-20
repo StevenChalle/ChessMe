@@ -2,10 +2,14 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { createRouter, RouterProvider } from '@tanstack/react-router'
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
+import { migrateLegacyKeys } from './lib/localData'
 import { registerServiceWorker } from './lib/registerServiceWorker'
 import { getLocale } from './paraglide/runtime'
 import { routeTree } from './routeTree.gen'
 import './index.css'
+
+// Before anything reads its settings: the keys were renamed with the app (ChessMe).
+migrateLegacyKeys()
 
 // Paraglide resolves the locale (saved choice, then browser language, then English).
 document.documentElement.lang = getLocale()

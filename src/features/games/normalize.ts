@@ -39,7 +39,7 @@ export type GameSummary = {
 }
 
 /**
- * The games ChessMe works with, in the review as in the history: standard chess, rated or casual
+ * The games CraftYourChess works with, in the review as in the history: standard chess, rated or casual
  * (no variants). The review can then keep only rated or only casual games (selection.ts).
  */
 export function isStandardGame(game: GameSummary): boolean {

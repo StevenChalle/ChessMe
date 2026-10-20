@@ -7,7 +7,7 @@ import type { TrainingOptions } from './order'
  * Declared on the /legal page; cleared by clearLocalData().
  */
 
-const STORAGE_KEY = 'chessme:training-settings'
+const STORAGE_KEY = 'craftyourchess:training-settings'
 const VERSION = 1
 
 /** As the options screen edits them: the games limit keeps its number while unchecked. */

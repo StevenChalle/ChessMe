@@ -68,11 +68,11 @@ export default defineConfig(({ mode }) => ({
       registerType: 'prompt',
       injectRegister: false,
       includeAssets: ['favicon.svg'],
-      // Lets you install a separate "ChessMe (dev)" app from `make dev` that follows HMR.
+      // Lets you install a separate "CraftYourChess (dev)" app from `make dev` that follows HMR.
       devOptions: { enabled: true, suppressWarnings: true },
       manifest: {
-        name: mode === 'development' ? 'ChessMe (dev)' : 'ChessMe',
-        short_name: mode === 'development' ? 'ChessMe dev' : 'ChessMe',
+        name: mode === 'development' ? 'CraftYourChess (dev)' : 'CraftYourChess',
+        short_name: mode === 'development' ? 'CraftYourChess dev' : 'CraftYourChess',
         description: 'Explore your Lichess and Chess.com stats and games.',
         lang: 'en',
         theme_color: '#161512',

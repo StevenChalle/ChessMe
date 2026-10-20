@@ -1,7 +1,7 @@
 /** Public facts about the project, shown in the footer and on the legal page. */
 
 /** GPL-3.0 requires the source to be available to users: keep this link visible. */
-export const SOURCE_CODE_URL = 'https://github.com/StevenChalle/ChessMe'
+export const SOURCE_CODE_URL = 'https://github.com/StevenChalle/CraftYourChess'
 
 export const HOST = {
   name: 'Render Services, Inc.',

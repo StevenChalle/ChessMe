@@ -38,7 +38,7 @@ function Emphasized({
 }
 
 /**
- * Who makes ChessMe, what it is for, and the invitation to say anything about it. On large screens
+ * Who makes CraftYourChess, what it is for, and the invitation to say anything about it. On large screens
  * the form sits in a right column next to the text; on phones it follows it.
  */
 function ContactPage() {

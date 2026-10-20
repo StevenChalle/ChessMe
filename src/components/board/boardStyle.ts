@@ -20,7 +20,7 @@ export const BOARD_PRESETS = {
   chesscom: { board: 'green', pieces: 'merida' },
 } as const satisfies Record<string, BoardStyle>
 
-const STORAGE_KEY = 'chessme:board-style'
+const STORAGE_KEY = 'craftyourchess:board-style'
 const listeners = new Set<() => void>()
 
 /** Saved style over the default, field by field. */

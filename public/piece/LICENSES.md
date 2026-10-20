@@ -1,7 +1,7 @@
 # Piece sets
 
 From Lichess's collection (https://github.com/lichess-org/lila/blob/master/COPYING.md), chosen
-for licenses compatible with ChessMe's GPL-3.0.
+for licenses compatible with CraftYourChess's GPL-3.0.
 
 | Set      | Author                      | License                                                  |
 | -------- | --------------------------- | -------------------------------------------------------- |

@@ -38,7 +38,7 @@ function RootLayout() {
           className="flex items-center gap-2.5 text-2xl font-medium tracking-tight text-font-clear"
         >
           <img src={`${import.meta.env.BASE_URL}favicon.svg`} alt="" className="size-8" />
-          ChessMe
+          CraftYourChess
         </Link>
         <div className="ml-auto flex items-center gap-4">
           {!isHome && <HeaderSearch />}

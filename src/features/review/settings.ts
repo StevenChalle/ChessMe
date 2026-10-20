@@ -19,7 +19,7 @@ import {
  * Declared on the /legal page; cleared by clearLocalData().
  */
 
-const STORAGE_KEY = 'chessme:review-settings'
+const STORAGE_KEY = 'craftyourchess:review-settings'
 const VERSION = 1
 
 export type ReviewSettings = { selection: GameSelection; criteria: ReviewCriteria }

@@ -5,8 +5,8 @@ describe('feedbackPayload', () => {
   it('sends the message, the kind and the access key', () => {
     expect(feedbackPayload({ kind: 'bug', message: 'Broken' }, 'KEY')).toEqual({
       access_key: 'KEY',
-      subject: 'ChessMe · bug',
-      from_name: 'ChessMe',
+      subject: 'CraftYourChess · bug',
+      from_name: 'CraftYourChess',
       botcheck: '',
       kind: 'bug',
       message: 'Broken',

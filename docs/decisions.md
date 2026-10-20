@@ -107,7 +107,7 @@ Remplace l'hypothèse du « même pseudo partout ».
 ## 2026-10-04 : recherches récentes
 
 - L'accueil affiche les **3 dernières recherches**. Un clic rouvre le profil, et une croix retire une entrée. Jusqu'à 10 recherches sont conservées, pour pouvoir afficher plus tard une liste plus longue.
-- **Stockage : `localStorage`** (`chessme:recent-searches`), et non Dexie. C'est une petite préférence propre à chaque navigateur, lue sans délai, donc pas d'état de chargement ni de clignotement sur l'accueil. Dexie reste réservé aux données volumineuses (parties importées). Le code tolère un stockage absent ou corrompu, et les onglets restent synchronisés grâce à l'événement `storage`.
+- **Stockage : `localStorage`** (`craftyourchess:recent-searches`), et non Dexie. C'est une petite préférence propre à chaque navigateur, lue sans délai, donc pas d'état de chargement ni de clignotement sur l'accueil. Dexie reste réservé aux données volumineuses (parties importées). Le code tolère un stockage absent ou corrompu, et les onglets restent synchronisés grâce à l'événement `storage`.
 - **Enregistrement depuis la page profil, une fois au moins un compte trouvé.** On ne garde que les comptes trouvés, avec la casse officielle du pseudo : une faute de frappe n'est jamais enregistrée, et une paire avec un mauvais pseudo Chess.com est mémorisée sans lui. Les visites par lien ou favori comptent aussi.
 - Les doublons sont détectés sans tenir compte de la casse, sur la paire (Lichess, Chess.com). Une recherche répétée remonte en tête de liste.
 
@@ -228,7 +228,7 @@ Constat sur Android : l'app installée ne recevait pas les nouvelles versions. L
 
 - **Enregistrement manuel** (`src/lib/registerServiceWorker.ts`, `registerType: 'prompt'`, `injectRegister: false`, dépendance `workbox-window`) : recherche de mise à jour au retour de l'app au premier plan (`visibilitychange`) et toutes les heures.
 - **Au lancement** : une nouvelle version trouvée dans les 10 premières secondes est appliquée tout de suite (rechargement), puisque rien n'a encore été commencé.
-- **Plus tard** : un bandeau « Une nouvelle version de ChessMe est disponible · Mettre à jour » (`UpdateBanner`), plutôt qu'un rechargement forcé qui ferait perdre une analyse ou un entraînement en cours (rien n'est stocké).
+- **Plus tard** : un bandeau « Une nouvelle version de CraftYourChess est disponible · Mettre à jour » (`UpdateBanner`), plutôt qu'un rechargement forcé qui ferait perdre une analyse ou un entraînement en cours (rien n'est stocké).
 - **Cache du moteur limité aux fichiers de Stockfish** (2026-10-05) : la règle `url.pathname.includes('/engine/')` (CacheFirst) attrapait aussi, en dev, les modules sources servis par Vite (`/src/lib/engine/stockfish.ts`, `uci.ts`, `pool.ts`). Ils restaient figés dans le cache : un navigateur de dev exécutait un vieux `stockfish.ts` avec un `coach.ts` récent, d'où « Impossible de démarrer Stockfish » à chaque coup (en réalité `TypeError: lines.map` sur l'ancien `evaluate()`), seulement en dev. La règle ne vise plus que `/engine/` à la racine du site (`startsWith`, même origine). Le cache s'appelle désormais `stockfish`, et l'ancien (`engine`) est supprimé au démarrage. La fonction `urlPattern` doit rester autonome : Workbox recopie son texte dans `sw.js`.
 - Une page jamais contrôlée par le service worker (première visite) ne reçoit pas l'événement de prise de contrôle : un rechargement simple suit au bout de 2 s si besoin.
 
@@ -308,7 +308,7 @@ Rien n'étant enregistré, fermer la modale pendant une recherche ou une analyse
 
 ### Réglages mémorisés
 
-Dans le `localStorage` (`chessme:review-settings`), avec une lecture tolérante (chaque champ invalide reprend sa valeur par défaut) et versionnée. Déclarés sur la page `/legal`, et effacés par « Supprimer mes données locales ».
+Dans le `localStorage` (`craftyourchess:review-settings`), avec une lecture tolérante (chaque champ invalide reprend sa valeur par défaut) et versionnée. Déclarés sur la page `/legal`, et effacés par « Supprimer mes données locales ».
 
 ---
 
@@ -412,7 +412,7 @@ Un téléphone **gèle** la page (et ses Web Workers, donc Stockfish) dès que l
   - « Mélanger les positions de chaque partie » (seconde option affichée, après « Entremêler les parties ») ignore l'ordre des coups.
   - Les deux cochées reproduisent l'ancien mélange total.
 - **Autres options** : « Limiter à [N] parties », décochée par défaut (les N premières parties de l'ordre de jeu, donc tirées au hasard), et « Perte minimale », du seuil d'erreur de l'analyse (toutes les erreurs, par défaut) jusqu'à 30 %, avec les repères de Lichess. Un récapitulatif suit les options en direct.
-- **Options mémorisées** au lancement (`chessme:training-settings`, déclarée sur `/legal`, effacée avec les autres données locales), avec un bouton « Valeurs par défaut ». La perte minimale n'est jamais ramenée sous le seuil de l'analyse en cours.
+- **Options mémorisées** au lancement (`craftyourchess:training-settings`, déclarée sur `/legal`, effacée avec les autres données locales), avec un bouton « Valeurs par défaut ». La perte minimale n'est jamais ramenée sous le seuil de l'analyse en cours.
 - **Rejeu d'une partie** depuis les résultats : un nouvel onglet numéroté, directement sur l'échiquier, avec les options par défaut.
 - **Un seul échiquier dans la page** : seul l'entraînement affiché a son échiquier, reconstruit depuis l'état de l'entraînement quand on revient sur son onglet. Les pointes de flèche de chessground sont des marqueurs SVG aux identifiants globaux (`arrowhead-g`…) : avec plusieurs échiquiers, ils renvoyaient à ceux d'un échiquier masqué, et les flèches des entraînements suivants s'affichaient mal.
 - **Un moteur à la fois** : seul l'entraînement affiché fait tourner Stockfish. Masqué, son moteur est arrêté, mais sa progression reste. Au retour, la recherche du meilleur coup ou la vérification d'un coup interrompue reprend : elles passent par des effets qui dépendent de l'onglet affiché, et non plus par le gestionnaire du coup.
@@ -461,23 +461,29 @@ Chaque erreur reçoit des **thèmes**, qui sont des étiquettes et non des caté
 - Le sélecteur ajouté un temps sous le panneau d'entraînement est retiré.
 - **Pièces** : jeux libres de la collection de Lichess, téléchargés dans `public/piece/<jeu>/`. Les jeux sous CC BY-NC-SA (Staunty, Maestro, Cardinal…), incompatibles avec la GPL, sont écartés. Les licences sont dans `public/piece/LICENSES.md`, et les crédits sur `/legal`. Les pièces de Chess.com (« Neo ») sont propriétaires, et dessiner un jeu qui leur ressemble aurait été risqué : le style Chess.com utilise Merida (GPL), un dessin classique indépendant, jugé le plus ressemblant.
 - **Couleurs** : les cases sont dessinées en CSS (`repeating-conic-gradient`, une tuile de 2 × 2 cases) à partir de deux variables par couleur (`components/board/boardStyles.css`). Le dernier coup est surligné en jaune et les coordonnées sont assorties. Le marron et cburnett restent ceux de chessground. Le vert reprend l'esprit des échiquiers de tournoi en vinyle, avec des valeurs volontairement différentes de celles de Chess.com.
-- Le choix est mémorisé (`chessme:board-style`, déclarée sur `/legal`, effacée avec les autres données locales) et partagé par tous les échiquiers de la page (`components/board/boardStyle.ts`).
+- Le choix est mémorisé (`craftyourchess:board-style`, déclarée sur `/legal`, effacée avec les autres données locales) et partagé par tous les échiquiers de la page (`components/board/boardStyle.ts`).
 
 ---
 
 ## 2026-10-18 : page de contact et retours
 
-- **`/contact`** : présentation rapide (pseudo OugaBouga), principe du projet, appel à tous les retours (plaintes, bugs, fonctionnalités, idées vagues), formulaire, et adresse e-mail en solution de repli. **Les textes sont provisoires** (marqués « [Provisoire] »).
+- **`/contact`** : à propos du projet et de son auteur (Ganjaskhan), appel à tous les retours, remerciement mis en avant (cœur), formulaire dans une colonne de droite sur grand écran (en dessous sur mobile), et adresse e-mail en solution de repli.
 - **Accès partout** :
   - « Un avis ? » dans l'en-tête, à côté de la roue des paramètres (icône seule sur mobile) ;
   - « Contact et retours » dans le pied de page ;
   - une ligne discrète à la fin d'un entraînement et sous les résultats d'analyse, là où l'on a un avis ;
   - le contact de la page `/legal`, qui renvoyait aux issues GitHub.
 - **Formulaire sans serveur** : **Web3Forms** reçoit le message et le fait suivre par e-mail. Il a été préféré à Formspree pour son palier gratuit plus large et sa clé publique par conception (elle ne permet d'écrire qu'à l'adresse du compte). Ont été écartés : le mailto seul (beaucoup abandonnent faute de logiciel de mail, et l'adresse est exposée au spam), les formulaires Google ou Tally intégrés (traceurs et marque d'un tiers), et les issues GitHub (compte requis).
-  - Champs : type de retour en pastilles (bug, idée, autre ; « quelque chose ne va pas » a été retiré, doublon du bug), message, e-mail facultatif, et une case pour joindre des infos techniques (page, navigateur, langue, taille d'écran), **cochée automatiquement pour un bug** et décochée pour les autres types (l'utilisateur peut toujours la changer). Un champ piège invisible arrête les robots.
+  - Champs : type de retour en pastilles (idée ou fonctionnalité, ressenti, bug, autre chose ; la liste d'exemples de la page suit le même ordre), message, e-mail facultatif, et une case pour joindre des infos techniques (page, navigateur, langue, taille d'écran), **cochée automatiquement pour un bug** et décochée pour les autres types (l'utilisateur peut toujours la changer). Un champ piège invisible arrête les robots.
   - Un échec garde le message et propose l'adresse e-mail.
   - Service tiers **déclaré sur `/legal`** ; rien n'est envoyé sans action de l'utilisateur.
 - **Maquette, en attendant le compte** :
   - sans clé (`VITE_WEB3FORMS_KEY`, voir `.env.example`), le développement fait semblant d'envoyer (journalisé dans la console) ;
   - un build de production refuse et renvoie vers l'adresse e-mail ;
   - l'adresse de contact est **chessme.dev@gmail.com** (`CONTACT_EMAIL` dans `lib/project.ts`), celle du compte Web3Forms.
+
+## 2026-10-20 : ChessMe devient CraftYourChess
+
+- Nom affiché partout : en-tête, titre, manifeste PWA, textes, page `/legal`, sujet des e-mails Web3Forms. Identifiants en minuscules : `craftyourchess` (paquet, préfixe des clés `localStorage`).
+- **Clés `localStorage` renommées** (`chessme:*` → `craftyourchess:*`) : `migrateLegacyKeys()` (`lib/localData.ts`), appelée au démarrage, recopie une fois les anciennes valeurs pour ne perdre aucun réglage. À retirer quand plus personne n'a l'ancienne version. `PARAGLIDE_LOCALE` n'avait pas de préfixe et ne change pas.
+- Hors du code : dépôt GitHub, service Render (et son URL), compte Web3Forms, adresse de contact : voir la liste de [rename-craftyourchess.md](rename-craftyourchess.md).

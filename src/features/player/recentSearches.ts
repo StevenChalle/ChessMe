@@ -11,7 +11,7 @@ export type RecentSearch = PlayerUsernames & {
   searchedAt: number
 }
 
-const STORAGE_KEY = 'chessme:recent-searches'
+const STORAGE_KEY = 'craftyourchess:recent-searches'
 const MAX_STORED = 10
 
 function sameSearch(a: PlayerUsernames, b: PlayerUsernames): boolean {

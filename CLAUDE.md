@@ -1,4 +1,4 @@
-# ChessMe
+# CraftYourChess
 
 Application web (PWA installable) pour explorer les stats et les parties d'un joueur sur Lichess et Chess.com. Projet perso, prototype qui évolue vite. 100 % navigateur, local-first, sans backend.
 

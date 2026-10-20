@@ -37,8 +37,8 @@ export const contactConfigured = Boolean(ACCESS_KEY)
 export function feedbackPayload(feedback: Feedback, accessKey: string): Record<string, string> {
   return {
     access_key: accessKey,
-    subject: `ChessMe · ${feedback.kind}`,
-    from_name: 'ChessMe',
+    subject: `CraftYourChess · ${feedback.kind}`,
+    from_name: 'CraftYourChess',
     botcheck: feedback.botcheck ?? '',
     ...(feedback.email ? { email: feedback.email, replyto: feedback.email } : {}),
     kind: feedback.kind,
