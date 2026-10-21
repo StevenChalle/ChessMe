@@ -43,7 +43,7 @@ function Emphasized({
  */
 function ContactPage() {
   return (
-    <article className="space-y-8 leading-relaxed">
+    <article className="space-y-8 text-[15px] leading-relaxed">
       <h1 className="flex items-center gap-3">
         <MessageSquare aria-hidden className="size-7 shrink-0" />
         {m.contact_title()}

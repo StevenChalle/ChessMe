@@ -12,7 +12,7 @@ export function Footer() {
             href={SOURCE_CODE_URL}
             target="_blank"
             rel="noreferrer"
-            className="text-primary underline-offset-3 hover:underline"
+            className="hover:text-text-strong"
           >
             {m.footer_source()}
           </a>
