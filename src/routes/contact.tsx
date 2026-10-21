@@ -12,7 +12,7 @@ export const Route = createFileRoute('/contact')({
 function Section({ title, children }: { title: string; children: ReactNode }) {
   return (
     <section className="space-y-2">
-      <h2>{title}</h2>
+      <h2 className="text-xl font-medium">{title}</h2>
       {children}
     </section>
   )
