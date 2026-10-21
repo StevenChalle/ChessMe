@@ -29,7 +29,7 @@ function stepSummary(step: ReviewStep, progress: ReviewProgress): string | undef
 }
 
 function StepIcon({ status }: { status: StepStatus }) {
-  if (status === 'done') return <Check className="size-4 text-good" />
+  if (status === 'done') return <Check className="size-4 text-win" />
   if (status === 'current') return <LoaderCircle className="size-4 animate-spin text-primary" />
   return <Circle className="size-4 text-muted-foreground/50" />
 }
@@ -60,7 +60,7 @@ export function ReviewSteps({
               <p
                 className={cn(
                   'flex flex-wrap justify-between gap-x-4',
-                  status === 'upcoming' ? 'text-muted-foreground' : 'text-font-clear',
+                  status === 'upcoming' ? 'text-muted-foreground' : 'text-text-strong',
                 )}
               >
                 <span>

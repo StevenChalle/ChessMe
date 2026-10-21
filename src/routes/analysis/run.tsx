@@ -33,7 +33,7 @@ function AnalysisTab() {
       {analysis.status === 'running' ? (
         <ReviewSteps progress={analysis.progress} single={single} />
       ) : analysis.status === 'error' ? (
-        <p className="text-bad">{m.review_failed()}</p>
+        <p className="text-loss">{m.review_failed()}</p>
       ) : (
         <ReviewResults outcome={analysis.outcome} onTrain={trainGame} />
       )}

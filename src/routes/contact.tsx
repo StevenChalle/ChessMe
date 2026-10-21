@@ -12,7 +12,7 @@ export const Route = createFileRoute('/contact')({
 function Section({ title, children }: { title: string; children: ReactNode }) {
   return (
     <section className="space-y-2">
-      <h2 className="text-lg font-medium text-font-clear">{title}</h2>
+      <h2>{title}</h2>
       {children}
     </section>
   )
@@ -31,7 +31,7 @@ function Emphasized({
   return (
     <>
       {before}
-      <strong className="font-semibold text-font-clear">{emphasis}</strong>
+      <strong className="font-semibold text-text-strong">{emphasis}</strong>
       {after}
     </>
   )
@@ -44,7 +44,7 @@ function Emphasized({
 function ContactPage() {
   return (
     <article className="space-y-8 leading-relaxed">
-      <h1 className="flex items-center gap-3 text-3xl font-medium text-font-clear">
+      <h1 className="flex items-center gap-3">
         <MessageSquare aria-hidden className="size-7 shrink-0" />
         {m.contact_title()}
       </h1>
@@ -64,7 +64,7 @@ function ContactPage() {
             <p>{m.contact_project_reach()}</p>
           </Section>
 
-          <p className="flex items-center gap-3 rounded-lg bg-card p-4 text-lg text-font-clear">
+          <p className="panel-etabli flex items-center gap-3 p-4 text-lg text-text-strong">
             <span aria-hidden className="shrink-0 text-5xl leading-none">
               🤸‍♂️
             </span>

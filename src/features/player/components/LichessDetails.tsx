@@ -43,7 +43,7 @@ export function LichessDetails({ usernames }: { usernames: PlayerUsernames }) {
 }
 
 function LichessUserDetails({ user }: { user: LichessUser }) {
-  if (user.disabled) return <p className="text-bad">{m.lichess_closed()}</p>
+  if (user.disabled) return <p className="text-loss">{m.lichess_closed()}</p>
 
   const perfs = RATED_PERFS.filter(({ key }) => user.perfs?.[key]?.games)
   const puzzleModes = PUZZLE_MODES.filter(({ key }) => user.perfs?.[key]?.runs)
@@ -51,7 +51,7 @@ function LichessUserDetails({ user }: { user: LichessUser }) {
 
   return (
     <div className="space-y-4">
-      {user.tosViolation && <p className="text-sm text-bad">{m.lichess_tos()}</p>}
+      {user.tosViolation && <p className="text-sm text-loss">{m.lichess_tos()}</p>}
 
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
         <StatTile label={m.games()} value={formatNumber(count?.all ?? 0)} />
@@ -74,14 +74,14 @@ function LichessUserDetails({ user }: { user: LichessUser }) {
             {perfs.map(({ key, label }) => {
               const perf = user.perfs![key]!
               return (
-                <li key={key} className="rounded-md bg-muted p-3">
-                  <div className="text-xs text-muted-foreground">{label()}</div>
-                  <div className="text-xl font-medium text-font-clear tabular-nums">
+                <li key={key} className="tile-etabli">
+                  <div className="label-etabli">{label()}</div>
+                  <div className="tile-value mt-1">
                     {perf.rating}
                     {perf.prov && <span className="text-muted-foreground">?</span>}
                     {perf.prog ? (
                       <span
-                        className={`ml-1.5 text-xs ${perf.prog > 0 ? 'text-good' : 'text-bad'}`}
+                        className={`ml-1.5 text-xs ${perf.prog > 0 ? 'text-win' : 'text-loss'}`}
                       >
                         {perf.prog > 0 ? '+' : ''}
                         {perf.prog}
@@ -104,7 +104,7 @@ function LichessUserDetails({ user }: { user: LichessUser }) {
             {puzzleModes.map(({ key, label }) => (
               <div key={key}>
                 <dt className="text-xs text-muted-foreground">{label}</dt>
-                <dd className="text-xl font-medium text-font-clear tabular-nums">
+                <dd className="num text-xl font-medium text-text-strong">
                   {user.perfs![key]!.score}
                 </dd>
               </div>
@@ -115,7 +115,7 @@ function LichessUserDetails({ user }: { user: LichessUser }) {
 
       {(profile?.bio || profile?.realName || profile?.location) && (
         <Panel title={m.profile()}>
-          {profile.realName && <p className="text-font-clear">{profile.realName}</p>}
+          {profile.realName && <p className="text-text-strong">{profile.realName}</p>}
           {profile.location && <p className="text-sm text-muted-foreground">{profile.location}</p>}
           {profile.bio && <p className="mt-2 text-sm whitespace-pre-line">{profile.bio}</p>}
         </Panel>

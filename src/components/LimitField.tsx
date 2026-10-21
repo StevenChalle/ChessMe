@@ -31,7 +31,7 @@ export function LimitField({
         id={id}
         checked={limited}
         onCheckedChange={(checked) => onChange({ limited: checked === true, count })}
-        className="border-font-dim"
+        className="border-border-strong"
       />
       <Label htmlFor={id} className="font-normal text-muted-foreground">
         {label}
@@ -42,7 +42,7 @@ export function LimitField({
         value={Number.isNaN(count) ? '' : count}
         onChange={(event) => onChange({ limited: true, count: event.target.valueAsNumber })}
         aria-label={label}
-        className={cn('h-8 w-24 bg-muted tabular-nums', !limited && 'opacity-50')}
+        className={cn('num h-8 w-24 bg-muted', !limited && 'opacity-50')}
       />
       <span className="text-muted-foreground">{unit}</span>
       {info && <InfoTip text={info} />}

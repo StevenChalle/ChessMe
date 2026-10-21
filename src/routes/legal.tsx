@@ -13,7 +13,7 @@ export const Route = createFileRoute('/legal')({
 function Section({ title, children }: { title: string; children: ReactNode }) {
   return (
     <section className="space-y-2">
-      <h2 className="text-lg font-medium text-font-clear">{title}</h2>
+      <h2>{title}</h2>
       {children}
     </section>
   )
@@ -24,7 +24,7 @@ function LegalPage() {
 
   return (
     <article className="max-w-prose space-y-8 text-sm leading-relaxed">
-      <h1 className="text-3xl font-medium text-font-clear">{m.legal_title()}</h1>
+      <h1>{m.legal_title()}</h1>
 
       <Section title={m.legal_publisher_title()}>
         <p>{m.legal_publisher_body()}</p>
@@ -43,7 +43,7 @@ function LegalPage() {
 
       <Section title={m.legal_privacy_title()}>
         <p>{m.legal_privacy_intro()}</p>
-        <h3 className="pt-2 font-medium text-font-clear">{m.legal_privacy_local_title()}</h3>
+        <h3 className="pt-2 font-semibold">{m.legal_privacy_local_title()}</h3>
         <ul className="list-disc space-y-1 pl-5">
           <li>{m.legal_privacy_local_language()}</li>
           <li>{m.legal_privacy_local_recent()}</li>
@@ -52,7 +52,7 @@ function LegalPage() {
           <li>{m.legal_privacy_local_board()}</li>
           <li>{m.legal_privacy_local_app()}</li>
         </ul>
-        <h3 className="pt-2 font-medium text-font-clear">{m.legal_privacy_thirdparty_title()}</h3>
+        <h3 className="pt-2 font-semibold">{m.legal_privacy_thirdparty_title()}</h3>
         <p>{m.legal_privacy_thirdparty_body()}</p>
         <p>{m.legal_privacy_thirdparty_form()}</p>
         <p>{m.legal_privacy_public_data()}</p>
@@ -76,7 +76,7 @@ function LegalPage() {
             {m.legal_clear_button()}
           </Button>
           {cleared && (
-            <span role="status" className="text-good">
+            <span role="status" className="text-win">
               {m.legal_clear_done()}
             </span>
           )}
@@ -113,7 +113,7 @@ function LegalPage() {
           </li>
           <li>{m.legal_credits_pieces_others()}</li>
           <li>
-            Noto Sans{' — '}
+            Noto Sans, Noto Sans Mono{' — '}
             {m.legal_credits_font()}
           </li>
         </ul>

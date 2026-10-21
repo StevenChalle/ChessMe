@@ -222,7 +222,7 @@
   "legal_credits_board": "plateau et règles du jeu par Lichess, GPL-3.0",
   "legal_credits_engine": "moteur d'échecs, GPL-3.0",
   "legal_credits_pieces": "pièces par Colin M.L. Burnett, GPL-2.0 ou ultérieure",
-  "legal_credits_font": "police, licence SIL Open Font",
+  "legal_credits_font": "polices, licence SIL Open Font",
   "legal_credits_data": "Données : API de Lichess et Published-Data API de Chess.com.",
   "legal_trademarks": "Lichess et Chess.com sont des marques de leurs propriétaires respectifs. CraftYourChess n'est ni affilié, ni approuvé, ni sponsorisé par eux.",
   "legal_warranty": "Fourni tel quel, sans garantie, comme le prévoit la licence.",

@@ -21,7 +21,7 @@ export function SourceStatus({
     case 'loading':
       return <p className="text-sm text-muted-foreground">{m.loading()}</p>
     case 'error':
-      return <p className="text-sm text-bad">{sourceErrorMessage(source, state.error)}</p>
+      return <p className="text-sm text-loss">{sourceErrorMessage(source, state.error)}</p>
     case 'missing':
       return (
         <p className="text-sm text-muted-foreground">

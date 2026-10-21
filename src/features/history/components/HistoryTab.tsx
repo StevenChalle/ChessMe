@@ -23,13 +23,13 @@ function RatingCell({ game }: { game: GameSummary }) {
   if (game.rating === undefined) return null
   const diff = game.ratingDiff
   return (
-    <span className="inline-flex items-baseline gap-1.5 tabular-nums">
-      <span className="text-font-clear">{game.rating}</span>
+    <span className="num inline-flex items-baseline gap-1.5">
+      <span className="text-text-strong">{game.rating}</span>
       {diff !== undefined && (
         <span
           className={cn(
             'text-sm font-medium',
-            diff > 0 ? 'text-good' : diff < 0 ? 'text-bad' : 'text-muted-foreground',
+            diff > 0 ? 'text-win' : diff < 0 ? 'text-loss' : 'text-muted-foreground',
           )}
         >
           {formatSigned(diff)}
@@ -115,7 +115,7 @@ export function HistoryTab({ accounts }: { accounts: HistoryAccount[] }) {
       </div>
 
       {failures.map(({ source, error }) => (
-        <p key={source} className="text-sm text-bad">
+        <p key={source} className="text-sm text-loss">
           {sourceErrorMessage(source, error)}
         </p>
       ))}
@@ -123,11 +123,11 @@ export function HistoryTab({ accounts }: { accounts: HistoryAccount[] }) {
       {query.isPending ? (
         <p className="text-muted-foreground">{m.loading()}</p>
       ) : query.isError && pages.length === 0 ? (
-        <p className="text-bad">{m.history_failed()}</p>
+        <p className="text-loss">{m.history_failed()}</p>
       ) : !page || page.games.length === 0 ? (
         <p className="text-muted-foreground">{m.history_no_games()}</p>
       ) : (
-        <div className="rounded-md bg-card px-2">
+        <div className="panel-etabli px-2">
           <GamesTable
             games={pageGames}
             extra={{ header: m.history_col_rating(), cell: (game) => <RatingCell game={game} /> }}

@@ -32,7 +32,7 @@ export function ThresholdSlider({
           <Label htmlFor={id}>{label}</Label>
           {note && <InfoTip text={note} />}
         </span>
-        <span className="font-medium text-font-clear tabular-nums">{value} %</span>
+        <span className="num font-medium text-text-strong">{value} %</span>
       </div>
       <Slider
         id={id}
@@ -56,13 +56,13 @@ export function ThresholdSlider({
                   : marker.value === range.max
                     ? '-translate-x-full items-end'
                     : '-translate-x-1/2 items-center',
-                marker.value === value && 'text-font-clear',
+                marker.value === value && 'text-text-strong',
               )}
               style={{ left: `${position(marker.value)}%` }}
             >
               <span className="h-1.5 w-px bg-current" />
               <span>{marker.label}</span>
-              <span className="tabular-nums">{marker.value}</span>
+              <span className="num">{marker.value}</span>
             </span>
           ))}
         </div>

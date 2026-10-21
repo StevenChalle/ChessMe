@@ -19,8 +19,8 @@ import type { TrainingAction, TrainingState } from '../session'
 type Tone = 'good' | 'bad' | 'solution'
 
 const TONES: Record<Tone, { box: string; icon: string; title: string }> = {
-  good: { box: 'bg-good/12 ring-good/40', icon: 'bg-good', title: 'text-good' },
-  bad: { box: 'bg-bad/10 ring-bad/35', icon: 'bg-bad', title: 'text-bad' },
+  good: { box: 'bg-win/12 ring-win/40', icon: 'bg-win', title: 'text-win' },
+  bad: { box: 'bg-loss/10 ring-loss/35', icon: 'bg-loss', title: 'text-loss' },
   solution: { box: 'bg-primary/10 ring-primary/35', icon: 'bg-primary', title: 'text-primary' },
 }
 
@@ -64,10 +64,10 @@ function EvalChip({ cp, color, muted }: { cp: number; color: Color; muted?: bool
   return (
     <span
       className={cn(
-        'rounded-sm px-1.5 py-0.5 text-sm tabular-nums',
+        'num rounded-sm px-1.5 py-0.5 text-sm',
         muted
           ? 'bg-background/35 text-muted-foreground'
-          : 'bg-background/70 font-medium text-font-clear',
+          : 'bg-background/70 font-medium text-text-strong',
       )}
     >
       {formatEval(forColor(cp, color))}
@@ -107,7 +107,7 @@ function MoveLine({
     <div className="space-y-0.5">
       <p className="text-sm text-muted-foreground">{label}</p>
       <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
-        <span className="text-2xl font-semibold text-font-clear">{san}</span>
+        <span className="text-2xl font-semibold text-text-strong">{san}</span>
         {cp !== undefined && (
           <span className="ml-auto flex items-center gap-1.5">
             {baseCp !== undefined && (
@@ -120,8 +120,8 @@ function MoveLine({
             {delta !== undefined && (
               <span
                 className={cn(
-                  'text-sm font-medium tabular-nums',
-                  isValidMove(baseCp!, cp, validMaxDrop) ? 'text-good' : 'text-bad',
+                  'num text-sm font-medium',
+                  isValidMove(baseCp!, cp, validMaxDrop) ? 'text-win' : 'text-loss',
                 )}
                 title={m.training_delta_title({ eval: formatEval(forColor(baseCp!, color)) })}
               >
@@ -166,7 +166,7 @@ function ValidMoves({ state, puzzle }: { state: TrainingState; puzzle: Mistake }
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger
-        className="text-sm text-foreground underline decoration-dotted underline-offset-4 hover:text-font-clear"
+        className="text-sm text-foreground underline decoration-dotted underline-offset-4 hover:text-text-strong"
         onPointerEnter={hover(true)}
         onPointerLeave={hover(false)}
       >
@@ -186,7 +186,7 @@ function ValidMoves({ state, puzzle }: { state: TrainingState; puzzle: Mistake }
             return (
               <li key={move.uci} className="flex items-center justify-between gap-3">
                 <span className="flex items-baseline gap-2">
-                  <span className={cn('font-semibold text-font-clear', isTried && 'text-good')}>
+                  <span className={cn('font-semibold text-text-strong', isTried && 'text-win')}>
                     {sanOf(puzzle.fen, move.uci)}
                   </span>
                   {isBest && (
@@ -221,7 +221,7 @@ function Prompt({
 }) {
   return (
     <div className="space-y-1.5">
-      <p className="flex items-center gap-3 text-2xl font-semibold text-font-clear">
+      <p className="flex items-center gap-3 text-2xl font-semibold text-text-strong">
         <SideSquare color={puzzle.color} className="size-5" />
         {puzzle.color === 'white' ? m.training_white_to_play() : m.training_black_to_play()}
       </p>
@@ -311,9 +311,9 @@ export function PuzzlePanel({
               : m.training_wrong_hint()}
           </p>
           {tried && state.triedReply && (
-            <p className="flex items-center gap-2 text-base text-font-clear">
+            <p className="flex items-center gap-2 text-base text-text-strong">
               <span className="text-sm text-muted-foreground">{m.training_engine_reply()}</span>
-              <span className="text-xl font-semibold text-bad">
+              <span className="text-xl font-semibold text-loss">
                 {sanOf(play(puzzle.fen, tried).fen, state.triedReply)}
               </span>
             </p>

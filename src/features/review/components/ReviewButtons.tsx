@@ -18,7 +18,8 @@ export function ReviewButtons({ usernames }: { usernames: PlayerUsernames }) {
           {m.review_button_last()}
         </Link>
       </Button>
-      <Button size="lg" asChild>
+      {/* One main action per screen: the quick one */}
+      <Button size="lg" variant="secondary" asChild>
         <Link to="/analysis" search={usernames}>
           <SlidersHorizontal data-icon="inline-start" />
           {m.review_button()}

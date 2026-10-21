@@ -9,9 +9,12 @@ export function UpdateBanner() {
   const available = useSyncExternalStore(subscribeAppUpdate, isAppUpdateAvailable, () => false)
   if (!available) return null
   return (
-    <div className="bg-primary/15 text-sm text-font-clear">
+    <div className="border-t-2 border-highlight bg-card text-sm text-text-strong">
       <div className="mx-auto flex w-full max-w-6xl flex-wrap items-center justify-between gap-2 px-4 py-2">
-        <span>{m.update_available()}</span>
+        <span className="flex items-center gap-2.5 font-semibold">
+          <span aria-hidden className="size-2 rounded-full bg-highlight" />
+          {m.update_available()}
+        </span>
         <Button size="sm" onClick={applyAppUpdate}>
           <RefreshCw data-icon="inline-start" />
           {m.update_apply()}

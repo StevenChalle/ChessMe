@@ -57,6 +57,7 @@ export function PlayerOverview({ usernames }: { usernames: PlayerUsernames }) {
             />
             <StatTile
               label={m.playing_since()}
+              text
               value={oldest?.joinedAt ? formatMonthYear(oldest.joinedAt) : '—'}
               hint={
                 oldest &&
@@ -66,6 +67,7 @@ export function PlayerOverview({ usernames }: { usernames: PlayerUsernames }) {
             />
             <StatTile
               label={m.last_activity()}
+              text
               value={latest?.lastSeenAt ? formatRelative(latest.lastSeenAt) : '—'}
               hint={
                 latest &&

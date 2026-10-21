@@ -32,18 +32,23 @@ function RootLayout() {
   return (
     <div className="flex min-h-dvh flex-col">
       <UpdateBanner />
-      <header className="mx-auto flex h-14 w-full max-w-6xl items-center gap-6 px-4">
-        <Link
-          to="/"
-          className="flex items-center gap-2.5 text-2xl font-medium tracking-tight text-font-clear"
-        >
-          <img src={`${import.meta.env.BASE_URL}favicon.svg`} alt="" className="size-8" />
-          CraftYourChess
-        </Link>
-        <div className="ml-auto flex items-center gap-4">
-          {!isHome && <HeaderSearch />}
-          <FeedbackButton />
-          <SettingsMenu />
+      <header className="header-etabli">
+        <div className="mx-auto flex h-14 w-full max-w-6xl items-center gap-6 px-4">
+          {/* The name as a wordmark: brand, not translated */}
+          <Link
+            to="/"
+            className="flex items-center gap-2.5 font-brand text-xl font-bold tracking-tight text-brand"
+          >
+            <img src={`${import.meta.env.BASE_URL}pwa-64x64.png`} alt="" className="size-8" />
+            <span>
+              Craft<span className="font-light text-brand-accent">Your</span>Chess
+            </span>
+          </Link>
+          <div className="ml-auto flex items-center gap-4">
+            {!isHome && <HeaderSearch />}
+            <FeedbackButton />
+            <SettingsMenu />
+          </div>
         </div>
       </header>
       <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-6">
@@ -75,7 +80,7 @@ function HeaderSearch() {
       <Link
         to="/"
         aria-label={m.new_search()}
-        className="text-muted-foreground hover:text-font-clear md:hidden"
+        className="text-muted-foreground hover:text-text-strong md:hidden"
       >
         <Search className="size-5" />
       </Link>

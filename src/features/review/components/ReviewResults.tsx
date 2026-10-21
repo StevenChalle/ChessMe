@@ -30,7 +30,7 @@ export function ReviewResults({
   return (
     <div className="min-w-0 space-y-3">
       {failures.map(({ source, error }) => (
-        <p key={source} className="text-sm text-bad">
+        <p key={source} className="text-sm text-loss">
           {sourceErrorMessage(source, error)}
         </p>
       ))}
@@ -47,8 +47,8 @@ export function ReviewResults({
                 <span className="inline-flex items-center justify-end gap-2">
                   <span
                     className={cn(
-                      'text-base font-medium tabular-nums',
-                      game.mistakes.length === 0 ? 'text-good' : 'text-bad',
+                      'num text-base font-medium',
+                      game.mistakes.length === 0 ? 'text-win' : 'text-loss',
                     )}
                   >
                     {formatNumber(game.mistakes.length)}

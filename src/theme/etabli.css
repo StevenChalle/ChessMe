@@ -1,0 +1,352 @@
+/*
+ * Theme "L'Établi" (dark): dense and sober, warm graphite, the pawn's gold to act, Noto Sans like
+ * the wordmark, Noto Sans Mono for figures. Everything is solid and crisp: bars, tabs, silver
+ * badges; color is left to the gold.
+ * Every color lives here: components only use the utilities below (bg-field, text-win…) or
+ * var(--cyc-*). Text pairs pass WCAG AA. Rules and components: docs/design.md.
+ * Imported by index.css, after Tailwind.
+ */
+
+/* Fonts (SIL OFL 1.1, licenses next to the files), self-hosted: no third-party request. Vite
+   serves them under hashed names. Variable fonts: every weight from 100 to 900. */
+@font-face {
+  font-family: 'Noto Sans';
+  src: url('./fonts/NotoSans-latin.woff2') format('woff2');
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+  unicode-range:
+    U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329,
+    U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: 'Noto Sans';
+  src: url('./fonts/NotoSans-latin-ext.woff2') format('woff2');
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+  unicode-range:
+    U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329,
+    U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F,
+    U+A720-A7FF;
+}
+@font-face {
+  font-family: 'Noto Sans';
+  src: url('./fonts/NotoSans-latin-italic.woff2') format('woff2');
+  font-weight: 100 900;
+  font-style: italic;
+  font-display: swap;
+  unicode-range:
+    U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329,
+    U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: 'Noto Sans Mono';
+  src: url('./fonts/NotoSansMono-latin.woff2') format('woff2');
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+  unicode-range:
+    U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329,
+    U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: 'Noto Sans Mono';
+  src: url('./fonts/NotoSansMono-latin-ext.woff2') format('woff2');
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+  unicode-range:
+    U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329,
+    U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F,
+    U+A720-A7FF;
+}
+
+/* 1. CraftYourChess roles: the only source of values */
+:root {
+  /* Neutrals, warm graphite, lowest to highest */
+  --cyc-bg: #121110; /* page */
+  --cyc-panel: #1c1a17; /* panels, cards, header */
+  --cyc-field: #24221e; /* inputs, even table rows, tiles */
+  --cyc-raised: #2d2a26; /* menus, secondary buttons, hover, selected item */
+  --cyc-border: #2a2724; /* panel borders, barely lighter than panels */
+  --cyc-border-strong: #77716a; /* control outlines (≥ 3:1), they stay crisp */
+
+  /* Text */
+  --cyc-text: #dcd8d2; /* body */
+  --cyc-text-muted: #a19b92; /* dates, counters, column headers, help */
+  --cyc-text-strong: #f6f3ee; /* headings, player names, ratings */
+
+  /* Colors with a meaning, used sparingly */
+  --cyc-primary: #e2a63c; /* the pawn's gold: actions, links, focus. The only action color */
+  --cyc-on-primary: #1d1303;
+  --cyc-win: #8cc455; /* wins, gains, progress */
+  --cyc-loss: #f2796a; /* losses, mistakes, form errors */
+  --cyc-title: #d8d4cc; /* silver: solid GM, IM, FM… badges only */
+  --cyc-on-title: #1c1a17;
+  --cyc-accent: #66c9d8; /* cyan: update banner, at most one per screen */
+  --cyc-on-accent: #06191c;
+
+  /* Chart series, always in this order: bullet, blitz, rapid, classical, correspondence */
+  --cyc-chart-1: #e2a63c;
+  --cyc-chart-2: #8cc455;
+  --cyc-chart-3: #c9a8f2;
+  --cyc-chart-4: #72aef0;
+  --cyc-chart-5: #ef8cab;
+
+  /* The "CraftYourChess" wordmark in the header */
+  --cyc-brand-text: #dddddd;
+  --cyc-brand-accent: #bf811d; /* "Your" */
+
+  /* Side played (White / Black dot in tables) */
+  --cyc-piece-white: var(--cyc-text-strong);
+  --cyc-piece-black: var(--cyc-bg);
+
+  /* Shadows: menus, popovers and dialogs only */
+  --cyc-shadow-pop: 0 4px 14px rgba(0, 0, 0, 0.45);
+
+  /* Radii and density */
+  --cyc-radius-sm: 3px; /* buttons, inputs, badges */
+  --cyc-radius-md: 4px; /* panels, tiles */
+  --cyc-row-h: 30px; /* table row */
+  --cyc-control-h: 32px; /* button, input */
+
+  /* 2. shadcn/ui tokens */
+  --background: var(--cyc-bg);
+  --foreground: var(--cyc-text);
+  --card: var(--cyc-panel);
+  --card-foreground: var(--cyc-text);
+  --popover: var(--cyc-raised);
+  --popover-foreground: var(--cyc-text-strong);
+  --primary: var(--cyc-primary);
+  --primary-foreground: var(--cyc-on-primary);
+  --secondary: var(--cyc-raised);
+  --secondary-foreground: var(--cyc-text-strong);
+  --muted: var(--cyc-field);
+  --muted-foreground: var(--cyc-text-muted);
+  /* shadcn's "accent" is the menu hover, not the cyan accent (that one is "highlight") */
+  --accent: var(--cyc-raised);
+  --accent-foreground: var(--cyc-text-strong);
+  --destructive: var(--cyc-loss);
+  --border: var(--cyc-border);
+  --input: var(--cyc-border-strong);
+  --ring: var(--cyc-primary);
+  --chart-1: var(--cyc-chart-1);
+  --chart-2: var(--cyc-chart-2);
+  --chart-3: var(--cyc-chart-3);
+  --chart-4: var(--cyc-chart-4);
+  --chart-5: var(--cyc-chart-5);
+  --radius: var(--cyc-radius-md);
+
+  color-scheme: dark;
+}
+
+/* 3. Tailwind utilities */
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+
+  /* CraftYourChess roles: bg-field, text-win, bg-title, bg-highlight… */
+  --color-field: var(--cyc-field);
+  --color-raised: var(--cyc-raised);
+  --color-border-strong: var(--cyc-border-strong);
+  --color-text-strong: var(--cyc-text-strong);
+  --color-win: var(--cyc-win);
+  --color-loss: var(--cyc-loss);
+  --color-title: var(--cyc-title);
+  --color-on-title: var(--cyc-on-title);
+  --color-highlight: var(--cyc-accent);
+  --color-on-highlight: var(--cyc-on-accent);
+  --color-brand: var(--cyc-brand-text);
+  --color-brand-accent: var(--cyc-brand-accent);
+  --color-piece-white: var(--cyc-piece-white);
+  --color-piece-black: var(--cyc-piece-black);
+
+  --font-sans: 'Noto Sans', system-ui, sans-serif;
+  --font-display: 'Noto Sans', system-ui, sans-serif;
+  --font-heading: var(--font-display);
+  --font-brand: 'Noto Sans', system-ui, sans-serif;
+  --font-mono: 'Noto Sans Mono', ui-monospace, monospace;
+
+  --radius-sm: var(--cyc-radius-sm);
+  --radius-md: var(--cyc-radius-sm);
+  --radius-lg: var(--cyc-radius-md);
+  --radius-xl: var(--cyc-radius-md);
+  --radius-2xl: var(--cyc-radius-md);
+  --radius-3xl: var(--cyc-radius-md);
+  --radius-4xl: var(--cyc-radius-md);
+
+  --shadow-pop: var(--cyc-shadow-pop);
+
+  --spacing-row: var(--cyc-row-h);
+  --spacing-control: var(--cyc-control-h);
+}
+
+/* 4. Base */
+@layer base {
+  * {
+    border-color: var(--border);
+  }
+  html {
+    background: var(--cyc-bg);
+  }
+  body {
+    background: var(--cyc-bg);
+    color: var(--cyc-text);
+    font-family: var(--font-sans);
+    font-size: 13.5px;
+    line-height: 20px;
+    -webkit-font-smoothing: antialiased;
+  }
+  h1,
+  h2,
+  h3 {
+    font-family: var(--font-display);
+    color: var(--cyc-text-strong);
+    font-weight: 700;
+  }
+  h1 {
+    font-size: 26px;
+    line-height: 32px;
+    letter-spacing: -0.005em;
+  }
+  h2 {
+    font-size: 16px;
+    line-height: 22px;
+  }
+  :focus-visible {
+    outline: 2px solid var(--cyc-primary);
+    outline-offset: 2px;
+  }
+}
+
+/* 5. Signature pieces of the theme */
+@layer components {
+  /* Figures (ratings, counters, time controls, dates): monospaced */
+  .num {
+    font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* Label: monospaced, lowercase as written, 11px */
+  .label-etabli {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    line-height: 14px;
+    font-weight: 500;
+    color: var(--cyc-text-muted);
+  }
+
+  /* Header: a 2px gold rule on top, the theme's mark */
+  .header-etabli {
+    background: var(--cyc-panel);
+    border-bottom: 1px solid var(--cyc-border);
+    box-shadow: inset 0 2px 0 var(--cyc-primary);
+  }
+
+  /* Panel: one step above the page, a very discreet border, no shadow */
+  .panel-etabli {
+    background: var(--cyc-panel);
+    border: 1px solid var(--cyc-border);
+    border-radius: var(--cyc-radius-md);
+  }
+
+  /* Stat tile */
+  .tile-etabli {
+    position: relative;
+    background: var(--cyc-field);
+    border: 1px solid var(--cyc-border);
+    border-radius: var(--cyc-radius-md);
+    padding: 10px 12px 8px;
+  }
+  .tile-value {
+    font-family: var(--font-mono);
+    font-size: 26px;
+    line-height: 30px;
+    font-weight: 600;
+    color: var(--cyc-text-strong);
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* Solid, continuous progress bar (engine analysis, "mistake 3 / 12") */
+  .progress-etabli {
+    position: relative;
+    height: 6px;
+    overflow: hidden;
+    border-radius: 3px;
+    background: var(--cyc-field);
+    box-shadow: inset 0 0 0 1px var(--cyc-border);
+  }
+  .progress-etabli > [data-fill] {
+    position: absolute;
+    inset: 0 auto 0 0;
+    border-radius: 3px;
+    background: var(--cyc-win);
+  }
+
+  /* Tab links: muted, the active one (TanStack Router's data-status) strong over a solid 2px
+     gold line */
+  .tab-etabli {
+    position: relative;
+    font-size: 13px;
+    color: var(--cyc-text-muted);
+  }
+  .tab-etabli:hover,
+  .tab-etabli[data-status='active'] {
+    color: var(--cyc-text-strong);
+  }
+  .tab-etabli[data-status='active']::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 2px;
+    border-radius: 1px;
+    background: var(--cyc-primary);
+  }
+
+  /* Title badge: a solid silver plate, monospaced text */
+  .title-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    height: 20px;
+    min-width: 28px;
+    padding: 0 6px;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    line-height: 1;
+    color: var(--cyc-on-title);
+    background: var(--cyc-title);
+    border-radius: var(--cyc-radius-sm);
+  }
+
+  /* Main button: a thin gold ring */
+  .btn-ring {
+    box-shadow: 0 0 0 1px color-mix(in oklab, var(--cyc-primary) 60%, var(--cyc-bg));
+  }
+}

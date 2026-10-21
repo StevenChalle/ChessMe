@@ -12,14 +12,14 @@ export function Footer() {
             href={SOURCE_CODE_URL}
             target="_blank"
             rel="noreferrer"
-            className="hover:text-font-clear"
+            className="text-primary underline-offset-3 hover:underline"
           >
             {m.footer_source()}
           </a>
-          <Link to="/contact" className="hover:text-font-clear">
+          <Link to="/contact" className="hover:text-text-strong">
             {m.footer_contact()}
           </Link>
-          <Link to="/legal" className="hover:text-font-clear">
+          <Link to="/legal" className="hover:text-text-strong">
             {m.footer_legal()}
           </Link>
         </nav>

@@ -28,20 +28,20 @@ export function AccountCard({ source, state }: { source: ApiSource; state: Sourc
       }
     >
       {account.closed ? (
-        <p className="text-sm text-bad">
+        <p className="text-sm text-loss">
           {account.flagged ? m.account_closed_tos() : m.account_closed()}
         </p>
       ) : (
         <dl className="grid grid-cols-2 gap-2 text-sm">
           <div>
             <dt className="text-xs text-muted-foreground">{m.member_since()}</dt>
-            <dd className="text-font-clear">
+            <dd className="text-text-strong">
               {account.joinedAt ? formatMonthYear(account.joinedAt) : '—'}
             </dd>
           </div>
           <div>
             <dt className="text-xs text-muted-foreground">{m.last_seen()}</dt>
-            <dd className="text-font-clear">
+            <dd className="text-text-strong">
               {account.lastSeenAt ? formatRelative(account.lastSeenAt) : '—'}
             </dd>
           </div>

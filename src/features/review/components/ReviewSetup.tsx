@@ -61,7 +61,7 @@ const RESULT_LABELS: Record<GameResult, () => string> = {
   loss: m.result_losses,
 }
 
-const SELECTED_SHORTCUT = 'bg-primary/15 text-font-clear ring-1 ring-primary hover:bg-primary/20'
+const SELECTED_SHORTCUT = 'bg-primary/15 text-text-strong ring-1 ring-primary hover:bg-primary/20'
 
 /** yyyy-mm-dd in local time, for date inputs. */
 function toDateInput(time: number): string {
@@ -81,9 +81,7 @@ function fromDateInput(value: string, endOfDay: boolean): number | undefined {
 function Section({ title, children }: { title: string; children: ReactNode }) {
   return (
     <fieldset className="space-y-2">
-      <legend className="mb-2 text-xs font-medium tracking-wide text-muted-foreground uppercase">
-        {title}
-      </legend>
+      <legend className="label-etabli mb-2">{title}</legend>
       {children}
     </fieldset>
   )
@@ -120,7 +118,7 @@ function Expandable({
           aria-hidden
           className="size-4 shrink-0 text-muted-foreground transition-transform group-open/expandable:rotate-90"
         />
-        <span className="font-medium text-font-clear">{title}</span>
+        <span className="font-medium text-text-strong">{title}</span>
         <span className="min-w-0 truncate text-sm text-muted-foreground group-open/expandable:hidden">
           {summary}
         </span>
@@ -269,7 +267,7 @@ export function ReviewSetup({
                   value={Number.isNaN(latest) ? '' : latest}
                   onChange={(event) => setLatest(event.target.valueAsNumber)}
                   aria-label={m.setup_latest()}
-                  className="h-8 w-24 bg-muted tabular-nums"
+                  className="num h-8 w-24 bg-muted"
                 />
                 {gameTotal > 0 && (
                   <span className="text-xs text-muted-foreground">
@@ -455,7 +453,7 @@ export function ReviewSetup({
                   update({ minMoves: Math.max(0, Math.floor(event.target.valueAsNumber || 0)) })
                 }
                 aria-label={m.setup_min_moves()}
-                className="h-8 w-20 bg-muted tabular-nums"
+                className="num h-8 w-20 bg-muted"
               />
               <span className="text-sm text-muted-foreground">{m.setup_moves_unit()}</span>
               <InfoTip text={m.setup_min_moves_hint()} />
@@ -505,7 +503,7 @@ export function ReviewSetup({
         </div>
       </Expandable>
 
-      {!valid && <p className="text-sm text-bad">{m.setup_invalid()}</p>}
+      {!valid && <p className="text-sm text-loss">{m.setup_invalid()}</p>}
     </div>
   )
 }
@@ -538,7 +536,7 @@ function RadioField({ value, children }: { value: string; children: ReactNode })
   const id = useId()
   return (
     <div className="flex items-center gap-2">
-      <RadioGroupItem id={id} value={value} className="border-font-dim" />
+      <RadioGroupItem id={id} value={value} className="border-border-strong" />
       <Label htmlFor={id} className="font-normal">
         {children}
       </Label>

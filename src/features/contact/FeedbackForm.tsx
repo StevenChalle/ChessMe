@@ -41,8 +41,8 @@ export function FeedbackForm() {
 
   if (status === 'sent') {
     return (
-      <div className="space-y-3 rounded-md bg-good/12 p-4 ring-1 ring-good/40" role="status">
-        <p className="flex items-center gap-2 text-lg font-medium text-good">
+      <div className="space-y-3 rounded-md bg-win/12 p-4 ring-1 ring-win/40" role="status">
+        <p className="flex items-center gap-2 text-lg font-medium text-win">
           <CircleCheck aria-hidden className="size-5" />
           {m.contact_sent_title()}
         </p>
@@ -85,7 +85,7 @@ export function FeedbackForm() {
       }}
     >
       <fieldset className="space-y-2">
-        <legend className="mb-2 text-sm text-font-clear">{m.contact_kind()}</legend>
+        <legend className="mb-2 text-sm text-text-strong">{m.contact_kind()}</legend>
         <ToggleGroup
           type="single"
           value={kind}
@@ -114,7 +114,7 @@ export function FeedbackForm() {
           value={message}
           onChange={(event) => setMessage(event.target.value)}
           placeholder={m.contact_message_placeholder()}
-          className="w-full rounded-lg border border-input bg-input/30 px-2.5 py-2 text-sm outline-none placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+          className="w-full rounded-sm border border-input bg-field px-3 py-2 text-sm text-text-strong outline-none placeholder:text-muted-foreground focus-visible:border-primary focus-visible:ring-1 focus-visible:ring-primary focus-visible:outline-none"
         />
       </div>
 
@@ -135,7 +135,7 @@ export function FeedbackForm() {
           id={ids.context}
           checked={withContext}
           onCheckedChange={(checked) => setWithContext(checked === true)}
-          className="mt-0.5 border-font-dim"
+          className="mt-0.5 border-border-strong"
         />
         <Label htmlFor={ids.context} className="leading-snug font-normal text-muted-foreground">
           {m.contact_context()}
@@ -154,7 +154,7 @@ export function FeedbackForm() {
       />
 
       {(status === 'failed' || status === 'unavailable') && (
-        <p className="text-sm text-bad" role="alert">
+        <p className="text-sm text-loss" role="alert">
           {status === 'failed' ? m.contact_failed() : m.contact_unavailable()}{' '}
           <a href={`mailto:${CONTACT_EMAIL}`} className="underline underline-offset-4">
             {CONTACT_EMAIL}

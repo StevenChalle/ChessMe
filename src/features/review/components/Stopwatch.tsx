@@ -19,7 +19,7 @@ export function Stopwatch({ clock, durationMs }: { clock?: ActiveTime; durationM
 
   return (
     <p
-      className="flex items-center justify-end gap-1 text-xs text-muted-foreground tabular-nums"
+      className="num flex items-center justify-end gap-1 text-xs text-muted-foreground"
       title={m.review_elapsed()}
     >
       <Timer aria-hidden className="size-3" />

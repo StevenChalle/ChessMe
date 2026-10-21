@@ -1,0 +1,242 @@
+/* ==========================================================================
+   CraftYourChess — thème « L'Établi » (sombre)
+   Tailwind CSS v4 + shadcn/ui. À importer depuis index.css, APRÈS
+   `@import "tailwindcss";`, à la place des variables actuelles copiées de Lichess.
+   Toutes les couleurs vivent ici ; aucun composant ne code une couleur en dur.
+   Contraste vérifié WCAG AA (voir THEME.md).
+   ========================================================================== */
+
+/* ---------- Polices (SIL OFL 1.1, auto-hébergées, aucun appel à Google Fonts) ---------- */
+/* Fichiers attendus dans public/fonts/. */
+@font-face {
+  font-family: "Noto Sans";
+  src: url("/fonts/NotoSans-latin.woff2") format("woff2");
+  font-weight: 100 900; font-style: normal; font-display: swap;
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: "Noto Sans";
+  src: url("/fonts/NotoSans-latin-ext.woff2") format("woff2");
+  font-weight: 100 900; font-style: normal; font-display: swap;
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+@font-face {
+  font-family: "Noto Sans";
+  src: url("/fonts/NotoSans-latin-italic.woff2") format("woff2");
+  font-weight: 100 900; font-style: italic; font-display: swap;
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: "Noto Sans Mono";
+  src: url("/fonts/NotoSansMono-latin.woff2") format("woff2");
+  font-weight: 100 900; font-style: normal; font-display: swap;
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: "Noto Sans Mono";
+  src: url("/fonts/NotoSansMono-latin-ext.woff2") format("woff2");
+  font-weight: 100 900; font-style: normal; font-display: swap;
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+
+/* ---------- 1. Rôles CraftYourChess (la seule source des valeurs) ---------- */
+:root {
+  /* Neutres — graphite tiède, du plus bas au plus haut */
+  --cyc-bg: #121110;            /* fond de page */
+  --cyc-panel: #1c1a17;         /* panneaux, cartes, en-tête, corps de tableau */
+  --cyc-field: #24221e;         /* champs, lignes paires des tableaux, tuiles */
+  --cyc-raised: #2d2a26;        /* menus, boutons secondaires, survol, élément sélectionné */
+  --cyc-border: #2a2724;        /* bordures d'encadrés TRÈS discrètes (à peine plus clair que panel) */
+  --cyc-border-strong: #77716a; /* contour des champs et contrôles (≥ 3:1) — reste net */
+
+  /* Texte (les gris de l'artisan du logo) */
+  --cyc-text: #dcd8d2;          /* texte courant */
+  --cyc-text-muted: #a19b92;    /* dates, compteurs, en-têtes de colonnes, aide */
+  --cyc-text-strong: #f6f3ee;   /* titres, pseudos, classements */
+
+  /* Couleurs qui ont un sens — rares */
+  --cyc-primary: #e2a63c;       /* l'or du pion : actions, liens, focus. LA seule couleur d'action */
+  --cyc-on-primary: #1d1303;
+  --cyc-win: #8cc455;           /* le vert de « Your » : victoires, gains, progrès */
+  --cyc-loss: #f2796a;          /* défaites, pertes, erreurs */
+  --cyc-title: #d8d4cc;         /* argent : plaque pleine des badges GM, IM, FM… uniquement */
+  --cyc-on-title: #1c1a17;
+  --cyc-accent: #66c9d8;        /* cyan : bandeau « nouvelle version », 1 occurrence par écran max */
+  --cyc-on-accent: #06191c;
+
+  /* Séries de graphiques — toujours dans cet ordre */
+  --cyc-chart-1: #e2a63c;       /* Bullet */
+  --cyc-chart-2: #8cc455;       /* Blitz */
+  --cyc-chart-3: #c9a8f2;       /* Rapide */
+  --cyc-chart-4: #72aef0;       /* Classique */
+  --cyc-chart-5: #ef8cab;       /* Correspondance / Daily */
+
+  /* Échiquier — sable et bronze */
+  --cyc-square-light: #e6dcc6;
+  --cyc-square-dark: #a3865a;
+  --cyc-square-mark: #e2a63c;   /* dernier coup / case sélectionnée, posé à 50 % d'opacité */
+
+  /* Ombres — aucune sur les panneaux */
+  --cyc-shadow-panel: none;
+  --cyc-shadow-pop: 0 4px 14px rgba(0, 0, 0, 0.45); /* menus, popovers, dialogues uniquement */
+
+  /* Rayons et densité — dense */
+  --cyc-radius-sm: 3px;         /* boutons, champs, badges */
+  --cyc-radius-md: 4px;         /* panneaux, tuiles */
+  --cyc-row-h: 30px;            /* ligne de tableau */
+  --cyc-control-h: 32px;        /* bouton / champ */
+
+/* ---------- 2. Branchement shadcn/ui ---------- */
+  --background: var(--cyc-bg);
+  --foreground: var(--cyc-text);
+  --card: var(--cyc-panel);
+  --card-foreground: var(--cyc-text);
+  --popover: var(--cyc-raised);
+  --popover-foreground: var(--cyc-text-strong);
+  --primary: var(--cyc-primary);
+  --primary-foreground: var(--cyc-on-primary);
+  --secondary: var(--cyc-raised);
+  --secondary-foreground: var(--cyc-text-strong);
+  --muted: var(--cyc-field);
+  --muted-foreground: var(--cyc-text-muted);
+  --accent: var(--cyc-raised);             /* ATTENTION : chez shadcn « accent » = survol des menus */
+  --accent-foreground: var(--cyc-text-strong);
+  --destructive: var(--cyc-loss);
+  --border: var(--cyc-border);
+  --input: var(--cyc-border-strong);
+  --ring: var(--cyc-primary);
+  --chart-1: var(--cyc-chart-1);
+  --chart-2: var(--cyc-chart-2);
+  --chart-3: var(--cyc-chart-3);
+  --chart-4: var(--cyc-chart-4);
+  --chart-5: var(--cyc-chart-5);
+  --radius: var(--cyc-radius-md);
+
+  color-scheme: dark;
+}
+
+/* ---------- 3. Utilitaires Tailwind v4 ---------- */
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+
+  /* Rôles CraftYourChess en utilitaires : bg-field, text-win, border-title, bg-highlight… */
+  --color-field: var(--cyc-field);
+  --color-raised: var(--cyc-raised);
+  --color-border-strong: var(--cyc-border-strong);
+  --color-text-strong: var(--cyc-text-strong);
+  --color-win: var(--cyc-win);
+  --color-loss: var(--cyc-loss);
+  --color-title: var(--cyc-title);
+  --color-on-title: var(--cyc-on-title);
+  --color-highlight: var(--cyc-accent);      /* l'accent cyan CYC (≠ accent shadcn) */
+  --color-on-highlight: var(--cyc-on-accent);
+  --color-square-light: var(--cyc-square-light);
+  --color-square-dark: var(--cyc-square-dark);
+  --color-square-mark: var(--cyc-square-mark);
+
+  --font-sans: "Noto Sans", system-ui, sans-serif;
+  --font-display: "Noto Sans", system-ui, sans-serif;
+  --font-mono: "Noto Sans Mono", ui-monospace, monospace;
+
+  --radius-sm: var(--cyc-radius-sm);
+  --radius-md: var(--cyc-radius-sm);
+  --radius-lg: var(--cyc-radius-md);
+  --radius-xl: var(--cyc-radius-md);
+
+  --shadow-panel: var(--cyc-shadow-panel);
+  --shadow-pop: var(--cyc-shadow-pop);
+
+  --spacing-row: var(--cyc-row-h);
+  --spacing-control: var(--cyc-control-h);
+}
+
+/* ---------- 4. Base ---------- */
+@layer base {
+  * { border-color: var(--border); }
+  html { background: var(--cyc-bg); }
+  body {
+    background: var(--cyc-bg);
+    color: var(--cyc-text);
+    font-family: var(--font-sans);
+    font-size: 13.5px;
+    line-height: 20px;
+    -webkit-font-smoothing: antialiased;
+  }
+  h1, h2, h3 { font-family: var(--font-display); color: var(--cyc-text-strong); font-weight: 700; }
+  h1 { font-size: 26px; line-height: 32px; letter-spacing: -0.005em; }
+  h2 { font-size: 16px; line-height: 22px; }
+  :focus-visible { outline: 2px solid var(--cyc-primary); outline-offset: 2px; }
+  a { color: var(--cyc-primary); text-underline-offset: 3px; }
+}
+
+/* ---------- 5. Signature de l'Établi ---------- */
+@layer components {
+  /* Chiffres : classements, compteurs, cadences, dates — en mono */
+  .num { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+
+  /* Libellé : mono, bas de casse, 11px */
+  .label-etabli { font-family: var(--font-mono); font-size: 11px; line-height: 14px; font-weight: 500; color: var(--cyc-text-muted); }
+
+  /* Filet or de 2px en haut de l'en-tête : LA marque de reconnaissance */
+  .header-etabli { background: var(--cyc-panel); border-bottom: 1px solid var(--cyc-border); box-shadow: inset 0 2px 0 var(--cyc-primary); }
+
+  /* Logotype « CraftYourChess » comme sur le logo : Noto Sans Bold, « Your » en vert */
+  .wordmark { font-family: var(--font-display); font-weight: 700; font-size: 21px; letter-spacing: -0.005em; color: var(--cyc-text); white-space: nowrap; }
+  .wordmark em { font-style: normal; color: var(--cyc-win); }
+
+  /* Panneau : fond un cran au-dessus de la page, bordure très discrète, pas d'ombre */
+  .panel-etabli { background: var(--cyc-panel); border: 1px solid var(--cyc-border); border-radius: var(--cyc-radius-md); }
+
+  /* Tuile de statistique */
+  .tile-etabli { position: relative; background: var(--cyc-field); border: 1px solid var(--cyc-border); border-radius: var(--cyc-radius-md); padding: 10px 12px 8px; }
+  .tile-value { font-family: var(--font-mono); font-size: 26px; line-height: 30px; font-weight: 600; color: var(--cyc-text-strong); font-variant-numeric: tabular-nums; }
+
+  /* Barre de progression PLEINE et continue (analyse Stockfish, « erreur 3 / 12 ») */
+  .progress-etabli { position: relative; height: 6px; overflow: hidden; border-radius: 3px; background: var(--cyc-field); box-shadow: inset 0 0 0 1px var(--cyc-border); }
+  .progress-etabli > [data-fill] { position: absolute; inset: 0 auto 0 0; border-radius: 3px; background: var(--cyc-win); }
+
+  /* Onglet actif : trait or CONTINU de 2px sur le filet de la liste (data-[state=active] des Tabs shadcn) */
+  .tabs-etabli { display: flex; gap: 4px; border-bottom: 1px solid var(--cyc-border); }
+  .tab-etabli { position: relative; height: 36px; padding: 0 12px; font-size: 13px; color: var(--cyc-text-muted); background: transparent; }
+  .tab-etabli:hover { color: var(--cyc-text-strong); }
+  .tab-etabli[data-state="active"] { color: var(--cyc-text-strong); }
+  .tab-etabli[data-state="active"]::after { content: ""; position: absolute; left: 8px; right: 8px; bottom: -1px; height: 2px; border-radius: 1px; background: var(--cyc-primary); }
+
+  /* Badge de titre : plaque argent pleine, texte mono */
+  .title-badge {
+    display: inline-flex; align-items: center; justify-content: center; height: 20px; min-width: 28px; padding: 0 6px;
+    font-family: var(--font-mono); font-size: 11px; font-weight: 700; letter-spacing: .04em; line-height: 1;
+    color: var(--cyc-on-title); background: var(--cyc-title); border-radius: var(--cyc-radius-sm);
+  }
+
+  /* Raccourci clavier dans un bouton (ex. « A » pour analyser) */
+  .kbd { font-family: var(--font-mono); font-size: 11px; padding: 1px 5px; border-radius: 2px; border: 1px solid color-mix(in oklab, currentColor 45%, transparent); opacity: .8; }
+
+  /* Bouton principal : léger liseré or */
+  .btn-ring { box-shadow: 0 0 0 1px color-mix(in oklab, var(--cyc-primary) 60%, var(--cyc-bg)); }
+
+  /* Échiquier : simple filet */
+  .board-frame { border-radius: var(--cyc-radius-sm); box-shadow: 0 0 0 1px var(--cyc-border-strong); }
+}

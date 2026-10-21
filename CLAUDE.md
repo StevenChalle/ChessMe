@@ -4,7 +4,7 @@ Application web (PWA installable) pour explorer les stats et les parties d'un jo
 
 - Vision produit (réflexions en cours, rien de définitif) : [docs/vision.md](docs/vision.md)
 - Décisions et justifications : [docs/decisions.md](docs/decisions.md). **À mettre à jour à chaque nouveau choix structurant.**
-- Design (thème sombre Lichess) : [docs/design.md](docs/design.md)
+- Design (thème « L'Établi ») : [docs/design.md](docs/design.md)
 - APIs Lichess / Chess.com, limites de débit : [docs/apis.md](docs/apis.md)
 - Feuille de route : [docs/roadmap.md](docs/roadmap.md)
 - Checklists en cours, à supprimer une fois terminées : [docs/domain-craftyourchess.md](docs/domain-craftyourchess.md) (finitions du domaine), [docs/staging.md](docs/staging.md) (environnement de staging, reporté), [docs/logo-prompt.md](docs/logo-prompt.md) (prompt logo pour ChatGPT et Gemini), [docs/identity-brief.md](docs/identity-brief.md) (identité visuelle avec Claude Design)
@@ -36,6 +36,7 @@ src/
   paraglide/          # GÉNÉRÉ par Paraglide depuis messages/*.json (git-ignoré, ne pas éditer)
   routes/             # une route par fichier (TanStack Router), routeTree.gen.ts est généré automatiquement
   components/ui/      # composants shadcn, générés par la CLI, modifiables
+  theme/              # thème « L'Établi » : tokens (etabli.css) et polices (fonts/)
   routes/analysis/    # page d'analyse : onglets Filtres (index), Analyse (run), un onglet fermable par entraînement (training.$number)
   components/         # composants applicatifs partagés (board/, SettingsMenu, Footer, FeedbackLink…)
   hooks/              # hooks transverses (useConfirm, useKeepAwake)
@@ -69,7 +70,7 @@ project.inlang/       # configuration Paraglide (langues, langue de base)
 - Appels réseau : une fonction dans `lib/<source>/client.ts` (via `fetchJson`), puis un `queryOptions` dans `queries.ts`. « Compte inexistant » vaut `null`, pas une erreur. Les loaders font un `prefetchQuery` (qui ne lève jamais d'erreur) et les composants un `useQuery`, en gérant les états chargement / absent / erreur source par source.
 - **Ne jamais additionner ni convertir des Elo entre plateformes.** Seuls les compteurs et les dates se combinent (voir `summary.ts`).
 - Données persistantes (parties importées) : Dexie. Données distantes éphémères : TanStack Query. Ne pas dupliquer l'une dans l'autre.
-- **Couleurs : uniquement via les tokens** (`bg-card`, `text-muted-foreground`, `text-good`, `text-brag`…) définis dans `src/index.css`. Jamais de code hexadécimal dans un composant.
+- **Couleurs : uniquement via les tokens** (`bg-card`, `bg-field`, `text-muted-foreground`, `text-win`, `text-title`…) définis dans `src/theme/etabli.css`. Jamais de code hexadécimal dans un composant. Un seul bouton principal par écran (voir `docs/design.md`).
 - chessground gère lui-même son DOM : passer par le wrapper `components/board/Board.tsx`, sans le manipuler depuis React.
 
 ## Internationalisation (obligatoire)

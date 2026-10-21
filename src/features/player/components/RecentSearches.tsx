@@ -17,9 +17,7 @@ export function RecentSearches({ className }: { className?: string }) {
 
   return (
     <section className={cn('space-y-2', className)}>
-      <h2 className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
-        {m.recent_searches()}
-      </h2>
+      <h2 className="label-etabli">{m.recent_searches()}</h2>
       <ul className="space-y-0.5">
         {searches
           .map(({ lichess, chesscom }) => ({ lichess, chesscom }))
@@ -31,7 +29,7 @@ export function RecentSearches({ className }: { className?: string }) {
               <Link
                 to="/player"
                 search={usernames}
-                className="flex min-w-0 flex-1 flex-wrap items-center gap-x-3 px-2 py-1.5 text-sm text-font-clear"
+                className="flex min-w-0 flex-1 flex-wrap items-center gap-x-3 px-2 py-1.5 text-sm text-text-strong"
               >
                 <AccountNames usernames={usernames} />
               </Link>

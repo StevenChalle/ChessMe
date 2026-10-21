@@ -34,7 +34,7 @@ export function GamesByCategory({ accounts }: { accounts: AccountSummary[] }) {
             >
               <span>{categoryLabel(category)}</span>
               <div
-                className="flex h-2 overflow-hidden rounded-full"
+                className="flex h-2 overflow-hidden rounded-[2px]"
                 style={{ width: `${(total / max) * 100}%` }}
               >
                 {bySource.map(({ source, games }) => (
@@ -46,7 +46,7 @@ export function GamesByCategory({ accounts }: { accounts: AccountSummary[] }) {
                   />
                 ))}
               </div>
-              <span className="text-right text-font-clear tabular-nums">{formatNumber(total)}</span>
+              <span className="num text-right text-text-strong">{formatNumber(total)}</span>
             </li>
           ))}
         </ul>

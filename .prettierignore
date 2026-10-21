@@ -4,3 +4,6 @@ pnpm-lock.yaml
 src/routeTree.gen.ts
 src/paraglide
 project.inlang/cache
+
+# Design exports (Claude Design), kept as delivered
+design/

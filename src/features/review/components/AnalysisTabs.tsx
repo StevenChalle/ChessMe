@@ -10,7 +10,7 @@ import { useAnalysisSession } from '../sessionContext'
 // current link. The bar scrolls sideways when the tabs overflow (several trainings on a phone):
 // the underline sits on the bar's border instead of overlapping it, which a scroller would clip.
 const TAB_CLASS =
-  'inline-flex shrink-0 items-center gap-2 border-b-2 border-transparent px-1 pb-2 text-sm whitespace-nowrap transition-colors hover:text-font-clear data-[status=active]:border-highlight data-[status=active]:text-font-clear [&>svg]:size-3.5 [&>svg]:opacity-70'
+  'tab-etabli inline-flex shrink-0 items-center gap-2 px-1 pb-2.5 whitespace-nowrap transition-colors [&>svg]:size-3.5 [&>svg]:opacity-70'
 
 /**
  * Filters are always there; the analysis tab appears once there is one, then a closable tab per
@@ -61,7 +61,7 @@ export function AnalysisTabs({ usernames }: { usernames: PlayerUsernames }) {
               type="button"
               onClick={() => void closeTraining(tab.number)}
               aria-label={m.training_close({ title })}
-              className="ml-0.5 rounded-sm p-0.5 text-muted-foreground transition-colors hover:bg-muted hover:text-font-clear"
+              className="ml-0.5 rounded-sm p-0.5 text-muted-foreground transition-colors hover:bg-muted hover:text-text-strong"
             >
               <X className="size-3.5" />
             </button>

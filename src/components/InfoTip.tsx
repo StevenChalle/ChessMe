@@ -10,7 +10,7 @@ export function InfoTip({ text }: { text: string }) {
           <button
             type="button"
             aria-label={text}
-            className="rounded-full align-middle text-muted-foreground normal-case hover:text-font-clear"
+            className="rounded-full align-middle text-muted-foreground normal-case hover:text-text-strong"
           >
             <Info className="size-4" />
           </button>

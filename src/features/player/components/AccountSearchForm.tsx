@@ -10,7 +10,7 @@ import { SOURCE_LABELS } from '../summary'
 import { SourceDot } from './SourceBadge'
 
 const INPUT_CLASS =
-  'h-9 w-full rounded-md border bg-muted px-3 text-sm outline-none placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring'
+  'h-control w-full rounded-sm border border-input bg-field px-3 text-sm text-text-strong outline-none placeholder:text-muted-foreground focus-visible:border-primary focus-visible:ring-1 focus-visible:ring-primary focus-visible:outline-none'
 
 /**
  * One username per platform, either or both. Accounts may have different names:
@@ -175,7 +175,7 @@ function UsernameInput({
       spellCheck={false}
       autoComplete="off"
       autoCapitalize="off"
-      className={cn(INPUT_CLASS, compact && 'pl-6')}
+      className={cn(INPUT_CLASS, compact && 'h-9 pl-8')}
     />
   )
 

@@ -498,3 +498,16 @@ Chaque erreur reçoit des **thèmes**, qui sont des étiquettes et non des caté
 - **DNS** : deux `CNAME` (`@` et `www`) vers `craftyourchess-2rcp.onrender.com`, en **DNS only** (sans le proxy de Cloudflare) : Render émet et renouvelle lui-même le certificat. `www` redirige vers la racine.
 - Le domaine est déclaré dans `render.yaml` (`domains`). La CI et le déploiement ne changent pas : un push sur `main` redéploie une fois la CI verte.
 - L'adresse `onrender.com` reste active le temps de la transition : la désactiver (`renderSubdomainPolicy`) renverrait une 404 au lieu de rediriger.
+
+## 2026-10-22 : thème « L'Établi »
+
+Le thème copié de Lichess était propre mais un peu froid, et l'app ressemblait à une page de Lichess. Plusieurs identités ont été explorées avec Claude Design ; deux ont été appliquées pour comparer, chacune sur sa branche : « L'Atelier » (`theme/atelier`) et « L'Établi » (`theme/etabli`, celle-ci). Spécification et captures : `design/theme-etabli/`, résumé dans `docs/design.md`.
+
+- **Tokens** dans `src/theme/etabli.css` (`--cyc-*`), branchés sur ceux de shadcn. Les anciens noms (`good`, `bad`, `brag`, `zebra`, `font-clear`, `font-dim`) sont devenus ceux du thème (`win`, `loss`, `title`, `field`, `text-strong`, `muted-foreground`).
+- **Polices** : Noto Sans et Noto Sans Mono (variables, SIL OFL), fichiers woff2 dans `src/theme/fonts/`, servis par Vite sous un nom haché. Le paquet `@fontsource-variable/noto-sans` n'est plus utile. Crédits sur `/legal`.
+- **Plateformes neutres** : les couleurs « Lichess » et « Chess.com » disparaissent au profit d'un carré `Li` / `Cc`, et de deux teintes neutres dans les barres empilées.
+- **Un seul bouton principal par écran** : « Analyse approfondie » passe en bouton secondaire à côté de « Analyser la dernière partie ».
+- **L'échiquier ne change pas** (choix de l'utilisateur) : couleurs, pièces, flèches et réglages restent ceux d'avant, malgré le plateau sable et bronze et les pièces mpchess proposés par le thème.
+- **Le nom dans l'en-tête suit le choix de l'utilisateur**, pas la spécification : Noto Sans, « Craft » et « Chess » en gras `#dddddd`, « Your » en maigre `#bf811d` (la spécification le voulait en vert, en gras).
+- **Nouveau logo** : un artisan qui taille un pion doré, fourni par l'utilisateur en image (`public/logo.png`, coins arrondis transparents), remplace le fou à la longue-vue, de l'en-tête jusqu'à l'icône d'onglet. Voir `docs/design.md`.
+- Pas repris de la maquette, faute de fonctionnalité correspondante : barre de navigation en bas sur téléphone, courbe d'évolution sur 12 mois, bouton « Plus tard » du bandeau de version, raccourcis clavier (`.kbd`).

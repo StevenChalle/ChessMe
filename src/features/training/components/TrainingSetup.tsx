@@ -28,7 +28,7 @@ import {
 function Section({ title, info, children }: { title: string; info?: string; children: ReactNode }) {
   return (
     <fieldset className="space-y-3">
-      <legend className="mb-3 flex items-center gap-1.5 text-xs font-medium tracking-wide text-muted-foreground uppercase">
+      <legend className="label-etabli mb-3 flex items-center gap-1.5">
         {title}
         {info && <InfoTip text={info} />}
       </legend>
@@ -55,7 +55,7 @@ function CheckboxField({
         id={id}
         checked={checked}
         onCheckedChange={(value) => onChange(value === true)}
-        className="border-font-dim"
+        className="border-border-strong"
       />
       <Label htmlFor={id} className="font-normal">
         {label}
@@ -103,7 +103,7 @@ function ThemeChips({
               className={CHIP_CLASS}
             >
               {label()}
-              <span className="text-muted-foreground tabular-nums">{formatNumber(count)}</span>
+              <span className="num text-muted-foreground">{formatNumber(count)}</span>
             </Toggle>
             <InfoTip text={info()} />
           </span>
@@ -232,7 +232,7 @@ export function TrainingSetup({ tab }: { tab: TrainingTab }) {
       </div>
 
       <div className="flex flex-wrap items-center justify-between gap-3 rounded-md bg-muted/50 p-4">
-        <p className="text-font-clear">
+        <p className="text-text-strong">
           {positions === 0
             ? m.training_setup_none()
             : limited

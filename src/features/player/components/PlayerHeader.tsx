@@ -38,11 +38,11 @@ export function PlayerHeader({
           <img src={avatarUrl} alt="" className="size-14 rounded-md bg-card object-cover" />
         )}
         <div>
-          <h1 className="flex flex-wrap items-baseline gap-x-2 text-3xl font-medium text-font-clear">
+          <h1 className="flex flex-wrap items-center gap-x-2.5">
             {(sameTitle ? titles.slice(0, 1) : titles).map((account) => (
               <span
                 key={account.source}
-                className="text-brag"
+                className="title-badge"
                 title={
                   sameTitle
                     ? undefined

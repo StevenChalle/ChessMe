@@ -8,7 +8,7 @@ export function FeedbackButton() {
     <Link
       to="/contact"
       title={m.feedback_button()}
-      className="inline-flex items-center gap-1.5 rounded-md px-1.5 py-1 text-sm text-muted-foreground transition-colors hover:text-font-clear data-[status=active]:text-font-clear"
+      className="inline-flex items-center gap-1.5 rounded-md px-1.5 py-1 text-sm text-muted-foreground transition-colors hover:text-text-strong data-[status=active]:text-text-strong"
     >
       <MessageSquare aria-hidden className="size-4" />
       <span className="max-sm:sr-only">{m.feedback_button()}</span>
@@ -23,7 +23,7 @@ export function FeedbackNudge({ text }: { text: string }) {
       {text}{' '}
       <Link
         to="/contact"
-        className="text-foreground underline underline-offset-4 hover:text-font-clear"
+        className="text-foreground underline underline-offset-4 hover:text-text-strong"
       >
         {m.feedback_nudge_link()}
       </Link>

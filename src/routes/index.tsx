@@ -14,7 +14,7 @@ function HomePage() {
   return (
     <div className="grid items-center gap-10 md:grid-cols-[1fr_minmax(0,420px)]">
       <section className="space-y-4">
-        <h1 className="text-3xl font-medium text-font-clear">{m.home_title()}</h1>
+        <h1>{m.home_title()}</h1>
         <p className="max-w-prose text-muted-foreground">{m.home_intro()}</p>
         <AccountSearchForm autoFocus className="max-w-sm" />
         <RecentSearches className="max-w-sm pt-4" />

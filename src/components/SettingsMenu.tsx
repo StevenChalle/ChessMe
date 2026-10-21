@@ -47,7 +47,7 @@ const SELECTED = 'ring-2 ring-primary'
 function Group({ title, children }: { title: string; children: ReactNode }) {
   return (
     <div className="space-y-2">
-      <p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">{title}</p>
+      <p className="label-etabli">{title}</p>
       {children}
     </div>
   )
@@ -81,7 +81,7 @@ export function SettingsMenu() {
           size="icon-sm"
           aria-label={m.settings()}
           title={m.settings()}
-          className="text-muted-foreground hover:text-font-clear"
+          className="text-muted-foreground hover:text-text-strong"
         >
           <Settings />
         </Button>

@@ -9,7 +9,7 @@ import { SourceDot } from './SourceBadge'
 // TanStack Router sets data-status="active" on the current link.
 // Icons stay discreet: small and dimmed, in the tab's color.
 const TAB_CLASS =
-  '-mb-px inline-flex items-center gap-2 [&>svg]:size-3.5 [&>svg]:opacity-70 border-b-2 border-transparent px-1 pb-2 text-sm transition-colors hover:text-font-clear data-[status=active]:border-highlight data-[status=active]:text-font-clear'
+  'tab-etabli inline-flex shrink-0 items-center gap-2 px-1 pb-2.5 whitespace-nowrap transition-colors [&>svg]:size-3.5 [&>svg]:opacity-70'
 
 const SOURCE_TABS = {
   lichess: { to: '/player/lichess', label: 'Lichess' },
@@ -24,7 +24,7 @@ export function PlayerTabs({
   states: Record<ApiSource, SourceState<unknown>>
 }) {
   return (
-    <nav className="flex gap-6 border-b" aria-label={m.tabs_label()}>
+    <nav className="flex gap-6 overflow-x-auto border-b" aria-label={m.tabs_label()}>
       <Link to="/player" search={true} activeOptions={{ exact: true }} className={TAB_CLASS}>
         <LayoutGrid aria-hidden />
         {m.tab_overview()}

@@ -54,9 +54,7 @@ function RecapHeader({
   return (
     <div className="flex flex-wrap items-start justify-between gap-3">
       <div className="space-y-3">
-        <p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
-          {m.recap_title()}
-        </p>
+        <p className="label-etabli">{m.recap_title()}</p>
         {children}
       </div>
       <Button size="lg" disabled={launchDisabled} onClick={onLaunch}>
@@ -95,7 +93,7 @@ function FoundRecap({
   return (
     <div className="space-y-4">
       {failures.map(({ source, error }) => (
-        <p key={source} className="text-sm text-bad">
+        <p key={source} className="text-sm text-loss">
           {sourceErrorMessage(source, error)}
         </p>
       ))}
@@ -105,7 +103,7 @@ function FoundRecap({
       ) : (
         <div className="space-y-3 rounded-md bg-muted/50 p-4">
           <RecapHeader onLaunch={onLaunch}>
-            <p className="text-2xl font-medium text-font-clear tabular-nums">
+            <p className="num text-2xl font-medium text-text-strong">
               {formatGameCount(games.length)}
             </p>
           </RecapHeader>
@@ -113,24 +111,23 @@ function FoundRecap({
             {bySource.map(({ source, count }) => (
               <span key={source} className="inline-flex items-center gap-1.5">
                 <SourceLabel source={source} />
-                <span className="text-muted-foreground tabular-nums">{formatNumber(count)}</span>
+                <span className="num text-muted-foreground">{formatNumber(count)}</span>
               </span>
             ))}
             {byCategory.map(({ category, count }) => (
               <span key={category} className="text-muted-foreground">
-                {categoryLabel(category)}{' '}
-                <span className="tabular-nums">{formatNumber(count)}</span>
+                {categoryLabel(category)} <span className="num">{formatNumber(count)}</span>
               </span>
             ))}
           </p>
           <div className="space-y-0.5 pt-1">
-            <p className="text-font-clear">
+            <p className="text-text-strong">
               {m.recap_estimate({
                 time: formatEstimate(estimateSeconds(games, criteria, profile)),
               })}
             </p>
             {speedup !== undefined && (
-              <p className="text-sm text-font-clear">
+              <p className="text-sm text-text-strong">
                 {m.recap_faster_on_desktop({ times: String(speedup) })}
               </p>
             )}
@@ -144,8 +141,8 @@ function FoundRecap({
             )}
           </div>
           {games.length >= LARGE_REVIEW && (
-            <p className="flex gap-2 rounded-md border border-brag/40 bg-brag/10 p-3 text-sm text-font-clear">
-              <TriangleAlert aria-hidden className="mt-0.5 size-4 shrink-0 text-brag" />
+            <p className="flex gap-2 rounded-md border border-highlight/40 bg-highlight/10 p-3 text-sm text-text-strong">
+              <TriangleAlert aria-hidden className="mt-0.5 size-4 shrink-0 text-highlight" />
               {m.recap_large_warning()}
             </p>
           )}

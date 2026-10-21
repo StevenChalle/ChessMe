@@ -227,7 +227,7 @@ export function TrainingView({
       <div className="flex flex-col gap-5 md:w-80 md:shrink-0">
         <div className="space-y-2">
           <p className="flex items-baseline justify-between gap-2 tabular-nums">
-            <span className="font-medium text-font-clear">
+            <span className="font-medium text-text-strong">
               {m.training_progress({
                 current: formatNumber(state.index + 1),
                 total: formatNumber(state.puzzles.length),
@@ -240,7 +240,7 @@ export function TrainingView({
           <Progress value={(state.index / state.puzzles.length) * 100} />
         </div>
         {engineFailed ? (
-          <p className="text-bad">{m.training_engine_failed()}</p>
+          <p className="text-loss">{m.training_engine_failed()}</p>
         ) : (
           <ValidMaxDropContext value={validMaxDrop}>
             <PuzzlePanel state={state} puzzle={puzzle} dispatch={dispatch} />

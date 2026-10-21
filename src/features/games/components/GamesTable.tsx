@@ -22,10 +22,11 @@ import {
   type GameSummary,
 } from '@/features/games/normalize'
 
-const RESULTS: Record<GameResult, { label: () => string; className: string }> = {
-  win: { label: m.result_win, className: 'text-good' },
-  draw: { label: m.result_draw, className: 'text-font-dim' },
-  loss: { label: m.result_loss, className: 'text-bad' },
+/** Score as on a scoresheet (1, ½, 0) next to the word: never color alone. */
+const RESULTS: Record<GameResult, { label: () => string; score: string; className: string }> = {
+  win: { label: m.result_win, score: '1', className: 'text-win' },
+  draw: { label: m.result_draw, score: '½', className: 'text-muted-foreground' },
+  loss: { label: m.result_loss, score: '0', className: 'text-loss' },
 }
 
 /** Small square showing which side the player had. */
@@ -76,7 +77,7 @@ export function GamesTable<G extends GameSummary>({
           const result = RESULTS[game.result]
           return (
             <TableRow key={`${game.source}-${game.id}`}>
-              <TableCell className="whitespace-nowrap text-muted-foreground tabular-nums">
+              <TableCell className="num whitespace-nowrap text-muted-foreground">
                 {formatDate(game.playedAt)}{' '}
                 <span className="ml-1 text-muted-foreground/70">{formatTime(game.playedAt)}</span>
               </TableCell>
@@ -85,25 +86,33 @@ export function GamesTable<G extends GameSummary>({
               </TableCell>
               <TableCell>
                 {categoryLabel(game.category)}{' '}
-                <span className="text-muted-foreground tabular-nums">
+                <span className="num text-muted-foreground">
                   {timeControlLabel(game.timeControl)}
                 </span>
                 {game.variant && (
-                  <span className="block text-xs text-brag">{variantLabel(game.variant)}</span>
+                  <span className="block text-xs text-highlight">{variantLabel(game.variant)}</span>
                 )}
               </TableCell>
               <TableCell>
                 <span className="inline-flex items-center gap-2">
                   <SideSquare color={game.color} />
-                  <span className="text-font-clear">{game.opponent.name}</span>
+                  <span className="text-text-strong">{game.opponent.name}</span>
                   {game.opponent.rating !== undefined && (
-                    <span className="text-muted-foreground tabular-nums">
-                      {game.opponent.rating}
-                    </span>
+                    <span className="num text-muted-foreground">{game.opponent.rating}</span>
                   )}
                 </span>
               </TableCell>
-              <TableCell className={result.className}>{result.label()}</TableCell>
+              <TableCell className={result.className}>
+                <span className="inline-flex items-center gap-1.5">
+                  <span
+                    aria-hidden
+                    className="inline-flex size-4 items-center justify-center rounded-[2px] border border-current font-mono text-[10px] leading-none font-bold"
+                  >
+                    {result.score}
+                  </span>
+                  {result.label()}
+                </span>
+              </TableCell>
               <TableCell className="text-right">{extra.cell(game)}</TableCell>
               <TableCell>
                 <a

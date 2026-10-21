@@ -19,11 +19,9 @@ export function ThemeBars({ mistakes }: { mistakes: Mistake[] }) {
   const max = rows[0]!.count
 
   return (
-    <section className="space-y-3 rounded-md bg-card p-4">
+    <section className="panel-etabli space-y-3 p-4 sm:p-5">
       <div className="flex flex-wrap items-baseline justify-between gap-2">
-        <h3 className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
-          {m.results_themes_title()}
-        </h3>
+        <h3 className="label-etabli">{m.results_themes_title()}</h3>
         <p className="text-xs text-muted-foreground">{m.results_themes_hint()}</p>
       </div>
       <ul className="space-y-2">
@@ -42,13 +40,13 @@ export function ThemeBars({ mistakes }: { mistakes: Mistake[] }) {
                 <span className="truncate">{label()}</span>
                 <InfoTip text={info()} />
               </span>
-              <span className="h-2.5 rounded-full bg-muted">
+              <span className="h-2.5 rounded-[2px] bg-muted">
                 <span
-                  className="block h-full rounded-full bg-primary"
+                  className="block h-full rounded-[2px] bg-primary"
                   style={{ width: `${(count / max) * 100}%` }}
                 />
               </span>
-              <span className="text-right text-muted-foreground tabular-nums">{text}</span>
+              <span className="num text-right text-muted-foreground">{text}</span>
             </li>
           )
         })}

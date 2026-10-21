@@ -67,7 +67,7 @@ export default defineConfig(({ mode }) => ({
       // src/lib/registerServiceWorker.ts): never a forced reload in the middle of a review.
       registerType: 'prompt',
       injectRegister: false,
-      includeAssets: ['favicon.svg'],
+      includeAssets: ['favicon.ico', 'logo.png'],
       // Lets you install a separate "CraftYourChess (dev)" app from `make dev` that follows HMR.
       devOptions: { enabled: true, suppressWarnings: true },
       manifest: {

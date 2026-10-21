@@ -62,7 +62,7 @@ function FiltersTab() {
         onChange={setDraft}
         reference={analysisSettings}
       />
-      {search.status === 'error' && <p className="text-bad">{m.search_failed()}</p>}
+      {search.status === 'error' && <p className="text-loss">{m.search_failed()}</p>}
       {/* While the games are looked for again (or about to be), the box shows a loader. */}
       {(search.status === 'found' || search.status === 'finding' || canSearch) && (
         <ReviewRecap

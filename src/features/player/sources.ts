@@ -10,10 +10,10 @@ const CATEGORY_LABELS: Record<Category, () => string> = {
   daily: m.category_daily,
 }
 
-/** Tailwind background class carrying each platform's identity color. */
+/** Each platform's share in stacked bars: two neutral shades, never the platforms' colors. */
 export const SOURCE_COLOR_CLASS: Record<ApiSource, string> = {
-  lichess: 'bg-lichess',
-  chesscom: 'bg-chesscom',
+  lichess: 'bg-foreground',
+  chesscom: 'bg-border-strong',
 }
 
 export function categoryLabel(category: Category): string {

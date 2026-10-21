@@ -37,12 +37,15 @@ export function CurrentRatings({
           </thead>
           <tbody>
             {rows.map((key) => (
-              <tr key={key} className="even:bg-zebra">
+              <tr key={key} className="even:bg-field">
                 <td className="py-1.5 pl-1">{categoryLabel(key)}</td>
                 {sources.map((source) => {
                   const stats = bySource.get(source)?.categories[key]
                   return (
-                    <td key={source} className="py-1.5 pr-1 text-right font-medium text-font-clear">
+                    <td
+                      key={source}
+                      className="num py-1.5 pr-1 text-right font-medium text-text-strong"
+                    >
                       {stats?.rating ?? (
                         <span className="font-normal text-muted-foreground">—</span>
                       )}

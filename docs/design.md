@@ -2,50 +2,52 @@
 
 ## Intention
 
-On s'inspire du **thème sombre de Lichess** : moderne, épuré, dense en information sans être chargé. L'échiquier et les données sont au centre, et l'interface s'efface autour.
+Thème **« L'Établi »**, conçu avec Claude Design (2026-10-22) pour donner une identité propre à l'app, au lieu de copier le thème sombre de Lichess. Dense et sobre, graphite tiède, l'or du pion pour agir, Noto Sans comme le nom de l'app. Tout est plein et net : barres, onglets, badges argent. La couleur est réservée à l'or.
 
-Principes :
+La spécification complète, avec les captures de référence, est dans [`design/theme-etabli/`](../design/theme-etabli/THEME.md). Les valeurs sont dans [`src/theme/etabli.css`](../src/theme/etabli.css), importé par `src/index.css`.
 
-- **Fond chaud et sombre** (et non un gris neutre) : le `#161512` de Lichess, avec un léger dégradé brun en haut de page.
-- **Surfaces en aplats** : des panneaux `bg-card` légèrement plus clairs que le fond, presque sans ombre ni bordure.
-- **Texte gris clair, jamais blanc pur** : `#bababa` pour le corps, `#ddd` pour les titres et les chiffres importants.
-- **Couleurs rares et porteuses de sens** : bleu pour les actions et les liens, vert pour les victoires et les progrès, rouge pour les défaites, or pour les titres (GM, IM…).
-- **Rayons de bordure faibles** (4 px) : un style sobre, plutôt qu'arrondi « app grand public ».
-- **Chiffres tabulaires** (`tabular-nums`) pour les classements et les compteurs.
-- Police : **Noto Sans**, comme Lichess.
-- Plateau : **brun avec les pièces cburnett**, le réglage par défaut de Lichess.
+Règles à respecter sur tout nouvel écran :
+
+- **Aucune couleur codée en dur** : uniquement les utilitaires issus des tokens, ou `var(--cyc-*)`.
+- **Une seule couleur d'action, `primary`** (l'or du pion), et **un seul bouton principal par écran** : les autres en `secondary` ou `ghost`.
+- **Surfaces par paliers**, sans ombre : `background` (page), `card` (panneaux), `field` (champs, tuiles, lignes paires), `raised` (menus, boutons secondaires, survol). Les bordures des panneaux sont très discrètes ; seuls les contrôles ont un contour net (`border-strong`).
+- **Tout est plein** : barres de progression continues, onglet actif souligné d'un trait or continu. Ni segment ni pointillé.
+- **`win`, `loss` et `title` sont des significations**, jamais de la décoration. Une victoire ou une défaite s'accompagne toujours d'un mot ou d'un signe (`1` / `½` / `0`, `+14`), pour les daltoniens. L'argent `title` est réservé aux badges de titre (GM, IM…).
+- **Cyan (`highlight`) : une occurrence par écran au plus**, en pratique le bandeau de nouvelle version.
+- **Chiffres en Noto Sans Mono** (`.num`) : classements, compteurs, dates en chiffres. Les phrases qui contiennent des nombres (« 412 parties », « Erreur 3 / 12 ») restent en Noto Sans, avec `tabular-nums`.
+- **Plateformes neutres** : un petit carré `Li` / `Cc` (`SourceDot`), jamais leurs logos ni leurs couleurs.
+- **Rayons** : 3 px pour les contrôles (`rounded-sm`), 4 px pour les panneaux (`rounded-lg`). Ombre (`shadow-pop`) sur les menus et dialogues seulement.
+- Polices : **Noto Sans** et **Noto Sans Mono**, SIL OFL, hébergées avec l'app (`src/theme/fonts/`).
+- **L'échiquier ne suit pas le thème** (choix de l'utilisateur) : ses couleurs, ses pièces et ses réglages restent ceux de `components/board/` (brun et cburnett par défaut).
 
 ## Tokens
 
-Tous définis dans [`src/index.css`](../src/index.css). La palette brute de Lichess est dans les variables `--lc-*`, et les tokens sémantiques de shadcn pointent dessus.
+| Utilitaire Tailwind                                              | Usage                                                                               |
+| ---------------------------------------------------------------- | ----------------------------------------------------------------------------------- |
+| `bg-background`                                                  | fond de page                                                                        |
+| `bg-card`                                                        | panneaux, en-tête                                                                   |
+| `bg-field` (= `bg-muted`)                                        | champs, tuiles, lignes paires des tableaux                                          |
+| `bg-raised` (= `bg-secondary`, `bg-popover`)                     | menus, boutons secondaires, survol                                                  |
+| `border-border` / `border-border-strong` (= `border-input`)      | bordures discrètes / contour des contrôles                                          |
+| `text-foreground` / `text-muted-foreground` / `text-text-strong` | texte courant / atténué / mis en avant                                              |
+| `bg-primary`, `text-primary`                                     | actions, liens, focus                                                               |
+| `text-win` / `text-loss` (= `destructive`)                       | victoire, progrès / défaite, erreur                                                 |
+| `bg-title`                                                       | badges de titre FIDE et Lichess                                                     |
+| `text-highlight`, `bg-highlight`                                 | accent cyan ponctuel                                                                |
+| `text-brand`, `text-brand-accent`                                | nom de l'app dans l'en-tête                                                         |
+| `chart-1…5`                                                      | séries de graphiques, dans l'ordre bullet, blitz, rapide, classique, correspondance |
+| `bg-piece-white` / `bg-piece-black`                              | couleur jouée, dans les tableaux                                                    |
 
-| Token Tailwind                            | Valeur                         | Usage                                           |
-| ----------------------------------------- | ------------------------------ | ----------------------------------------------- |
-| `bg-background`                           | `#161512`                      | fond de page                                    |
-| `bg-card`                                 | `#262421`                      | panneaux, tuiles de stats                       |
-| `bg-muted` / `bg-zebra`                   | `#2b2926`                      | champs de saisie, lignes alternées des tableaux |
-| `bg-popover` / `bg-secondary`             | `#3c3934`                      | menus, popups, boutons secondaires              |
-| `border-border`                           | `#404040`                      | séparateurs                                     |
-| `text-foreground`                         | `#bababa`                      | texte courant                                   |
-| `text-muted-foreground` / `text-font-dim` | `#999`                         | libellés, métadonnées                           |
-| `text-font-clear`                         | `#ddd`                         | titres, valeurs mises en avant                  |
-| `bg-primary` / `text-primary`             | `#3692e7`                      | actions, liens, focus                           |
-| `text-good`                               | `#629924`                      | victoire, progression                           |
-| `text-bad` / `destructive`                | `#cc3333`                      | défaite, erreur                                 |
-| `text-brag`                               | `#bf811d`                      | titres FIDE et Lichess                          |
-| `text-highlight`                          | `#d85000`                      | accent ponctuel (orange Lichess)                |
-| `chart-1…5`                               | bleu, vert, orange, or, violet | séries de graphiques                            |
-
-Règle : **pas de code hexadécimal dans les composants**. Pour une nouvelle couleur, ajouter un token.
+Composants propres au thème, dans `etabli.css` : `.header-etabli` (en-tête au filet or), `.panel-etabli` (panneau), `.tile-etabli` + `.tile-value` (tuile de statistique), `.label-etabli` (libellé en mono), `.num` (chiffres en mono), `.title-badge` (plaque argent), `.tab-etabli` (onglet, actif souligné d'or), `.progress-etabli` (barre de progression pleine, utilisée par `Progress`), `.btn-ring` (liseré du bouton principal).
 
 ## Logo
 
-`public/favicon.svg` : le **fou blanc des pièces cburnett** (Colin M.L. Burnett, GPL-2.0 ou ultérieure, comme le plateau, crédité sur la page `/legal`) qui **regarde au loin dans une longue-vue blanche et bleue** (`#3692e7`, la couleur principale), dessinée dans le même style (cernée de noir). La longue-vue monte légèrement vers la droite et dépasse de la silhouette, ce qui la garde lisible en petit. Fond : carré arrondi `#262421` (`bg-card`).
+`public/logo.png` (512 px, tiré d'une image de 1024 px, coins arrondis transparents) : un **artisan qui taille un pion doré au ciseau**, des éclats autour, sur un fond sombre `#282421`. Le favicon et les icônes PWA gardent ces coins arrondis ; les icônes Apple et maskable les remplissent du fond du logo, car le système les découpe lui-même. Il illustre le nom : façonner son jeu. C'est une image matricielle, pas un SVG : à redessiner en vectoriel un jour si on veut plus de netteté en petit.
 
-- Écartés (2026-10-05) : un cavalier avec une loupe, en plusieurs variantes (loupe bleue en bas à droite, loupe blanche ou bleue posée sur l'œil, avec ou sans grossissement). La loupe se superposait à la tête et restait confuse en petit. Écartée aussi : une ligne d'horizon derrière le fou.
-- Affiché à côté du titre « CraftYourChess » dans l'en-tête (32 px).
-- Les icônes de l'app (PWA, Apple, favicon.ico) en sont générées : `pnpm generate-pwa-assets`, à relancer après toute modification du SVG. Les icônes avec marge (maskable Android, Apple) utilisent le fond du logo (`pwa-assets.config.ts`), jamais du blanc.
+- Écartés : le fou cburnett à la longue-vue (2026-10-05 → 2026-10-22), un cavalier avec une loupe, une ligne d'horizon derrière le fou.
+- Les icônes de l'app (favicon.ico, PWA, Apple) en sont générées : `pnpm generate-pwa-assets`, à relancer après toute modification de `logo.png`. Les icônes avec marge (maskable Android, Apple) utilisent le fond du logo (`pwa-assets.config.ts`), jamais du blanc.
+- Dans l'en-tête : `pwa-64x64.png` à 32 px, suivi du nom « CraftYourChess » en **Noto Sans** : « Craft » et « Chess » en gras `#dddddd` (`text-brand`), « Your » en maigre `#bf811d` (`text-brand-accent`).
 
 ## Thème clair
 
-Il n'est pas prévu pour l'instant. Le jour où on le voudra, il suffira de redéfinir les variables `--lc-*` sous un sélecteur (`.light` ou `[data-theme]`), puisque les composants n'utilisent que les tokens.
+Il n'est pas prévu pour l'instant. Le jour où on le voudra, il suffira de redéfinir les variables `--cyc-*` sous un sélecteur (`.light` ou `[data-theme]`), puisque les composants n'utilisent que les tokens.

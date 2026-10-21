@@ -35,7 +35,7 @@ export function ChessComDetails({ usernames }: { usernames: PlayerUsernames }) {
 
 function ChessComPlayerDetails({ player: { profile, stats } }: { player: ChessComPlayer }) {
   if (profile.status?.startsWith('closed')) {
-    return <p className="text-bad">{m.chesscom_closed()}</p>
+    return <p className="text-loss">{m.chesscom_closed()}</p>
   }
 
   const categories = CATEGORIES.filter(({ key }) => stats[key]?.last)
@@ -65,15 +65,13 @@ function ChessComPlayerDetails({ player: { profile, stats } }: { player: ChessCo
               >
                 <div className="mb-3 flex items-baseline gap-6">
                   <div>
-                    <div className="text-xs text-muted-foreground">{m.rating_current()}</div>
-                    <div className="text-2xl font-medium text-font-clear tabular-nums">
-                      {last!.rating}
-                    </div>
+                    <div className="label-etabli">{m.rating_current()}</div>
+                    <div className="tile-value">{last!.rating}</div>
                   </div>
                   {best && (
                     <div>
-                      <div className="text-xs text-muted-foreground">{m.rating_best()}</div>
-                      <div className="text-lg text-font-clear tabular-nums">
+                      <div className="label-etabli">{m.rating_best()}</div>
+                      <div className="num text-lg text-text-strong">
                         {best.rating}
                         <ExternalLink href={best.game} className="ml-2 text-xs font-normal">
                           {formatDate(new Date(best.date * 1000))}
@@ -95,7 +93,7 @@ function ChessComPlayerDetails({ player: { profile, stats } }: { player: ChessCo
             {stats.tactics?.highest && (
               <div>
                 <dt className="text-xs text-muted-foreground">{m.tactics_best()}</dt>
-                <dd className="text-xl font-medium text-font-clear tabular-nums">
+                <dd className="num text-xl font-medium text-text-strong">
                   {stats.tactics.highest.rating}
                 </dd>
               </div>
@@ -103,7 +101,7 @@ function ChessComPlayerDetails({ player: { profile, stats } }: { player: ChessCo
             {stats.puzzle_rush?.best && (
               <div>
                 <dt className="text-xs text-muted-foreground">{m.puzzle_rush_best()}</dt>
-                <dd className="text-xl font-medium text-font-clear tabular-nums">
+                <dd className="num text-xl font-medium text-text-strong">
                   {stats.puzzle_rush.best.score}
                 </dd>
               </div>
