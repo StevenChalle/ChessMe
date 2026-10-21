@@ -249,7 +249,7 @@
   "setup_rating_and": "et",
   "setup_rating_min": "Elo minimum de l'adversaire",
   "setup_rating_max": "Elo maximum de l'adversaire",
-  "setup_opponent_rating_hint": "Ne garde que les parties contre des adversaires classés dans cette fourchette. Les parties contre des adversaires sans classement sont écartées.",
+  "setup_opponent_rating_hint": "Ne garde que les parties classées contre des adversaires dans cette fourchette d'Elo. Les parties non classées sont conservées : décoche-les pour les écarter.",
   "setup_opponent_rating_rated_only": "Uniquement avec les parties classées.",
   "setup_summary_opponent_rating": "adversaires classés de {min} à {max}",
   "setup_invalid_rating": "La fourchette d'Elo de l'adversaire doit rester entre {floor} et {ceiling}, le minimum ne dépassant pas le maximum.",

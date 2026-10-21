@@ -55,6 +55,15 @@ describe('matchesSelection', () => {
     expect(matchesSelection(game({ opponent: { name: 'anon' } }), range(0, 4000))).toBe(false)
   })
 
+  it('keeps casual games whatever the rating range', () => {
+    const narrow: GameSelection = {
+      ...all,
+      opponentRating: { enabled: true, min: 2000, max: 2100 },
+    }
+    expect(matchesSelection(game({ rated: false }), narrow)).toBe(true)
+    expect(matchesSelection(game({ rated: false, opponent: { name: 'anon' } }), narrow)).toBe(true)
+  })
+
   it('ignores the rating range while it is off or rated games are not chosen', () => {
     const narrow = { enabled: true, min: 2000, max: 2100 }
     expect(

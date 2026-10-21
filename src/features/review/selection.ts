@@ -23,8 +23,9 @@ export type GameScope =
 export type RatingKind = 'rated' | 'casual'
 
 /**
- * Opponents rated within [min, max], when `enabled`. Only offered, and applied, while rated games
- * are chosen; the bounds stay saved when it is off, to turn it back on.
+ * Rated games against opponents rated within [min, max], when `enabled`; casual games are always
+ * kept (unchecking them is how to leave them out). Only offered, and applied, while rated games are
+ * chosen; the bounds stay saved when it is off, to turn it back on.
  */
 export type OpponentRatingFilter = { enabled: boolean; min: number; max: number }
 
@@ -97,8 +98,8 @@ export function activeRatingFilter(selection: GameSelection): OpponentRatingFilt
 export function matchesSelection(game: GameSummary, selection: GameSelection): boolean {
   const { scope } = selection
   const ratingFilter = activeRatingFilter(selection)
-  if (ratingFilter) {
-    // An unrated opponent (or a rating the platform did not give) cannot be in the range.
+  if (ratingFilter && game.rated) {
+    // A rating the platform did not give cannot be in the range.
     const rating = game.opponent.rating
     if (rating === undefined || rating < ratingFilter.min || rating > ratingFilter.max) return false
   }
