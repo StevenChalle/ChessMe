@@ -12,7 +12,7 @@ Règles à respecter sur tout nouvel écran :
 - **Une seule couleur d'action, `primary`** (l'or du pion), et **un seul bouton principal par écran** : les autres en `secondary` ou `ghost`.
 - **Surfaces par paliers**, sans ombre : `background` (page), `card` (panneaux), `field` (champs, tuiles, lignes paires), `raised` (menus, boutons secondaires, survol). Les bordures des panneaux sont très discrètes ; seuls les contrôles ont un contour net (`border-strong`).
 - **Tout est plein** : barres de progression continues, onglet actif souligné d'un trait or continu. Ni segment ni pointillé.
-- **`win`, `loss` et `title` sont des significations**, jamais de la décoration. Une victoire ou une défaite s'accompagne toujours d'un mot ou d'un signe (`1` / `½` / `0`, `+14`), pour les daltoniens. L'argent `title` est réservé aux badges de titre (GM, IM…).
+- **`win`, `loss` et `title` sont des significations**, jamais de la décoration. Une victoire ou une défaite s'accompagne toujours d'un mot ou d'un signe (« Victoire », `+14`), pour les daltoniens. L'argent `title` est réservé aux badges de titre (GM, IM…).
 - **Cyan (`highlight`) : une occurrence par écran au plus**, en pratique le bandeau de nouvelle version.
 - **Chiffres en Noto Sans Mono** (`.num`) : classements, compteurs, dates en chiffres. Les phrases qui contiennent des nombres (« 412 parties », « Erreur 3 / 12 ») restent en Noto Sans, avec `tabular-nums`.
 - **Plateformes** : une pastille discrète (`SourceDot`), bleue pour Lichess, verte pour Chess.com (`bg-lichess`, `bg-chesscom`), reprise aussi dans les barres empilées. Jamais leurs logos.

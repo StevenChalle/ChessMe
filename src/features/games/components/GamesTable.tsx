@@ -22,11 +22,10 @@ import {
   type GameSummary,
 } from '@/features/games/normalize'
 
-/** Score as on a scoresheet (1, ½, 0) next to the word: never color alone. */
-const RESULTS: Record<GameResult, { label: () => string; score: string; className: string }> = {
-  win: { label: m.result_win, score: '1', className: 'text-win' },
-  draw: { label: m.result_draw, score: '½', className: 'text-muted-foreground' },
-  loss: { label: m.result_loss, score: '0', className: 'text-loss' },
+const RESULTS: Record<GameResult, { label: () => string; className: string }> = {
+  win: { label: m.result_win, className: 'text-win' },
+  draw: { label: m.result_draw, className: 'text-muted-foreground' },
+  loss: { label: m.result_loss, className: 'text-loss' },
 }
 
 /** Small square showing which side the player had. */
@@ -102,17 +101,7 @@ export function GamesTable<G extends GameSummary>({
                   )}
                 </span>
               </TableCell>
-              <TableCell className={result.className}>
-                <span className="inline-flex items-center gap-1.5">
-                  <span
-                    aria-hidden
-                    className="inline-flex size-4 items-center justify-center rounded-[2px] border border-current font-mono text-[10px] leading-none font-bold"
-                  >
-                    {result.score}
-                  </span>
-                  {result.label()}
-                </span>
-              </TableCell>
+              <TableCell className={result.className}>{result.label()}</TableCell>
               <TableCell className="text-right">{extra.cell(game)}</TableCell>
               <TableCell>
                 <a
