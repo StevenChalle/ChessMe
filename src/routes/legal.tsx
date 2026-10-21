@@ -2,6 +2,7 @@ import { createFileRoute, Link } from '@tanstack/react-router'
 import { useState, type ReactNode } from 'react'
 import { Button } from '@/components/ui/button'
 import { ExternalLink } from '@/features/player/components/ExternalLink'
+import { usePageMeta } from '@/hooks/usePageMeta'
 import { clearLocalData } from '@/lib/localData'
 import { HOST, SOURCE_CODE_URL } from '@/lib/project'
 import { m } from '@/paraglide/messages'
@@ -20,6 +21,7 @@ function Section({ title, children }: { title: string; children: ReactNode }) {
 }
 
 function LegalPage() {
+  usePageMeta({ title: m.legal_title() })
   const [cleared, setCleared] = useState(false)
 
   return (

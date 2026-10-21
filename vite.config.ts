@@ -73,10 +73,11 @@ export default defineConfig(({ mode }) => ({
       manifest: {
         name: mode === 'development' ? 'CraftYourChess (dev)' : 'CraftYourChess',
         short_name: mode === 'development' ? 'CraftYourChess dev' : 'CraftYourChess',
-        description: 'Explore your Lichess and Chess.com stats and games.',
+        description:
+          'Analyze your Lichess and Chess.com games with Stockfish in your browser, find the mistakes that cost you points and replay them. Free, open source, no account.',
         lang: 'en',
-        theme_color: '#161512',
-        background_color: '#161512',
+        theme_color: '#121110',
+        background_color: '#121110',
         display: 'standalone',
         start_url: '/',
         icons: [

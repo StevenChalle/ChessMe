@@ -44,3 +44,14 @@ export function copySource(
   if (!from) return null
   return cleanUsername(values[from]) === cleanUsername(values[otherSource(from)]) ? null : from
 }
+
+/** The usernames for a page title: each once, whatever its case ("Hikaru / hikaru" is "Hikaru"). */
+export function usernamesLabel(usernames: PlayerUsernames): string {
+  const names = [usernames.lichess, usernames.chesscom].filter((name) => name !== undefined)
+  return names
+    .filter(
+      (name, index) =>
+        names.findIndex((other) => other.toLowerCase() === name.toLowerCase()) === index,
+    )
+    .join(' / ')
+}

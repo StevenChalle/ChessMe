@@ -15,6 +15,7 @@ import { SettingsMenu } from '@/components/SettingsMenu'
 import { UpdateBanner } from '@/components/UpdateBanner'
 import { AccountSearchForm } from '@/features/player/components/AccountSearchForm'
 import { validatePlayerSearch } from '@/features/player/search'
+import { usePageMeta } from '@/hooks/usePageMeta'
 import { m } from '@/paraglide/messages'
 
 type RouterContext = {
@@ -23,7 +24,7 @@ type RouterContext = {
 
 export const Route = createRootRouteWithContext<RouterContext>()({
   component: RootLayout,
-  notFoundComponent: () => <p className="p-8 text-muted-foreground">{m.not_found()}</p>,
+  notFoundComponent: NotFound,
 })
 
 function RootLayout() {
@@ -86,4 +87,10 @@ function HeaderSearch() {
       </Link>
     </>
   )
+}
+
+/** Any unknown path: the host serves the app with a 200, so keep such pages out of search results. */
+function NotFound() {
+  usePageMeta({ noindex: true })
+  return <p className="p-8 text-muted-foreground">{m.not_found()}</p>
 }

@@ -511,3 +511,14 @@ Le thème copié de Lichess était propre mais un peu froid, et l'app ressemblai
 - **Le nom dans l'en-tête suit le choix de l'utilisateur**, pas la spécification : Noto Sans, « Craft » et « Chess » en gras `#dddddd`, « Your » en maigre, dans le vert `win` de la spécification (d'abord en `#bf811d`).
 - **Nouveau logo** : un artisan qui taille un pion doré, fourni par l'utilisateur en image (`public/logo.png`, coins arrondis transparents), remplace le fou à la longue-vue, de l'en-tête jusqu'à l'icône d'onglet. Voir `docs/design.md`.
 - Pas repris de la maquette, faute de fonctionnalité correspondante : barre de navigation en bas sur téléphone, courbe d'évolution sur 12 mois, bouton « Plus tard » du bandeau de version, raccourcis clavier (`.kbd`).
+
+## 2026-10-22 : référencement
+
+Le site n'apparaissait pas dans les moteurs de recherche, et un lien partagé s'affichait sans aperçu.
+
+- **`robots.txt`** (tout est autorisé) et **`sitemap.xml`** (accueil, contact, mentions légales). Avant, `/sitemap.xml` renvoyait l'app avec un code 200, à cause de la règle de réécriture de Render.
+- **Titre et description** qui parlent du produit dans `index.html`, plus une description structurée (JSON-LD `WebApplication`).
+- **Aperçus de lien** (Open Graph, carte Twitter) : titre, description et logo. Les réseaux sociaux et messageries n'exécutent pas le JavaScript, d'où ces balises en dur dans `index.html`.
+- **Un titre par page** et un **lien canonique** qui suit l'adresse (`usePageMeta`). Les pages de joueur et d'analyse et la page 404 portent `noindex` : une infinité d'adresses, une par pseudo, sans intérêt pour la recherche. On utilise `noindex` plutôt qu'une interdiction dans `robots.txt`, qui empêcherait les robots de voir cette balise.
+- `theme-color` et couleurs du manifeste alignées sur le fond du thème (`#121110`).
+- Pas fait, à rediscuter : pré-générer le HTML des pages publiques au build, des adresses en `/fr/` pour indexer le français. Google Search Console (vérification du domaine par un enregistrement DNS) reste à configurer par l'utilisateur.

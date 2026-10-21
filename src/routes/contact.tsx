@@ -2,6 +2,7 @@ import { createFileRoute } from '@tanstack/react-router'
 import { MessageSquare } from 'lucide-react'
 import type { ReactNode } from 'react'
 import { FeedbackForm } from '@/features/contact/FeedbackForm'
+import { usePageMeta } from '@/hooks/usePageMeta'
 import { CONTACT_EMAIL } from '@/lib/project'
 import { m } from '@/paraglide/messages'
 
@@ -42,6 +43,7 @@ function Emphasized({
  * the form sits in a right column next to the text; on phones it follows it.
  */
 function ContactPage() {
+  usePageMeta({ title: m.contact_title() })
   return (
     <article className="space-y-8 text-base leading-relaxed">
       <h1 className="flex items-center gap-3">

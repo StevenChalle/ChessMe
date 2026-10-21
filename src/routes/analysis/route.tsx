@@ -4,8 +4,9 @@ import { ConfirmDialog } from '@/components/ConfirmDialog'
 import { PlayerHeader } from '@/features/player/components/PlayerHeader'
 import {
   hasAnyUsername,
-  validatePlayerSearch,
   type PlayerUsernames,
+  usernamesLabel,
+  validatePlayerSearch,
 } from '@/features/player/search'
 import type { AccountSummary } from '@/features/player/summary'
 import { usePlayerAccounts } from '@/features/player/usePlayerAccounts'
@@ -15,6 +16,7 @@ import { AnalysisActions } from '@/features/review/components/ReviewButtons'
 import { AnalysisSessionProvider } from '@/features/review/session'
 import { useAnalysisSession } from '@/features/review/sessionContext'
 import { TrainingView } from '@/features/training/components/TrainingView'
+import { usePageMeta } from '@/hooks/usePageMeta'
 import { chessComPlayerQueryOptions } from '@/lib/chesscom/queries'
 import { formatOrList } from '@/lib/format'
 import { lichessUserQueryOptions } from '@/lib/lichess/queries'
@@ -46,6 +48,7 @@ function AnalysisLayout() {
   const { lichess, chesscom, start } = Route.useSearch()
   const usernames = useMemo(() => ({ lichess, chesscom }), [lichess, chesscom])
   const { linked, accounts, noAccount } = usePlayerAccounts(usernames)
+  usePageMeta({ title: usernamesLabel(usernames) || undefined, noindex: true })
   const reviewable = useMemo(() => reviewableAccounts(accounts), [accounts])
 
   if (!hasAnyUsername(usernames)) {

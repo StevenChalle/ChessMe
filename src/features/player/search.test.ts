@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest'
-import { cleanUsername, copySource, hasAnyUsername, validatePlayerSearch } from './search'
+import {
+  cleanUsername,
+  copySource,
+  hasAnyUsername,
+  usernamesLabel,
+  validatePlayerSearch,
+} from './search'
 
 describe('cleanUsername', () => {
   it('trims and drops empty values', () => {
@@ -47,5 +53,19 @@ describe('copySource', () => {
   it('returns null when there is nothing to copy', () => {
     expect(copySource({ lichess: ' ', chesscom: '' }, null)).toBeNull()
     expect(copySource({ lichess: 'a', chesscom: ' a ' }, 'lichess')).toBeNull()
+  })
+})
+
+describe('usernamesLabel', () => {
+  it('joins both usernames', () => {
+    expect(usernamesLabel({ lichess: 'thibault', chesscom: 'hikaru' })).toBe('thibault / hikaru')
+  })
+
+  it('shows a username once when both accounts share it, whatever the case', () => {
+    expect(usernamesLabel({ lichess: 'Hikaru', chesscom: 'hikaru' })).toBe('Hikaru')
+  })
+
+  it('works with a single account', () => {
+    expect(usernamesLabel({ chesscom: 'hikaru' })).toBe('hikaru')
   })
 })

@@ -1,0 +1,6 @@
+# Player and analysis pages carry a noindex tag instead of a Disallow rule here: a disallowed
+# page could not be crawled, so search engines would never see that tag.
+User-agent: *
+Allow: /
+
+Sitemap: https://craftyourchess.com/sitemap.xml

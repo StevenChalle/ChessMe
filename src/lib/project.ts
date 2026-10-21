@@ -1,5 +1,8 @@
 /** Public facts about the project, shown in the footer and on the legal page. */
 
+/** The site's address, for canonical links (keep in sync with index.html and sitemap.xml). */
+export const SITE_URL = 'https://craftyourchess.com'
+
 /** GPL-3.0 requires the source to be available to users: keep this link visible. */
 export const SOURCE_CODE_URL = 'https://github.com/StevenChalle/CraftYourChess'
 

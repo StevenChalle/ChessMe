@@ -39,7 +39,7 @@ src/
   theme/              # thème « L'Établi » : tokens (etabli.css) et polices (fonts/)
   routes/analysis/    # page d'analyse : onglets Filtres (index), Analyse (run), un onglet fermable par entraînement (training.$number)
   components/         # composants applicatifs partagés (board/, SettingsMenu, Footer, FeedbackLink…)
-  hooks/              # hooks transverses (useConfirm, useKeepAwake)
+  hooks/              # hooks transverses (useConfirm, useKeepAwake, usePageMeta : titre et référencement de chaque page)
   features/<nom>/     # code propre à une fonctionnalité, à créer au besoin
   features/player/    # profil croisé : summary.ts (normalisation), search.ts (paramètres ?lichess=&chesscom=), recentSearches.ts, hook, composants
   features/games/     # résumé commun d'une partie (normalize.ts) et table des parties (GamesTable)
@@ -93,4 +93,5 @@ L'interface existe en **anglais (langue de base) et en français**. Langue initi
 - Stockfish multi-thread exige les en-têtes COOP/COEP : à configurer à la fois dans Vite et chez l'hébergeur le jour où on l'ajoute (voir docs/decisions.md).
 - pnpm 11 refuse par défaut les versions publiées très récemment : c'est voulu, ne pas forcer.
 - **Déploiement** : Render (site statique), configuré dans `render.yaml`, servi sur **https://craftyourchess.com** (domaine chez Cloudflare, `CNAME` en DNS only vers `craftyourchess-2rcp.onrender.com`). Un push sur `main` redéploie le site une fois la CI GitHub verte. On travaille sur `develop` et on ne merge sur `main` (en fast-forward) que ce qui doit partir en ligne. **Aucun push, même sur `develop`, sans l'accord explicite de l'utilisateur** : committer, puis demander. La clé `VITE_WEB3FORMS_KEY` est définie dans l'environnement du service Render et dans le `.env` local (git-ignoré).
+- **Référencement** : chaque page appelle `usePageMeta` (titre, `noindex` pour les pages de joueur). Une nouvelle page publique s'ajoute aussi à `public/sitemap.xml`.
 - Adresse de contact : `craftyourchess@gmail.com`, aussi celle du compte Web3Forms.
