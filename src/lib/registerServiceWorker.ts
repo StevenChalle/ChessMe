@@ -25,18 +25,39 @@ export function registerServiceWorker(): void {
     for (const name of OBSOLETE_CACHES) void caches.delete(name)
   }
   const openedAt = Date.now()
+  let found = false
   const apply = () => {
+    navigator.serviceWorker.addEventListener('controllerchange', () => window.location.reload(), {
+      once: true,
+    })
     void updateSW(true)
     setTimeout(() => window.location.reload(), RELOAD_FALLBACK_MS)
   }
+  /** A new version is installed and waiting, however it was noticed. */
+  const onWaiting = () => {
+    if (found) return
+    found = true
+    if (Date.now() - openedAt < APPLY_AT_LAUNCH_MS) apply()
+    else setAppUpdateAvailable(apply)
+  }
   const updateSW = registerSW({
     immediate: true,
-    onNeedRefresh() {
-      if (Date.now() - openedAt < APPLY_AT_LAUNCH_MS) apply()
-      else setAppUpdateAvailable(apply)
-    },
+    onNeedRefresh: onWaiting,
     onRegisteredSW(_url, registration) {
       if (!registration) return
+      // workbox-window misses an update the browser was already installing when register()
+      // resolved (Firefox and Safari don't wait for it): no prompt, the new version stayed
+      // waiting until every tab was closed. Watch the registration directly as well.
+      const isUpdate = () => registration.waiting && navigator.serviceWorker.controller
+      const watchInstalling = () => {
+        const worker = registration.installing
+        worker?.addEventListener('statechange', () => {
+          if (worker.state === 'installed' && isUpdate()) onWaiting()
+        })
+      }
+      if (isUpdate()) onWaiting()
+      watchInstalling()
+      registration.addEventListener('updatefound', watchInstalling)
       const check = () => {
         if (navigator.onLine) void registration.update()
       }
