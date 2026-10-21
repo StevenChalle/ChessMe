@@ -40,7 +40,7 @@ Règles à respecter sur tout nouvel écran :
 | `chart-1…5`                                                      | séries de graphiques, dans l'ordre bullet, blitz, rapide, classique, correspondance |
 | `bg-piece-white` / `bg-piece-black`                              | couleur jouée, dans les tableaux                                                    |
 
-Composants propres au thème, dans `etabli.css` : `.header-etabli` (en-tête), `.panel-etabli` (panneau), `.tile-etabli` + `.tile-value` (tuile de statistique), `.label-etabli` (libellé en capitales), `.num` (chiffres en mono), `.title-badge` (plaque argent), `.tab-etabli` (onglet, actif souligné d'or), `.progress-etabli` (barre de progression pleine, utilisée par `Progress`), `.btn-ring` (liseré du bouton principal).
+Composants propres au thème, dans `etabli.css` : `.header-etabli` (en-tête), `.panel-etabli` (panneau), `.tile-etabli` + `.tile-value` (tuile de statistique), `.label-etabli` (libellé en capitales), `.num` (chiffres en mono), `.title-badge` (plaque argent), `.tab-etabli` (onglet, actif souligné d'or), `.progress-etabli` (barre de progression pleine, utilisée par `Progress`). Les boutons pleins n'ont pas de liseré.
 
 ## Logo
 

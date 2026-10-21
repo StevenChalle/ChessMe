@@ -351,9 +351,4 @@
     background: var(--cyc-title);
     border-radius: var(--cyc-radius-sm);
   }
-
-  /* Main button: a thin gold ring */
-  .btn-ring {
-    box-shadow: 0 0 0 1px color-mix(in oklab, var(--cyc-primary) 60%, var(--cyc-bg));
-  }
 }
