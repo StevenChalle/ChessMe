@@ -85,7 +85,7 @@ export function FeedbackForm() {
       }}
     >
       <fieldset className="space-y-2">
-        <legend className="mb-2 text-sm text-text-strong">{m.contact_kind()}</legend>
+        <legend className="mb-2 text-[15px] text-text-strong">{m.contact_kind()}</legend>
         <ToggleGroup
           type="single"
           value={kind}
@@ -114,7 +114,7 @@ export function FeedbackForm() {
           value={message}
           onChange={(event) => setMessage(event.target.value)}
           placeholder={m.contact_message_placeholder()}
-          className="w-full rounded-sm border border-input bg-field px-3 py-2 text-sm text-text-strong outline-none placeholder:text-muted-foreground focus-visible:border-primary focus-visible:ring-1 focus-visible:ring-primary focus-visible:outline-none"
+          className="w-full rounded-sm border border-input bg-field px-3 py-2 text-[15px] text-text-strong outline-none placeholder:text-muted-foreground focus-visible:border-primary focus-visible:ring-1 focus-visible:ring-primary focus-visible:outline-none"
         />
       </div>
 
@@ -130,7 +130,7 @@ export function FeedbackForm() {
         />
       </div>
 
-      <div className="flex items-start gap-2 text-sm">
+      <div className="flex items-start gap-2 text-[15px]">
         <Checkbox
           id={ids.context}
           checked={withContext}
@@ -154,7 +154,7 @@ export function FeedbackForm() {
       />
 
       {(status === 'failed' || status === 'unavailable') && (
-        <p className="text-sm text-loss" role="alert">
+        <p className="text-[15px] text-loss" role="alert">
           {status === 'failed' ? m.contact_failed() : m.contact_unavailable()}{' '}
           <a href={`mailto:${CONTACT_EMAIL}`} className="underline underline-offset-4">
             {CONTACT_EMAIL}

@@ -43,7 +43,7 @@ function Emphasized({
  */
 function ContactPage() {
   return (
-    <article className="space-y-8 text-[15px] leading-relaxed">
+    <article className="space-y-8 text-base leading-relaxed">
       <h1 className="flex items-center gap-3">
         <MessageSquare aria-hidden className="size-7 shrink-0" />
         {m.contact_title()}
@@ -77,7 +77,7 @@ function ContactPage() {
             <FeedbackForm />
           </Section>
 
-          <p className="text-sm text-muted-foreground">
+          <p className="text-[15px] text-muted-foreground">
             {m.contact_mail_alternative()}{' '}
             <a
               href={`mailto:${CONTACT_EMAIL}`}
