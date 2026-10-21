@@ -25,7 +25,7 @@ describe('parseReviewSettings', () => {
           categories: ['blitz'],
           colors: ['black'],
           results: ['loss'],
-          minMoves: 10,
+          opponentRating: { enabled: true, min: 1200, max: 1800 },
         },
         criteria: { errorMinDrop: 15, validMaxDrop: 4 },
       }),
@@ -39,7 +39,7 @@ describe('parseReviewSettings', () => {
         categories: ['blitz'],
         colors: ['black'],
         results: ['loss'],
-        minMoves: 10,
+        opponentRating: { enabled: true, min: 1200, max: 1800 },
       },
       criteria: { errorMinDrop: 15, validMaxDrop: 4 },
     })
@@ -50,7 +50,7 @@ describe('parseReviewSettings', () => {
       saved({
         selection: {
           categories: ['hyperbullet'],
-          minMoves: -3,
+          opponentRating: { enabled: true, min: 1800, max: 1200 },
           scope: { kind: 'latest', count: 0 },
         },
         criteria: { errorMinDrop: 4, validMaxDrop: 9 },
@@ -58,7 +58,7 @@ describe('parseReviewSettings', () => {
       [...both],
     )
     expect(settings.selection.categories).toEqual(defaultSelection([...both]).categories)
-    expect(settings.selection.minMoves).toBe(0)
+    expect(settings.selection.opponentRating).toEqual({ enabled: false, min: 0, max: 4000 })
     expect(settings.selection.scope).toEqual({ kind: 'latest', count: 10 })
     // Kept consistent: a valid move stays below an error
     expect(settings.criteria).toEqual({ errorMinDrop: 4, validMaxDrop: 3 })
@@ -92,9 +92,17 @@ describe('sameSettings', () => {
   })
 
   it('tells any change of games or rules', () => {
-    expect(sameSettings(base, { ...base, selection: { ...base.selection, minMoves: 5 } })).toBe(
-      false,
-    )
+    const rating = { enabled: true, min: 1200, max: 1800 }
+    expect(
+      sameSettings(base, { ...base, selection: { ...base.selection, opponentRating: rating } }),
+    ).toBe(false)
+    // Off, the saved bounds do not change the games
+    expect(
+      sameSettings(base, {
+        ...base,
+        selection: { ...base.selection, opponentRating: { ...rating, enabled: false } },
+      }),
+    ).toBe(true)
     expect(
       sameSettings(base, {
         ...base,

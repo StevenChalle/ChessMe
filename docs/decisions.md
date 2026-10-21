@@ -522,3 +522,14 @@ Le site n'apparaissait pas dans les moteurs de recherche, et un lien partagé s'
 - **Un titre par page** et un **lien canonique** qui suit l'adresse (`usePageMeta`). Les pages de joueur et d'analyse et la page 404 portent `noindex` : une infinité d'adresses, une par pseudo, sans intérêt pour la recherche. On utilise `noindex` plutôt qu'une interdiction dans `robots.txt`, qui empêcherait les robots de voir cette balise.
 - `theme-color` et couleurs du manifeste alignées sur le fond du thème (`#121110`).
 - Pas fait, à rediscuter : pré-générer le HTML des pages publiques au build, des adresses en `/fr/` pour indexer le français. Google Search Console (vérification du domaine par un enregistrement DNS) reste à configurer par l'utilisateur.
+
+## 2026-10-22 : Elo de l'adversaire au lieu de la longueur minimale
+
+Le filtre « longueur minimale » de l'analyse approfondie servait peu. Il est remplacé par une **fourchette d'Elo de l'adversaire** (`opponentRating` dans `selection.ts`).
+
+- **Désactivée par défaut** (tous les adversaires) ; une case à cocher l'active, avec un minimum et un maximum (0 à 4 000 par défaut, par pas de 50). Comme pour le maximum d'une période, les bornes restent affichées, grisées, quand le filtre est coupé, et en taper une l'active.
+- **Seulement avec les parties classées** : le filtre n'est proposé, et appliqué, que si « Classées » est coché. Si les parties amicales sont aussi cochées, il s'applique à toutes les parties retenues, avec l'Elo affiché de l'adversaire.
+- Une partie contre un adversaire **sans Elo connu** est écartée quand le filtre est actif.
+- Bornes invalides (minimum au-dessus du maximum, hors de 0 à 4 000, champ vide) : message dédié, pas de recherche.
+- Comme le résultat, ce filtre n'est vérifié que par l'app : avec Lichess, on remonte les parties page par page jusqu'à en avoir assez.
+- Réglages enregistrés : l'ancien `minMoves` est simplement ignoré, sans changer de version.

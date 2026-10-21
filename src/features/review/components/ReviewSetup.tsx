@@ -5,6 +5,7 @@ import { CHIP_CLASS } from '@/components/chip'
 import { InfoTip } from '@/components/InfoTip'
 import { LimitField } from '@/components/LimitField'
 import { Button } from '@/components/ui/button'
+import { Checkbox } from '@/components/ui/checkbox'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
@@ -30,15 +31,20 @@ import type { ReviewAccount } from '../fetch'
 import {
   ALL_COLORS,
   ALL_RATINGS,
+  activeRatingFilter,
   ALL_RESULTS,
   DATE_PRESETS,
   datePresetRange,
   DEFAULT_RANGE_MAX,
+  isRatingFilterValid,
   isSelectionValid,
   LATEST_SHORTCUTS,
+  RATING_CEILING,
+  RATING_FLOOR,
   type DatePreset,
   type GameScope,
   type GameSelection,
+  type OpponentRatingFilter,
   type RatingKind,
 } from '../selection'
 import { sameCriteria, sameFilters, sameScope, type ReviewSettings } from '../settings'
@@ -177,8 +183,14 @@ function gamesSummary(selection: GameSelection, accounts: ReviewAccount[]): stri
   some(selection.categories, CATEGORIES, categoryLabel)
   some(selection.colors, ALL_COLORS, (color) => COLOR_LABELS[color]())
   some(selection.results, ALL_RESULTS, (result) => RESULT_LABELS[result]())
-  if (selection.minMoves > 0) {
-    parts.push(m.setup_summary_min_moves({ count: formatNumber(selection.minMoves) }))
+  const ratingFilter = activeRatingFilter(selection)
+  if (ratingFilter) {
+    parts.push(
+      m.setup_summary_opponent_rating({
+        min: formatNumber(ratingFilter.min),
+        max: formatNumber(ratingFilter.max),
+      }),
+    )
   }
   return parts.length > 0 ? parts.join(' · ') : m.setup_summary_all_games()
 }
@@ -443,21 +455,12 @@ export function ReviewSetup({
               ))}
             </ToggleGroup>
           </Section>
-          <Section title={m.setup_min_moves()}>
-            <div className="flex items-center gap-2">
-              <Input
-                type="number"
-                min={0}
-                value={selection.minMoves}
-                onChange={(event) =>
-                  update({ minMoves: Math.max(0, Math.floor(event.target.valueAsNumber || 0)) })
-                }
-                aria-label={m.setup_min_moves()}
-                className="num h-8 w-20 bg-muted"
-              />
-              <span className="text-sm text-muted-foreground">{m.setup_moves_unit()}</span>
-              <InfoTip text={m.setup_min_moves_hint()} />
-            </div>
+          <Section title={m.setup_opponent_rating()}>
+            <RatingRangeField
+              filter={selection.opponentRating}
+              available={selection.ratings.includes('rated')}
+              onChange={(opponentRating) => update({ opponentRating })}
+            />
           </Section>
         </div>
       </Expandable>
@@ -503,7 +506,16 @@ export function ReviewSetup({
         </div>
       </Expandable>
 
-      {!valid && <p className="text-sm text-loss">{m.setup_invalid()}</p>}
+      {!valid && (
+        <p className="text-sm text-loss">
+          {activeRatingFilter(selection) && !isRatingFilterValid(selection.opponentRating)
+            ? m.setup_invalid_rating({
+                floor: formatNumber(RATING_FLOOR),
+                ceiling: formatNumber(RATING_CEILING),
+              })
+            : m.setup_invalid()}
+        </p>
+      )}
     </div>
   )
 }
@@ -567,5 +579,60 @@ function DateField({
         className="h-8 w-auto bg-muted [color-scheme:dark]"
       />
     </span>
+  )
+}
+
+/**
+ * "Between [min] and [max]", behind a checkbox (off: every opponent). Only for rated games: the
+ * fields stay shown, dimmed, otherwise. Typing a bound turns the filter on.
+ */
+function RatingRangeField({
+  filter,
+  available,
+  onChange,
+}: {
+  filter: OpponentRatingFilter
+  available: boolean
+  onChange: (filter: OpponentRatingFilter) => void
+}) {
+  const id = useId()
+  const on = available && filter.enabled
+  const bound = (key: 'min' | 'max', label: string) => (
+    <Input
+      type="number"
+      min={RATING_FLOOR}
+      max={RATING_CEILING}
+      step={50}
+      value={Number.isNaN(filter[key]) ? '' : filter[key]}
+      disabled={!available}
+      onChange={(event) =>
+        onChange({ ...filter, enabled: true, [key]: event.target.valueAsNumber })
+      }
+      aria-label={label}
+      className={cn('num h-8 w-20 bg-muted', !on && 'opacity-50')}
+    />
+  )
+  return (
+    <div className="space-y-1.5">
+      <div className="flex flex-wrap items-center gap-2 text-sm">
+        <Checkbox
+          id={id}
+          checked={on}
+          disabled={!available}
+          onCheckedChange={(checked) => onChange({ ...filter, enabled: checked === true })}
+          className="border-border-strong"
+        />
+        <Label htmlFor={id} className="font-normal text-muted-foreground">
+          {m.setup_rating_between()}
+        </Label>
+        {bound('min', m.setup_rating_min())}
+        <span className="text-muted-foreground">{m.setup_rating_and()}</span>
+        {bound('max', m.setup_rating_max())}
+        <InfoTip text={m.setup_opponent_rating_hint()} />
+      </div>
+      {!available && (
+        <p className="text-xs text-muted-foreground">{m.setup_opponent_rating_rated_only()}</p>
+      )}
+    </div>
   )
 }

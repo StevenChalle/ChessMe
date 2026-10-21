@@ -4,13 +4,16 @@ import { CATEGORIES, type Category } from '@/features/player/summary'
 import type { ApiSource } from '@/lib/http'
 import { DEFAULT_CRITERIA, normalizeCriteria, type ReviewCriteria } from './criteria'
 import {
+  activeRatingFilter,
   ALL_COLORS,
   ALL_RATINGS,
   ALL_RESULTS,
   DATE_PRESETS,
   defaultSelection,
+  isRatingFilterValid,
   type GameScope,
   type GameSelection,
+  type OpponentRatingFilter,
   type RatingKind,
 } from './selection'
 
@@ -52,6 +55,16 @@ function parseScope(value: unknown): GameScope | undefined {
   return undefined
 }
 
+function parseRatingFilter(value: unknown): OpponentRatingFilter | undefined {
+  if (typeof value !== 'object' || value === null) return undefined
+  const { enabled, min, max } = value as Record<string, unknown>
+  if (typeof enabled !== 'boolean' || typeof min !== 'number' || typeof max !== 'number') {
+    return undefined
+  }
+  const filter = { enabled, min, max }
+  return isRatingFilterValid(filter) ? filter : undefined
+}
+
 /**
  * Saved settings over the defaults, field by field: anything missing or invalid falls back.
  * Platforms are limited to the accounts available now (all of them if none of the saved ones).
@@ -79,10 +92,7 @@ export function parseReviewSettings(raw: string | null, available: ApiSource[]):
     categories: pick<Category>(s.categories, CATEGORIES) ?? defaults.selection.categories,
     colors: pick<Color>(s.colors, ALL_COLORS) ?? defaults.selection.colors,
     results: pick<GameResult>(s.results, ALL_RESULTS) ?? defaults.selection.results,
-    minMoves:
-      Number.isInteger(s.minMoves) && (s.minMoves as number) >= 0
-        ? (s.minMoves as number)
-        : defaults.selection.minMoves,
+    opponentRating: parseRatingFilter(s.opponentRating) ?? defaults.selection.opponentRating,
   }
 
   const c = (typeof data.criteria === 'object' && data.criteria) || {}
@@ -132,8 +142,13 @@ export function sameFilters(x: GameSelection, y: GameSelection): boolean {
     sameItems(x.categories, y.categories) &&
     sameItems(x.colors, y.colors) &&
     sameItems(x.results, y.results) &&
-    x.minMoves === y.minMoves
+    sameRatingFilter(activeRatingFilter(x), activeRatingFilter(y))
   )
+}
+
+/** Two rating filters in force (undefined: none) keep the same games. */
+function sameRatingFilter(x?: OpponentRatingFilter, y?: OpponentRatingFilter): boolean {
+  return x === undefined || y === undefined ? x === y : x.min === y.min && x.max === y.max
 }
 
 /** Same games: same scope and same filters. */

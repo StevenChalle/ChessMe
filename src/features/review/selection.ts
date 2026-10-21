@@ -22,6 +22,12 @@ export type GameScope =
 /** Rated games, casual games, or both */
 export type RatingKind = 'rated' | 'casual'
 
+/**
+ * Opponents rated within [min, max], when `enabled`. Only offered, and applied, while rated games
+ * are chosen; the bounds stay saved when it is off, to turn it back on.
+ */
+export type OpponentRatingFilter = { enabled: boolean; min: number; max: number }
+
 export type GameSelection = {
   sources: ApiSource[]
   ratings: RatingKind[]
@@ -29,8 +35,7 @@ export type GameSelection = {
   categories: Category[]
   colors: Color[]
   results: GameResult[]
-  /** Games shorter than this many moves (full moves) are left out; 0 keeps them all. */
-  minMoves: number
+  opponentRating: OpponentRatingFilter
 }
 
 export const ALL_RATINGS: RatingKind[] = ['rated', 'casual']
@@ -42,6 +47,9 @@ export const DATE_PRESETS: DatePreset[] = ['today', 'week', 'month', '3months', 
 export const DEFAULT_RANGE_MAX = 50
 /** From this many games, the recap warns that nothing is saved yet. */
 export const LARGE_REVIEW = 100
+/** Bounds of the opponent rating filter, and its range when first turned on. */
+export const RATING_FLOOR = 0
+export const RATING_CEILING = 4000
 
 export function defaultSelection(sources: ApiSource[]): GameSelection {
   return {
@@ -51,7 +59,7 @@ export function defaultSelection(sources: ApiSource[]): GameSelection {
     categories: [...CATEGORIES],
     colors: [...ALL_COLORS],
     results: [...ALL_RESULTS],
-    minMoves: 0,
+    opponentRating: { enabled: false, min: RATING_FLOOR, max: RATING_CEILING },
   }
 }
 
@@ -79,17 +87,21 @@ export function resolveScope(scope: GameScope, now: number): GameScope {
   return scope
 }
 
-/** Full moves played in a game of `plies` half-moves. */
-export function fullMoves(plies: number): number {
-  return Math.ceil(plies / 2)
+/** The opponent rating filter in force: only while it is on and rated games are chosen. */
+export function activeRatingFilter(selection: GameSelection): OpponentRatingFilter | undefined {
+  const filter = selection.opponentRating
+  return filter.enabled && selection.ratings.includes('rated') ? filter : undefined
 }
 
 /** Filters that only this app can check (the date range too, on the game's end date). */
-export function matchesSelection(
-  game: GameSummary & { sanMoves: string[] },
-  selection: GameSelection,
-): boolean {
+export function matchesSelection(game: GameSummary, selection: GameSelection): boolean {
   const { scope } = selection
+  const ratingFilter = activeRatingFilter(selection)
+  if (ratingFilter) {
+    // An unrated opponent (or a rating the platform did not give) cannot be in the range.
+    const rating = game.opponent.rating
+    if (rating === undefined || rating < ratingFilter.min || rating > ratingFilter.max) return false
+  }
   if (scope.kind === 'range') {
     const playedAt = game.playedAt.getTime()
     if (playedAt < scope.from || playedAt > scope.to) return false
@@ -99,8 +111,7 @@ export function matchesSelection(
     selection.ratings.includes(game.rated ? 'rated' : 'casual') &&
     selection.categories.includes(game.category) &&
     selection.colors.includes(game.color) &&
-    selection.results.includes(game.result) &&
-    fullMoves(game.sanMoves.length) >= selection.minMoves
+    selection.results.includes(game.result)
   )
 }
 
@@ -119,6 +130,17 @@ export function isSelectionValid(selection: GameSelection): boolean {
     selection.categories.length > 0 &&
     selection.colors.length > 0 &&
     selection.results.length > 0 &&
-    selection.minMoves >= 0
+    (activeRatingFilter(selection) === undefined || isRatingFilterValid(selection.opponentRating))
+  )
+}
+
+/** Whole ratings within the bounds, the minimum not above the maximum. */
+export function isRatingFilterValid({ min, max }: OpponentRatingFilter): boolean {
+  return (
+    Number.isInteger(min) &&
+    Number.isInteger(max) &&
+    min >= RATING_FLOOR &&
+    max <= RATING_CEILING &&
+    min <= max
   )
 }

@@ -5,7 +5,7 @@ import type { ApiSource } from '@/lib/http'
 import { exportStandardGames, type GameExportOptions } from '@/lib/lichess/client'
 import type { LichessGame } from '@/lib/lichess/types'
 import { fromChessComGame, fromLichessGame, latestGames, type ReviewGame } from './games'
-import { ALL_RESULTS, matchesSelection, type GameSelection } from './selection'
+import { activeRatingFilter, ALL_RESULTS, matchesSelection, type GameSelection } from './selection'
 
 /**
  * Finds the games of the advanced review: the APIs filter what they can (Lichess: time controls,
@@ -82,12 +82,12 @@ async function findLichessGames(
     return keep(await fetchers.lichessExport(username, { ...base, since, until }, signal))
   }
 
-  // Results, lengths and end dates are only checked here: then page backwards until enough games
+  // Results, opponent ratings and end dates are only checked here: then page backwards until enough games
   // match. Without them, Lichess returns exactly the right games (the quick review asks for 1).
   const filteredHere =
     scope.kind === 'range' ||
     selection.results.length < ALL_RESULTS.length ||
-    selection.minMoves > 0
+    activeRatingFilter(selection) !== undefined
   const pageSize = filteredHere ? Math.max(LICHESS_PAGE, limit) : limit
   const found: ReviewGame[] = []
   while (found.length < limit) {

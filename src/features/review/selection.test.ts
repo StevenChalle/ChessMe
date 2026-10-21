@@ -3,7 +3,6 @@ import type { GameSummary } from '@/features/games/normalize'
 import {
   datePresetRange,
   defaultSelection,
-  fullMoves,
   isSelectionValid,
   matchesSelection,
   resolveScope,
@@ -13,10 +12,7 @@ import {
 const DAY = 86_400_000
 const NOW = Date.UTC(2026, 9, 5, 12)
 
-function game(
-  overrides: Partial<GameSummary> = {},
-  plies = 60,
-): GameSummary & { sanMoves: string[] } {
+function game(overrides: Partial<GameSummary> = {}): GameSummary {
   return {
     source: 'lichess',
     id: 'g',
@@ -26,9 +22,8 @@ function game(
     timeControl: { kind: 'clock', initial: 180, increment: 0 },
     rated: true,
     color: 'white',
-    opponent: { name: 'bob' },
+    opponent: { name: 'bob', rating: 1500 },
     result: 'loss',
-    sanMoves: Array.from({ length: plies }, () => 'e4'),
     ...overrides,
   }
 }
@@ -49,11 +44,29 @@ describe('matchesSelection', () => {
     expect(matchesSelection(game(), { ...all, results: ['win', 'draw'] })).toBe(false)
   })
 
-  it('leaves out games shorter than the minimum, in full moves', () => {
-    const short = game({}, 19) // 10 moves
-    expect(fullMoves(19)).toBe(10)
-    expect(matchesSelection(short, { ...all, minMoves: 10 })).toBe(true)
-    expect(matchesSelection(short, { ...all, minMoves: 11 })).toBe(false)
+  it('keeps opponents rated within the range, bounds included', () => {
+    const range = (min: number, max: number): GameSelection => ({
+      ...all,
+      opponentRating: { enabled: true, min, max },
+    })
+    expect(matchesSelection(game(), range(1500, 1600))).toBe(true)
+    expect(matchesSelection(game(), range(1400, 1500))).toBe(true)
+    expect(matchesSelection(game(), range(1501, 4000))).toBe(false)
+    expect(matchesSelection(game({ opponent: { name: 'anon' } }), range(0, 4000))).toBe(false)
+  })
+
+  it('ignores the rating range while it is off or rated games are not chosen', () => {
+    const narrow = { enabled: true, min: 2000, max: 2100 }
+    expect(
+      matchesSelection(game(), { ...all, opponentRating: { ...narrow, enabled: false } }),
+    ).toBe(true)
+    expect(
+      matchesSelection(game({ rated: false }), {
+        ...all,
+        ratings: ['casual'],
+        opponentRating: narrow,
+      }),
+    ).toBe(true)
   })
 
   it('checks the date range on the end date', () => {
@@ -102,5 +115,19 @@ describe('isSelectionValid', () => {
     expect(isSelectionValid({ ...all, scope: { kind: 'range', from: 1, to: 2, max: 5 } })).toBe(
       true,
     )
+  })
+
+  it('needs a sound rating range, only while the filter is in force', () => {
+    const range = (min: number, max: number, enabled = true): GameSelection => ({
+      ...all,
+      opponentRating: { enabled, min, max },
+    })
+    expect(isSelectionValid(range(1200, 1800))).toBe(true)
+    expect(isSelectionValid(range(1800, 1200))).toBe(false)
+    expect(isSelectionValid(range(-1, 1200))).toBe(false)
+    expect(isSelectionValid(range(0, 4001))).toBe(false)
+    expect(isSelectionValid(range(Number.NaN, 1200))).toBe(false)
+    expect(isSelectionValid(range(1800, 1200, false))).toBe(true)
+    expect(isSelectionValid({ ...range(1800, 1200), ratings: ['casual'] })).toBe(true)
   })
 })
