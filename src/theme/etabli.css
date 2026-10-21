@@ -96,7 +96,7 @@
 
   /* The "CraftYourChess" wordmark in the header */
   --cyc-brand-text: #dddddd;
-  --cyc-brand-accent: #bf811d; /* "Your" */
+  --cyc-brand-accent: var(--cyc-win); /* "Your", as the theme spec has it */
 
   /* Platform dots and their share in stacked bars */
   --cyc-source-lichess: #3692e7;

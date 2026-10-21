@@ -48,7 +48,7 @@ Composants propres au thème, dans `etabli.css` : `.header-etabli` (en-tête), `
 
 - Écartés : le fou cburnett à la longue-vue (2026-10-05 → 2026-10-22), un cavalier avec une loupe, une ligne d'horizon derrière le fou.
 - Les icônes de l'app (favicon.ico, PWA, Apple) en sont générées : `pnpm generate-pwa-assets`, à relancer après toute modification de `logo.png`. Les icônes avec marge (maskable Android, Apple) utilisent le fond du logo (`pwa-assets.config.ts`), jamais du blanc.
-- Dans l'en-tête : `pwa-64x64.png` à 40 px, suivi du nom « CraftYourChess » en **Noto Sans** de 24 px : « Craft » et « Chess » en gras `#dddddd` (`text-brand`), « Your » en maigre `#bf811d` (`text-brand-accent`).
+- Dans l'en-tête : `pwa-64x64.png` à 40 px, suivi du nom « CraftYourChess » en **Noto Sans** de 24 px : « Craft » et « Chess » en gras `#dddddd` (`text-brand`), « Your » en maigre, dans le vert du thème `win` (`text-brand-accent`).
 
 ## Thème clair
 
