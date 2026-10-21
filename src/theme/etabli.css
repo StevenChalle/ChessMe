@@ -98,6 +98,10 @@
   --cyc-brand-text: #dddddd;
   --cyc-brand-accent: #bf811d; /* "Your" */
 
+  /* Platform dots and their share in stacked bars */
+  --cyc-source-lichess: #3692e7;
+  --cyc-source-chesscom: #81b64c;
+
   /* Side played (White / Black dot in tables) */
   --cyc-piece-white: var(--cyc-text-strong);
   --cyc-piece-black: var(--cyc-bg);
@@ -108,8 +112,8 @@
   /* Radii and density */
   --cyc-radius-sm: 3px; /* buttons, inputs, badges */
   --cyc-radius-md: 4px; /* panels, tiles */
-  --cyc-row-h: 30px; /* table row */
-  --cyc-control-h: 32px; /* button, input */
+  --cyc-row-h: 38px; /* table row */
+  --cyc-control-h: 36px; /* button, input */
 
   /* 2. shadcn/ui tokens */
   --background: var(--cyc-bg);
@@ -180,6 +184,8 @@
   --color-on-highlight: var(--cyc-on-accent);
   --color-brand: var(--cyc-brand-text);
   --color-brand-accent: var(--cyc-brand-accent);
+  --color-lichess: var(--cyc-source-lichess);
+  --color-chesscom: var(--cyc-source-chesscom);
   --color-piece-white: var(--cyc-piece-white);
   --color-piece-black: var(--cyc-piece-black);
 
@@ -249,20 +255,21 @@
     font-variant-numeric: tabular-nums;
   }
 
-  /* Label: monospaced, lowercase as written, 11px */
+  /* Label (panel titles, column headers, form sections): spaced capitals, 12px */
   .label-etabli {
-    font-family: var(--font-mono);
-    font-size: 11px;
-    line-height: 14px;
-    font-weight: 500;
+    font-family: var(--font-sans);
+    font-size: 12px;
+    line-height: 16px;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
     color: var(--cyc-text-muted);
   }
 
-  /* Header: a 2px gold rule on top, the theme's mark */
+  /* Header: on the panel color, a discreet rule below */
   .header-etabli {
     background: var(--cyc-panel);
     border-bottom: 1px solid var(--cyc-border);
-    box-shadow: inset 0 2px 0 var(--cyc-primary);
   }
 
   /* Panel: one step above the page, a very discreet border, no shadow */

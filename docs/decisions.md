@@ -505,7 +505,7 @@ Le thème copié de Lichess était propre mais un peu froid, et l'app ressemblai
 
 - **Tokens** dans `src/theme/etabli.css` (`--cyc-*`), branchés sur ceux de shadcn. Les anciens noms (`good`, `bad`, `brag`, `zebra`, `font-clear`, `font-dim`) sont devenus ceux du thème (`win`, `loss`, `title`, `field`, `text-strong`, `muted-foreground`).
 - **Polices** : Noto Sans et Noto Sans Mono (variables, SIL OFL), fichiers woff2 dans `src/theme/fonts/`, servis par Vite sous un nom haché. Le paquet `@fontsource-variable/noto-sans` n'est plus utile. Crédits sur `/legal`.
-- **Plateformes neutres** : les couleurs « Lichess » et « Chess.com » disparaissent au profit d'un carré `Li` / `Cc`, et de deux teintes neutres dans les barres empilées.
+- **Retouches après essai** (même jour) : les carrés `Li` / `Cc` de la spécification sont remplacés par les pastilles colorées d'avant ; plus de filet or au-dessus de l'en-tête ; logo (40 px) et nom un peu plus grands ; champs et boutons de 36 px, lignes de tableau de 38 px ; libellés en capitales de 12 px, comme avant, au lieu du mono en bas de casse ; boutons fantômes et raccourcis d'analyse en gris neutre au lieu de l'or.
 - **Un seul bouton principal par écran** : « Analyse approfondie » passe en bouton secondaire à côté de « Analyser la dernière partie ».
 - **L'échiquier ne change pas** (choix de l'utilisateur) : couleurs, pièces, flèches et réglages restent ceux d'avant, malgré le plateau sable et bronze et les pièces mpchess proposés par le thème.
 - **Le nom dans l'en-tête suit le choix de l'utilisateur**, pas la spécification : Noto Sans, « Craft » et « Chess » en gras `#dddddd`, « Your » en maigre `#bf811d` (la spécification le voulait en vert, en gras).

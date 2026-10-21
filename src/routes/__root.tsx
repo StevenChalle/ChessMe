@@ -37,9 +37,9 @@ function RootLayout() {
           {/* The name as a wordmark: brand, not translated */}
           <Link
             to="/"
-            className="flex items-center gap-2.5 font-brand text-xl font-bold tracking-tight text-brand"
+            className="flex items-center gap-3 font-brand text-2xl font-bold tracking-tight text-brand"
           >
-            <img src={`${import.meta.env.BASE_URL}pwa-64x64.png`} alt="" className="size-8" />
+            <img src={`${import.meta.env.BASE_URL}pwa-64x64.png`} alt="" className="size-10" />
             <span>
               Craft<span className="font-light text-brand-accent">Your</span>Chess
             </span>

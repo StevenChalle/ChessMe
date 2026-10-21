@@ -13,7 +13,8 @@ const buttonVariants = cva(
           'border-border-strong bg-transparent text-text-strong hover:bg-raised aria-expanded:bg-raised',
         secondary:
           'border-border-strong bg-secondary text-secondary-foreground hover:bg-[color-mix(in_oklch,var(--secondary),var(--foreground)_6%)] aria-expanded:bg-secondary aria-expanded:text-secondary-foreground',
-        ghost: 'text-primary hover:bg-primary/10 aria-expanded:bg-primary/10',
+        ghost:
+          'text-foreground hover:bg-raised hover:text-text-strong aria-expanded:bg-raised aria-expanded:text-text-strong',
         destructive:
           'bg-destructive/10 text-destructive hover:bg-destructive/20 focus-visible:border-destructive/40 focus-visible:ring-destructive/20 dark:bg-destructive/20 dark:hover:bg-destructive/30 dark:focus-visible:ring-destructive/40',
         link: 'text-primary underline-offset-4 hover:underline',

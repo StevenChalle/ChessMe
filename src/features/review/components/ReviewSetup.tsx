@@ -61,7 +61,7 @@ const RESULT_LABELS: Record<GameResult, () => string> = {
   loss: m.result_losses,
 }
 
-const SELECTED_SHORTCUT = 'bg-primary/15 text-text-strong ring-1 ring-primary hover:bg-primary/20'
+const SELECTED_SHORTCUT = 'bg-raised text-text-strong ring-1 ring-border-strong hover:bg-raised'
 
 /** yyyy-mm-dd in local time, for date inputs. */
 function toDateInput(time: number): string {

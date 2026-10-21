@@ -175,7 +175,7 @@ function UsernameInput({
       spellCheck={false}
       autoComplete="off"
       autoCapitalize="off"
-      className={cn(INPUT_CLASS, compact && 'h-9 pl-8')}
+      className={cn(INPUT_CLASS, compact && 'pl-6')}
     />
   )
 

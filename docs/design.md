@@ -15,7 +15,9 @@ Règles à respecter sur tout nouvel écran :
 - **`win`, `loss` et `title` sont des significations**, jamais de la décoration. Une victoire ou une défaite s'accompagne toujours d'un mot ou d'un signe (`1` / `½` / `0`, `+14`), pour les daltoniens. L'argent `title` est réservé aux badges de titre (GM, IM…).
 - **Cyan (`highlight`) : une occurrence par écran au plus**, en pratique le bandeau de nouvelle version.
 - **Chiffres en Noto Sans Mono** (`.num`) : classements, compteurs, dates en chiffres. Les phrases qui contiennent des nombres (« 412 parties », « Erreur 3 / 12 ») restent en Noto Sans, avec `tabular-nums`.
-- **Plateformes neutres** : un petit carré `Li` / `Cc` (`SourceDot`), jamais leurs logos ni leurs couleurs.
+- **Plateformes** : une pastille discrète (`SourceDot`), bleue pour Lichess, verte pour Chess.com (`bg-lichess`, `bg-chesscom`), reprise aussi dans les barres empilées. Jamais leurs logos.
+- **Libellés** (titres de panneaux, en-têtes de colonnes, sections de formulaire) : `.label-etabli`, capitales espacées de 12 px.
+- **Boutons fantômes et raccourcis** (10 / 25 / 50 / 100, « Aujourd'hui »…) : neutres, en gris clair ; la sélection se marque par un fond `raised` et un contour, pas par l'or.
 - **Rayons** : 3 px pour les contrôles (`rounded-sm`), 4 px pour les panneaux (`rounded-lg`). Ombre (`shadow-pop`) sur les menus et dialogues seulement.
 - Polices : **Noto Sans** et **Noto Sans Mono**, SIL OFL, hébergées avec l'app (`src/theme/fonts/`).
 - **L'échiquier ne suit pas le thème** (choix de l'utilisateur) : ses couleurs, ses pièces et ses réglages restent ceux de `components/board/` (brun et cburnett par défaut).
@@ -38,7 +40,7 @@ Règles à respecter sur tout nouvel écran :
 | `chart-1…5`                                                      | séries de graphiques, dans l'ordre bullet, blitz, rapide, classique, correspondance |
 | `bg-piece-white` / `bg-piece-black`                              | couleur jouée, dans les tableaux                                                    |
 
-Composants propres au thème, dans `etabli.css` : `.header-etabli` (en-tête au filet or), `.panel-etabli` (panneau), `.tile-etabli` + `.tile-value` (tuile de statistique), `.label-etabli` (libellé en mono), `.num` (chiffres en mono), `.title-badge` (plaque argent), `.tab-etabli` (onglet, actif souligné d'or), `.progress-etabli` (barre de progression pleine, utilisée par `Progress`), `.btn-ring` (liseré du bouton principal).
+Composants propres au thème, dans `etabli.css` : `.header-etabli` (en-tête), `.panel-etabli` (panneau), `.tile-etabli` + `.tile-value` (tuile de statistique), `.label-etabli` (libellé en capitales), `.num` (chiffres en mono), `.title-badge` (plaque argent), `.tab-etabli` (onglet, actif souligné d'or), `.progress-etabli` (barre de progression pleine, utilisée par `Progress`), `.btn-ring` (liseré du bouton principal).
 
 ## Logo
 
@@ -46,7 +48,7 @@ Composants propres au thème, dans `etabli.css` : `.header-etabli` (en-tête au 
 
 - Écartés : le fou cburnett à la longue-vue (2026-10-05 → 2026-10-22), un cavalier avec une loupe, une ligne d'horizon derrière le fou.
 - Les icônes de l'app (favicon.ico, PWA, Apple) en sont générées : `pnpm generate-pwa-assets`, à relancer après toute modification de `logo.png`. Les icônes avec marge (maskable Android, Apple) utilisent le fond du logo (`pwa-assets.config.ts`), jamais du blanc.
-- Dans l'en-tête : `pwa-64x64.png` à 32 px, suivi du nom « CraftYourChess » en **Noto Sans** : « Craft » et « Chess » en gras `#dddddd` (`text-brand`), « Your » en maigre `#bf811d` (`text-brand-accent`).
+- Dans l'en-tête : `pwa-64x64.png` à 40 px, suivi du nom « CraftYourChess » en **Noto Sans** de 24 px : « Craft » et « Chess » en gras `#dddddd` (`text-brand`), « Your » en maigre `#bf811d` (`text-brand-accent`).
 
 ## Thème clair
 
