@@ -551,3 +551,14 @@ Constat (en comparant avec Chess Rewind) : un nouveau visiteur ne voyait pas vit
 - Les sections des filtres d'analyse et des options d'entraînement partagent un composant (`components/Expandable.tsx`) : un accordéon Radix, une seule section ouverte à la fois, avec un court glissement pour que le changement se voie. Le repliement natif (`<details>`) ne s'anime pas de façon fiable dans tous les navigateurs. En-têtes sur fond `field`, résumé des choix toujours visible, bouton « Reset to default » dans chaque section.
 - Options d'entraînement : une section « Themes », une section « Advanced » (ordre, limites, perte minimale).
 - Nouvelle option **limiter à N positions** (par défaut décochée, 10) : les N premières dans l'ordre de jeu, après la limite de parties. Enregistrée avec les autres options d'entraînement, même clé de stockage.
+
+## 2026-10-22 : l'analyse devient des onglets du profil
+
+La page `/analysis` doublait le profil (même en-tête, mêmes comptes) et obligeait à aller et venir entre deux pages. Elle disparaît : ses onglets rejoignent ceux du profil.
+
+- Onglets du profil : **Aperçu**, **Parties**, **Analyse** (les filtres et options), **Résultats** (dès qu'une analyse existe), puis un onglet fermable par entraînement. Adresses : `/player`, `/player/history`, `/player/analysis`, `/player/results`, `/player/training/N`.
+- Les onglets **Lichess** et **Chess.com** sont supprimés : l'aperçu garde l'essentiel (Elo actuels, bilans, parties par cadence) et les liens vers les deux sites.
+- La session d'analyse (`AnalysisSessionProvider`) est portée par la mise en page du profil : on peut consulter l'aperçu ou les parties pendant qu'une analyse tourne. Quitter le profil, ou passer à d'autres comptes, pendant une analyse ou un entraînement en cours demande confirmation.
+- Une revue rapide se demande par lien (`?start=last` ou `?game=…`), à l'arrivée comme depuis la page : la session la lance (en demandant avant de remplacer une analyse existante) puis retire la demande de l'adresse.
+- En-tête du profil : « Review last game » et « Advanced analysis » (qui ouvre l'onglet Analyse). Le bouton « New training » de l'ancienne page est retiré : l'encadré sous les résultats et les boutons « Train » suffisent.
+- Les anciennes adresses `/analysis…` redirigent vers les onglets.

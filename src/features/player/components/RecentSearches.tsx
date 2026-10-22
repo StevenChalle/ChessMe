@@ -41,7 +41,7 @@ export function RecentSearches({ className }: { className?: string }) {
               </Link>
               <Button variant="ghost" size="xs" asChild className="text-muted-foreground">
                 <Link
-                  to="/analysis/run"
+                  to="/player/results"
                   search={{ ...usernames, start: 'last' }}
                   title={m.review_button_last()}
                 >

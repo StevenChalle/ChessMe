@@ -14,13 +14,12 @@ import { Route as AnalysisRouteRouteImport } from './routes/analysis/route'
 import { Route as ContactRouteImport } from './routes/contact'
 import { Route as LegalRouteImport } from './routes/legal'
 import { Route as PlayerRouteRouteImport } from './routes/player/route'
-import { Route as AnalysisIndexRouteImport } from './routes/analysis/index'
-import { Route as AnalysisRunRouteImport } from './routes/analysis/run'
+import { Route as AnalysisSplatRouteImport } from './routes/analysis/$'
 import { Route as PlayerIndexRouteImport } from './routes/player/index'
-import { Route as PlayerChesscomRouteImport } from './routes/player/chesscom'
+import { Route as PlayerAnalysisRouteImport } from './routes/player/analysis'
 import { Route as PlayerHistoryRouteImport } from './routes/player/history'
-import { Route as PlayerLichessRouteImport } from './routes/player/lichess'
-import { Route as AnalysisTrainingNumberRouteImport } from './routes/analysis/training.$number'
+import { Route as PlayerResultsRouteImport } from './routes/player/results'
+import { Route as PlayerTrainingNumberRouteImport } from './routes/player/training.$number'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -47,14 +46,9 @@ const PlayerRouteRoute = PlayerRouteRouteImport.update({
   path: '/player',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AnalysisIndexRoute = AnalysisIndexRouteImport.update({
-  id: '/',
-  path: '/',
-  getParentRoute: () => AnalysisRouteRoute,
-} as any)
-const AnalysisRunRoute = AnalysisRunRouteImport.update({
-  id: '/run',
-  path: '/run',
+const AnalysisSplatRoute = AnalysisSplatRouteImport.update({
+  id: '/$',
+  path: '/$',
   getParentRoute: () => AnalysisRouteRoute,
 } as any)
 const PlayerIndexRoute = PlayerIndexRouteImport.update({
@@ -62,9 +56,9 @@ const PlayerIndexRoute = PlayerIndexRouteImport.update({
   path: '/',
   getParentRoute: () => PlayerRouteRoute,
 } as any)
-const PlayerChesscomRoute = PlayerChesscomRouteImport.update({
-  id: '/chesscom',
-  path: '/chesscom',
+const PlayerAnalysisRoute = PlayerAnalysisRouteImport.update({
+  id: '/analysis',
+  path: '/analysis',
   getParentRoute: () => PlayerRouteRoute,
 } as any)
 const PlayerHistoryRoute = PlayerHistoryRouteImport.update({
@@ -72,15 +66,15 @@ const PlayerHistoryRoute = PlayerHistoryRouteImport.update({
   path: '/history',
   getParentRoute: () => PlayerRouteRoute,
 } as any)
-const PlayerLichessRoute = PlayerLichessRouteImport.update({
-  id: '/lichess',
-  path: '/lichess',
+const PlayerResultsRoute = PlayerResultsRouteImport.update({
+  id: '/results',
+  path: '/results',
   getParentRoute: () => PlayerRouteRoute,
 } as any)
-const AnalysisTrainingNumberRoute = AnalysisTrainingNumberRouteImport.update({
+const PlayerTrainingNumberRoute = PlayerTrainingNumberRouteImport.update({
   id: '/training/$number',
   path: '/training/$number',
-  getParentRoute: () => AnalysisRouteRoute,
+  getParentRoute: () => PlayerRouteRoute,
 } as any)
 
 export interface FileRoutesByFullPath {
@@ -89,25 +83,24 @@ export interface FileRoutesByFullPath {
   '/player': typeof PlayerRouteRouteWithChildren
   '/contact': typeof ContactRoute
   '/legal': typeof LegalRoute
-  '/analysis/run': typeof AnalysisRunRoute
-  '/player/chesscom': typeof PlayerChesscomRoute
+  '/analysis/$': typeof AnalysisSplatRoute
+  '/player/analysis': typeof PlayerAnalysisRoute
   '/player/history': typeof PlayerHistoryRoute
-  '/player/lichess': typeof PlayerLichessRoute
-  '/analysis/': typeof AnalysisIndexRoute
+  '/player/results': typeof PlayerResultsRoute
   '/player/': typeof PlayerIndexRoute
-  '/analysis/training/$number': typeof AnalysisTrainingNumberRoute
+  '/player/training/$number': typeof PlayerTrainingNumberRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/analysis': typeof AnalysisRouteRouteWithChildren
   '/contact': typeof ContactRoute
   '/legal': typeof LegalRoute
-  '/analysis/run': typeof AnalysisRunRoute
-  '/player/chesscom': typeof PlayerChesscomRoute
+  '/analysis/$': typeof AnalysisSplatRoute
+  '/player/analysis': typeof PlayerAnalysisRoute
   '/player/history': typeof PlayerHistoryRoute
-  '/player/lichess': typeof PlayerLichessRoute
-  '/analysis': typeof AnalysisIndexRoute
+  '/player/results': typeof PlayerResultsRoute
   '/player': typeof PlayerIndexRoute
-  '/analysis/training/$number': typeof AnalysisTrainingNumberRoute
+  '/player/training/$number': typeof PlayerTrainingNumberRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -116,13 +109,12 @@ export interface FileRoutesById {
   '/player': typeof PlayerRouteRouteWithChildren
   '/contact': typeof ContactRoute
   '/legal': typeof LegalRoute
-  '/analysis/run': typeof AnalysisRunRoute
-  '/player/chesscom': typeof PlayerChesscomRoute
+  '/analysis/$': typeof AnalysisSplatRoute
+  '/player/analysis': typeof PlayerAnalysisRoute
   '/player/history': typeof PlayerHistoryRoute
-  '/player/lichess': typeof PlayerLichessRoute
-  '/analysis/': typeof AnalysisIndexRoute
+  '/player/results': typeof PlayerResultsRoute
   '/player/': typeof PlayerIndexRoute
-  '/analysis/training/$number': typeof AnalysisTrainingNumberRoute
+  '/player/training/$number': typeof PlayerTrainingNumberRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -132,25 +124,24 @@ export interface FileRouteTypes {
     | '/player'
     | '/contact'
     | '/legal'
-    | '/analysis/run'
-    | '/player/chesscom'
+    | '/analysis/$'
+    | '/player/analysis'
     | '/player/history'
-    | '/player/lichess'
-    | '/analysis/'
+    | '/player/results'
     | '/player/'
-    | '/analysis/training/$number'
+    | '/player/training/$number'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/analysis'
     | '/contact'
     | '/legal'
-    | '/analysis/run'
-    | '/player/chesscom'
+    | '/analysis/$'
+    | '/player/analysis'
     | '/player/history'
-    | '/player/lichess'
-    | '/analysis'
+    | '/player/results'
     | '/player'
-    | '/analysis/training/$number'
+    | '/player/training/$number'
   id:
     | '__root__'
     | '/'
@@ -158,13 +149,12 @@ export interface FileRouteTypes {
     | '/player'
     | '/contact'
     | '/legal'
-    | '/analysis/run'
-    | '/player/chesscom'
+    | '/analysis/$'
+    | '/player/analysis'
     | '/player/history'
-    | '/player/lichess'
-    | '/analysis/'
+    | '/player/results'
     | '/player/'
-    | '/analysis/training/$number'
+    | '/player/training/$number'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -212,18 +202,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PlayerRouteRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/analysis/': {
-      id: '/analysis/'
-      path: '/'
-      fullPath: '/analysis/'
-      preLoaderRoute: typeof AnalysisIndexRouteImport
-      parentRoute: typeof AnalysisRouteRoute
-    }
-    '/analysis/run': {
-      id: '/analysis/run'
-      path: '/run'
-      fullPath: '/analysis/run'
-      preLoaderRoute: typeof AnalysisRunRouteImport
+    '/analysis/$': {
+      id: '/analysis/$'
+      path: '/$'
+      fullPath: '/analysis/$'
+      preLoaderRoute: typeof AnalysisSplatRouteImport
       parentRoute: typeof AnalysisRouteRoute
     }
     '/player/': {
@@ -233,11 +216,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PlayerIndexRouteImport
       parentRoute: typeof PlayerRouteRoute
     }
-    '/player/chesscom': {
-      id: '/player/chesscom'
-      path: '/chesscom'
-      fullPath: '/player/chesscom'
-      preLoaderRoute: typeof PlayerChesscomRouteImport
+    '/player/analysis': {
+      id: '/player/analysis'
+      path: '/analysis'
+      fullPath: '/player/analysis'
+      preLoaderRoute: typeof PlayerAnalysisRouteImport
       parentRoute: typeof PlayerRouteRoute
     }
     '/player/history': {
@@ -247,33 +230,29 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PlayerHistoryRouteImport
       parentRoute: typeof PlayerRouteRoute
     }
-    '/player/lichess': {
-      id: '/player/lichess'
-      path: '/lichess'
-      fullPath: '/player/lichess'
-      preLoaderRoute: typeof PlayerLichessRouteImport
+    '/player/results': {
+      id: '/player/results'
+      path: '/results'
+      fullPath: '/player/results'
+      preLoaderRoute: typeof PlayerResultsRouteImport
       parentRoute: typeof PlayerRouteRoute
     }
-    '/analysis/training/$number': {
-      id: '/analysis/training/$number'
+    '/player/training/$number': {
+      id: '/player/training/$number'
       path: '/training/$number'
-      fullPath: '/analysis/training/$number'
-      preLoaderRoute: typeof AnalysisTrainingNumberRouteImport
-      parentRoute: typeof AnalysisRouteRoute
+      fullPath: '/player/training/$number'
+      preLoaderRoute: typeof PlayerTrainingNumberRouteImport
+      parentRoute: typeof PlayerRouteRoute
     }
   }
 }
 
 interface AnalysisRouteRouteChildren {
-  AnalysisRunRoute: typeof AnalysisRunRoute
-  AnalysisIndexRoute: typeof AnalysisIndexRoute
-  AnalysisTrainingNumberRoute: typeof AnalysisTrainingNumberRoute
+  AnalysisSplatRoute: typeof AnalysisSplatRoute
 }
 
 const AnalysisRouteRouteChildren: AnalysisRouteRouteChildren = {
-  AnalysisRunRoute: AnalysisRunRoute,
-  AnalysisIndexRoute: AnalysisIndexRoute,
-  AnalysisTrainingNumberRoute: AnalysisTrainingNumberRoute,
+  AnalysisSplatRoute: AnalysisSplatRoute,
 }
 
 const AnalysisRouteRouteWithChildren = AnalysisRouteRoute._addFileChildren(
@@ -281,17 +260,19 @@ const AnalysisRouteRouteWithChildren = AnalysisRouteRoute._addFileChildren(
 )
 
 interface PlayerRouteRouteChildren {
-  PlayerChesscomRoute: typeof PlayerChesscomRoute
+  PlayerAnalysisRoute: typeof PlayerAnalysisRoute
   PlayerHistoryRoute: typeof PlayerHistoryRoute
-  PlayerLichessRoute: typeof PlayerLichessRoute
+  PlayerResultsRoute: typeof PlayerResultsRoute
   PlayerIndexRoute: typeof PlayerIndexRoute
+  PlayerTrainingNumberRoute: typeof PlayerTrainingNumberRoute
 }
 
 const PlayerRouteRouteChildren: PlayerRouteRouteChildren = {
-  PlayerChesscomRoute: PlayerChesscomRoute,
+  PlayerAnalysisRoute: PlayerAnalysisRoute,
   PlayerHistoryRoute: PlayerHistoryRoute,
-  PlayerLichessRoute: PlayerLichessRoute,
+  PlayerResultsRoute: PlayerResultsRoute,
   PlayerIndexRoute: PlayerIndexRoute,
+  PlayerTrainingNumberRoute: PlayerTrainingNumberRoute,
 }
 
 const PlayerRouteRouteWithChildren = PlayerRouteRoute._addFileChildren(

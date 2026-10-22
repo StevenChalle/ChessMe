@@ -19,7 +19,7 @@ function AnalyzeLink({ game, usernames }: { game: GameSummary; usernames: Player
   return (
     <Button size="xs" asChild>
       <Link
-        to="/analysis/run"
+        to="/player/results"
         search={{ ...usernames, game: gameRef(game) }}
         title={m.history_analyze_title()}
       >

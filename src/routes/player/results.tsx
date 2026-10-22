@@ -5,20 +5,22 @@ import { Stopwatch } from '@/features/review/components/Stopwatch'
 import { useAnalysisSession } from '@/features/review/sessionContext'
 import { m } from '@/paraglide/messages'
 
-export const Route = createFileRoute('/analysis/run')({
-  component: AnalysisTab,
+export const Route = createFileRoute('/player/results')({
+  component: ResultsTab,
 })
 
 /** The analysis: its steps while it runs, then the games and their errors. */
-function AnalysisTab() {
+function ResultsTab() {
   const { analysis, trainGame } = useAnalysisSession()
   const search = Route.useSearch()
 
-  // Nothing in memory (page reloaded, link shared): back to the filters.
+  // Nothing in memory (page reloaded, link shared): back to the filters. A review asked by the
+  // link (start, game) is about to start.
   if (analysis.status === 'none') {
+    if (search.start || search.game) return null
     return (
       <Navigate
-        to="/analysis"
+        to="/player/analysis"
         search={{ lichess: search.lichess, chesscom: search.chesscom }}
         replace
       />

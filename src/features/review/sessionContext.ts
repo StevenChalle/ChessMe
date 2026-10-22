@@ -37,7 +37,7 @@ export type TrainingPhase =
   | { kind: 'running'; puzzles: Mistake[]; settings: TrainingSettings; run: number }
 
 export type TrainingTab = {
-  /** Fixed for the tab's life, never reused on the page: its title and route */
+  /** Fixed for the tab's life, the smallest free one when opened: its title and route */
   number: number
   /** The analysis its errors come from: an older one once another analysis is launched */
   analysisId: number

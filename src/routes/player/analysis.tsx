@@ -7,12 +7,21 @@ import type { ReviewSettings } from '@/features/review/settings'
 import { useAnalysisSession } from '@/features/review/sessionContext'
 import { m } from '@/paraglide/messages'
 
-export const Route = createFileRoute('/analysis/')({
-  component: FiltersTab,
+export const Route = createFileRoute('/player/analysis')({
+  component: AnalysisTab,
 })
 
 /** Time to wait after the last change before searching (typing a number, clicking chips…). */
 const SEARCH_DELAY_MS = 400
+
+/** Closed accounts have no games to analyse. */
+function AnalysisTab() {
+  const { accounts } = useAnalysisSession()
+  if (accounts.length === 0) {
+    return <p className="text-muted-foreground">{m.analysis_unavailable()}</p>
+  }
+  return <FiltersTab />
+}
 
 /**
  * Filters and options; the games they match show up below (searched again after every change),

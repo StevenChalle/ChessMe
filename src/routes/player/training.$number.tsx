@@ -2,7 +2,7 @@ import { createFileRoute, Navigate } from '@tanstack/react-router'
 import { useAnalysisSession } from '@/features/review/sessionContext'
 import { TrainingSetup } from '@/features/training/components/TrainingSetup'
 
-export const Route = createFileRoute('/analysis/training/$number')({
+export const Route = createFileRoute('/player/training/$number')({
   component: TrainingTab,
 })
 
@@ -19,7 +19,7 @@ function TrainingTab() {
   if (!tab) {
     return (
       <Navigate
-        to={analysis.status === 'none' ? '/analysis' : '/analysis/run'}
+        to={analysis.status === 'none' ? '/player/analysis' : '/player/results'}
         search={{ lichess, chesscom }}
         replace
       />

@@ -1,50 +1,89 @@
 import { Link } from '@tanstack/react-router'
-import { LayoutGrid, List } from 'lucide-react'
-import type { ApiSource } from '@/lib/http'
+import { History, LayoutGrid, List, Microscope, SlidersHorizontal, Swords, X } from 'lucide-react'
+import { useAnalysisSession } from '@/features/review/sessionContext'
+import { trainingTitle } from '@/features/training/title'
 import { cn } from '@/lib/utils'
 import { m } from '@/paraglide/messages'
-import type { SourceState } from '../usePlayerAccounts'
-import { SourceDot } from './SourceBadge'
+import type { PlayerUsernames } from '../search'
 
 // TanStack Router sets data-status="active" on the current link.
 // Icons stay discreet: small and dimmed, in the tab's color.
 const TAB_CLASS =
   'tab-etabli inline-flex shrink-0 items-center gap-2 px-1 pb-2.5 whitespace-nowrap transition-colors [&>svg]:size-3.5 [&>svg]:opacity-70'
 
-const SOURCE_TABS = {
-  lichess: { to: '/player/lichess', label: 'Lichess' },
-  chesscom: { to: '/player/chesscom', label: 'Chess.com' },
-} as const
-
+/**
+ * The profile's tabs: overview, games, the analysis filters, then its results once there is an
+ * analysis, and a closable tab per training. Switching tabs keeps the scroll position
+ * (`resetScroll={false}`): a training tab places its board itself. The bar scrolls sideways when
+ * the tabs overflow (several trainings on a phone): the underline sits on the bar's border instead
+ * of overlapping it, which a scroller would clip.
+ */
 export function PlayerTabs({
-  linked,
-  states,
+  usernames,
+  canAnalyse,
 }: {
-  linked: ApiSource[]
-  states: Record<ApiSource, SourceState<unknown>>
+  usernames: PlayerUsernames
+  /** Some account has games to analyse (closed ones do not) */
+  canAnalyse: boolean
 }) {
+  const { analysis, analysisId, trainings, closeTraining } = useAnalysisSession()
   return (
-    <nav className="flex gap-6 overflow-x-auto border-b" aria-label={m.tabs_label()}>
-      <Link to="/player" search={true} activeOptions={{ exact: true }} className={TAB_CLASS}>
+    <nav
+      className="flex [scrollbar-width:none] gap-6 overflow-x-auto border-b"
+      aria-label={m.tabs_label()}
+    >
+      <Link
+        resetScroll={false}
+        to="/player"
+        search={usernames}
+        activeOptions={{ exact: true }}
+        className={TAB_CLASS}
+      >
         <LayoutGrid aria-hidden />
         {m.tab_overview()}
       </Link>
-      <Link to="/player/history" search={true} className={TAB_CLASS}>
+      <Link resetScroll={false} to="/player/history" search={usernames} className={TAB_CLASS}>
         <List aria-hidden />
         {m.tab_history()}
       </Link>
-      {linked.map((source) => {
-        const unavailable = states[source].status === 'missing' || states[source].status === 'error'
+      {canAnalyse && (
+        <Link resetScroll={false} to="/player/analysis" search={usernames} className={TAB_CLASS}>
+          <SlidersHorizontal aria-hidden />
+          {m.tab_analysis()}
+        </Link>
+      )}
+      {analysis.status !== 'none' && (
+        <Link resetScroll={false} to="/player/results" search={usernames} className={TAB_CLASS}>
+          <Microscope aria-hidden />
+          {m.tab_results()}
+        </Link>
+      )}
+      {trainings.map((tab) => {
+        const title = trainingTitle(tab, trainings)
+        // Its errors come from an analysis replaced since: dimmed, with a clock.
+        const stale = tab.analysisId !== analysisId
         return (
-          <Link
-            key={source}
-            to={SOURCE_TABS[source].to}
-            search={true}
-            className={cn(TAB_CLASS, unavailable && 'opacity-50')}
-          >
-            <SourceDot source={source} />
-            {SOURCE_TABS[source].label}
-          </Link>
+          <span key={tab.number} className={cn('flex shrink-0 items-start', stale && 'opacity-60')}>
+            <Link
+              resetScroll={false}
+              to="/player/training/$number"
+              params={{ number: String(tab.number) }}
+              search={usernames}
+              title={stale ? m.training_stale() : undefined}
+              className={TAB_CLASS}
+            >
+              {stale ? <History aria-hidden /> : <Swords aria-hidden />}
+              {title}
+            </Link>
+            <button
+              type="button"
+              onClick={() => void closeTraining(tab.number)}
+              aria-label={m.training_close({ title })}
+              className="ml-0.5 rounded-sm p-0.5 text-muted-foreground transition-colors hover:bg-muted hover:text-text-strong"
+            >
+              <X className="size-3.5" />
+            </button>
+          </span>
         )
       })}
     </nav>

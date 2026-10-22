@@ -62,7 +62,7 @@ export function AccountSearchForm({
   /** Skips the profile: straight to the review of the last game. */
   function reviewLastGame() {
     if (!canSubmit) return
-    void navigate({ to: '/analysis/run', search: { lichess, chesscom, start: 'last' } })
+    void navigate({ to: '/player/results', search: { lichess, chesscom, start: 'last' } })
   }
 
   // Full form: a single button on the Chess.com field copies the Lichess username above it.

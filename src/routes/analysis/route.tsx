@@ -1,148 +1,18 @@
-import { createFileRoute, Outlet, useBlocker, useLocation } from '@tanstack/react-router'
-import { useMemo } from 'react'
-import { ConfirmDialog } from '@/components/ConfirmDialog'
-import { PlayerHeader } from '@/features/player/components/PlayerHeader'
-import { useRememberSearch } from '@/features/player/recentSearches'
-import {
-  hasAnyUsername,
-  type PlayerUsernames,
-  usernamesLabel,
-  validatePlayerSearch,
-} from '@/features/player/search'
-import type { AccountSummary } from '@/features/player/summary'
-import { usePlayerAccounts } from '@/features/player/usePlayerAccounts'
-import { reviewableAccounts } from '@/features/review/accounts'
-import { AnalysisTabs } from '@/features/review/components/AnalysisTabs'
-import { AnalysisActions } from '@/features/review/components/ReviewButtons'
-import { parseGameRef } from '@/features/review/gameRef'
-import { AnalysisSessionProvider } from '@/features/review/session'
-import { useAnalysisSession } from '@/features/review/sessionContext'
-import { TrainingView } from '@/features/training/components/TrainingView'
-import { usePageMeta } from '@/hooks/usePageMeta'
-import { chessComPlayerQueryOptions } from '@/lib/chesscom/queries'
-import { formatOrList } from '@/lib/format'
-import { lichessUserQueryOptions } from '@/lib/lichess/queries'
-import { m } from '@/paraglide/messages'
+import { createFileRoute, redirect } from '@tanstack/react-router'
+import { validatePlayerSearch } from '@/features/player/search'
 
-type AnalysisSearch = PlayerUsernames & {
-  /** "last": start the quick review of the last game right away */
-  start?: 'last'
-  /** A game to review on its own right away (see gameRef.ts) */
-  game?: string
-}
-
-/** /analysis?lichess=<name>&chesscom=<name>: the analysis page of these accounts, with tabs. */
+/**
+ * The analysis used to be a page of its own: its addresses (/analysis, /analysis/run…) lead to the
+ * profile's tabs. A review asked by the link (start, game) still starts.
+ */
 export const Route = createFileRoute('/analysis')({
-  validateSearch: (search: Record<string, unknown>): AnalysisSearch => ({
-    ...validatePlayerSearch(search),
-    ...(search.start === 'last' ? { start: 'last' as const } : {}),
-    ...(parseGameRef(search.game) ? { game: search.game as string } : {}),
-  }),
-  loaderDeps: ({ search }) => ({ lichess: search.lichess, chesscom: search.chesscom }),
-  // prefetchQuery never throws: each source handles its own failure in the UI.
-  loader: ({ context: { queryClient }, deps }) =>
-    Promise.all([
-      deps.lichess && queryClient.prefetchQuery(lichessUserQueryOptions(deps.lichess)),
-      deps.chesscom && queryClient.prefetchQuery(chessComPlayerQueryOptions(deps.chesscom)),
-    ]),
-  component: AnalysisLayout,
-  pendingComponent: () => <p className="text-muted-foreground">{m.player_loading()}</p>,
+  beforeLoad: ({ search }) => {
+    const raw = search as Record<string, unknown>
+    const quick = raw.start === 'last' || raw.game !== undefined
+    throw redirect({
+      to: quick ? '/player/results' : '/player/analysis',
+      search: quick ? raw : validatePlayerSearch(raw),
+      replace: true,
+    })
+  },
 })
-
-function AnalysisLayout() {
-  const { lichess, chesscom, start, game } = Route.useSearch()
-  const gameToReview = useMemo(() => parseGameRef(game), [game])
-  const usernames = useMemo(() => ({ lichess, chesscom }), [lichess, chesscom])
-  const { linked, accounts, noAccount } = usePlayerAccounts(usernames)
-  usePageMeta({ title: usernamesLabel(usernames) || undefined, noindex: true })
-  // Reached straight from the home page too (review of the last game)
-  useRememberSearch(accounts)
-  const reviewable = useMemo(() => reviewableAccounts(accounts), [accounts])
-
-  if (!hasAnyUsername(usernames)) {
-    return <p className="text-muted-foreground">{m.player_need_username()}</p>
-  }
-  if (noAccount) {
-    const names = formatOrList(linked.map((source) => m.quoted({ text: usernames[source]! })))
-    return <p className="text-muted-foreground">{m.player_not_found({ names })}</p>
-  }
-  if (reviewable.accounts.length === 0) {
-    return <p className="text-muted-foreground">{m.analysis_unavailable()}</p>
-  }
-
-  return (
-    // A new session for other accounts.
-    <AnalysisSessionProvider
-      key={`${lichess ?? ''}|${chesscom ?? ''}`}
-      accounts={reviewable.accounts}
-      gameTotal={reviewable.gameTotal}
-      usernames={usernames}
-      start={start}
-      game={gameToReview}
-    >
-      <AnalysisPage usernames={usernames} accounts={accounts} />
-    </AnalysisSessionProvider>
-  )
-}
-
-function AnalysisPage({
-  usernames,
-  accounts,
-}: {
-  usernames: PlayerUsernames
-  accounts: AccountSummary[]
-}) {
-  const { analysis, trainings, restartTraining, setTrainingFinished, showResults } =
-    useAnalysisSession()
-  const pathname = useLocation({ select: (location) => location.pathname })
-
-  // Nothing is saved yet: leaving the page during an analysis or an unfinished training asks
-  // first. Switching tabs inside the page is never blocked.
-  const busy =
-    analysis.status === 'running' ||
-    trainings.some((tab) => tab.phase.kind === 'running' && !tab.finished)
-  const blocker = useBlocker({
-    shouldBlockFn: ({ next }) => busy && !next.pathname.startsWith('/analysis'),
-    enableBeforeUnload: () => busy,
-    withResolver: true,
-  })
-
-  return (
-    <div className="space-y-6">
-      <PlayerHeader accounts={accounts} profileLink={usernames} actions={<AnalysisActions />} />
-      <AnalysisTabs usernames={usernames} />
-      {/* Trainings stay mounted while another tab is shown: each goes on where it was (only the
-          one on screen runs its engine). Placed before the tab content so the board never moves
-          when that content changes. */}
-      {trainings.map((tab) => {
-        if (tab.phase.kind !== 'running') return null
-        const shown = pathname === `/analysis/training/${tab.number}`
-        return (
-          <div key={tab.number} hidden={!shown}>
-            <TrainingView
-              key={tab.phase.run}
-              puzzles={tab.phase.puzzles}
-              validMaxDrop={tab.validMaxDrop}
-              active={shown}
-              onFinishedChange={(finished) => setTrainingFinished(tab.number, finished)}
-              onRestart={() => restartTraining(tab.number)}
-              onExit={showResults}
-            />
-          </div>
-        )
-      })}
-      <Outlet />
-      <ConfirmDialog
-        open={blocker.status === 'blocked'}
-        options={{
-          title: m.confirm_leave_title(),
-          description: m.confirm_leave_body(),
-          confirmLabel: m.confirm_leave_action(),
-          cancelLabel: m.confirm_cancel(),
-        }}
-        onConfirm={() => blocker.proceed?.()}
-        onCancel={() => blocker.reset?.()}
-      />
-    </div>
-  )
-}

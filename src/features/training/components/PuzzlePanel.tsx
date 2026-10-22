@@ -14,6 +14,7 @@ import { m } from '@/paraglide/messages'
 import { evalDelta, formatDelta, formatEval } from '../evaluation'
 import { REFERENCE_LINES } from '../coach'
 import { lichessAnalysisUrl, play, sameMove, sanOf } from '../moves'
+import { MovePreview } from './MovePreview'
 import type { TrainingAction, TrainingState } from '../session'
 
 type Tone = 'good' | 'bad' | 'solution'
@@ -88,9 +89,12 @@ function MoveLine({
   cp,
   baseCp,
   showDelta = true,
+  preview,
 }: {
   label: string
   san: string
+  /** The position before the move and the move: hovering it shows the position after */
+  preview?: { fen: string; uci: string }
   /** The player's color: evaluations are shown from White's side, as usual in chess */
   color: Color
   /** From the player's side */
@@ -107,7 +111,13 @@ function MoveLine({
     <div className="space-y-0.5">
       <p className="text-sm text-muted-foreground">{label}</p>
       <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
-        <span className="text-2xl font-semibold text-text-strong">{san}</span>
+        {preview ? (
+          <MovePreview fen={preview.fen} uci={preview.uci} orientation={color}>
+            <span className="cursor-default text-2xl font-semibold text-text-strong">{san}</span>
+          </MovePreview>
+        ) : (
+          <span className="text-2xl font-semibold text-text-strong">{san}</span>
+        )}
         {cp !== undefined && (
           <span className="ml-auto flex items-center gap-1.5">
             {baseCp !== undefined && (
@@ -186,9 +196,16 @@ function ValidMoves({ state, puzzle }: { state: TrainingState; puzzle: Mistake }
             return (
               <li key={move.uci} className="flex items-center justify-between gap-3">
                 <span className="flex items-baseline gap-2">
-                  <span className={cn('font-semibold text-text-strong', isTried && 'text-win')}>
-                    {sanOf(puzzle.fen, move.uci)}
-                  </span>
+                  {/* The move just played needs no preview: it is on the board. */}
+                  {isTried ? (
+                    <span className="font-semibold text-win">{sanOf(puzzle.fen, move.uci)}</span>
+                  ) : (
+                    <MovePreview fen={puzzle.fen} uci={move.uci} orientation={puzzle.color}>
+                      <span className="cursor-default font-semibold text-text-strong">
+                        {sanOf(puzzle.fen, move.uci)}
+                      </span>
+                    </MovePreview>
+                  )}
                   {isBest && (
                     <span className="text-xs text-muted-foreground">{m.training_best_tag()}</span>
                   )}
@@ -294,6 +311,7 @@ export function PuzzlePanel({
       color={puzzle.color}
       label={m.training_best_move()}
       san={sanOf(puzzle.fen, best)}
+      preview={{ fen: puzzle.fen, uci: best }}
       cp={bestCp}
       baseCp={bestCp}
       showDelta={false}
@@ -370,6 +388,7 @@ export function PuzzlePanel({
             color={puzzle.color}
             label={m.training_game_move()}
             san={puzzle.played.san}
+            preview={{ fen: puzzle.fen, uci: puzzle.played.uci }}
             cp={puzzle.afterCp}
             baseCp={bestCp}
           />
