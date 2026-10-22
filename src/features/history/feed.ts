@@ -87,33 +87,6 @@ async function refill(feed: SourceFeed, fetchers: FeedFetchers, signal?: AbortSi
   }
 }
 
-/** Games of the same rating pool: same platform, category and variant, rated. */
-const samePool = (a: GameSummary, b: GameSummary) =>
-  b.rated && a.source === b.source && a.category === b.category && a.variant === b.variant
-
-/**
- * Chess.com gives the rating after each game but not the change: it is the difference with the
- * previous game of the same pool. `games` are newest first; `older` are games fetched beyond
- * them (not shown yet), so the oldest shown games of each pool get their change too.
- */
-export function withChessComRatingDiffs(
-  games: GameSummary[],
-  older: GameSummary[] = [],
-): GameSummary[] {
-  const all = [...games, ...older]
-  return games.map((game, index) => {
-    if (game.source !== 'chesscom' || !game.rated || game.rating === undefined) return game
-    const previous = all.slice(index + 1).find((candidate) => samePool(game, candidate))
-    if (previous?.rating === undefined) return game
-    return { ...game, ratingDiff: game.rating - previous.rating }
-  })
-}
-
-/** Games fetched but not shown yet, newest first: what comes after the last page. */
-export function bufferedGames(state: FeedState): GameSummary[] {
-  return state.sources.flatMap((feed) => feed.buffer).sort(byNewest)
-}
-
 /** The next `size` games, all platforms together, newest first. */
 export async function nextPage(
   state: FeedState,

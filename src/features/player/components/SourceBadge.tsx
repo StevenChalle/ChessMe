@@ -16,11 +16,12 @@ export function SourceDot({ source, className }: { source: ApiSource; className?
   )
 }
 
-export function SourceLabel({ source }: { source: ApiSource }) {
+/** `compact`: the dot alone on phones, the name kept for screen readers. */
+export function SourceLabel({ source, compact }: { source: ApiSource; compact?: boolean }) {
   return (
     <span className="inline-flex items-center gap-1.5">
       <SourceDot source={source} />
-      {SOURCE_LABELS[source]}
+      <span className={cn(compact && 'max-sm:sr-only')}>{SOURCE_LABELS[source]}</span>
     </span>
   )
 }

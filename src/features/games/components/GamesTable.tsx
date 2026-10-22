@@ -45,27 +45,40 @@ export function SideSquare({ color, className }: { color: Color; className?: str
   )
 }
 
-/** A column specific to one table (mistakes for the review, rating for the history). */
+/**
+ * Narrow screens keep, by priority: `extra` (the mistakes), time control, links, result, platform
+ * (its dot only on phones). The opponent and then the date give way first.
+ */
+const HIDE = { date: 'hidden md:table-cell', opponent: 'hidden sm:table-cell' }
+
+/** A column specific to one table (mistakes for the review). */
 export type ExtraColumn<G> = { header: string; cell: (game: G) => ReactNode }
 
-/** Games, newest first: date, platform, time control, opponent, result, then `extra`. */
+/**
+ * Games, newest first: date, platform, time control, opponent, result, then `extra` if any. `action`
+ * goes at the end of each row, before the link to the platform.
+ */
 export function GamesTable<G extends GameSummary>({
   games,
   extra,
+  action,
 }: {
   games: G[]
-  extra: ExtraColumn<G>
+  extra?: ExtraColumn<G>
+  action?: (game: G) => ReactNode
 }) {
   return (
     <Table>
       <TableHeader>
         <TableRow>
-          <TableHead>{m.review_col_date()}</TableHead>
-          <TableHead>{m.review_col_platform()}</TableHead>
+          <TableHead className={HIDE.date}>{m.review_col_date()}</TableHead>
+          <TableHead>
+            <span className="max-sm:sr-only">{m.review_col_platform()}</span>
+          </TableHead>
           <TableHead>{m.review_col_time_control()}</TableHead>
-          <TableHead>{m.review_col_opponent()}</TableHead>
+          <TableHead className={HIDE.opponent}>{m.review_col_opponent()}</TableHead>
           <TableHead>{m.review_col_result()}</TableHead>
-          <TableHead className="text-right">{extra.header}</TableHead>
+          {extra && <TableHead className="text-right">{extra.header}</TableHead>}
           <TableHead>
             <span className="sr-only">{m.review_col_link()}</span>
           </TableHead>
@@ -76,12 +89,12 @@ export function GamesTable<G extends GameSummary>({
           const result = RESULTS[game.result]
           return (
             <TableRow key={`${game.source}-${game.id}`}>
-              <TableCell className="num whitespace-nowrap text-muted-foreground">
+              <TableCell className={cn('num whitespace-nowrap text-muted-foreground', HIDE.date)}>
                 {formatDate(game.playedAt)}{' '}
                 <span className="ml-1 text-muted-foreground/70">{formatTime(game.playedAt)}</span>
               </TableCell>
               <TableCell>
-                <SourceLabel source={game.source} />
+                <SourceLabel source={game.source} compact />
               </TableCell>
               <TableCell>
                 {categoryLabel(game.category)}{' '}
@@ -92,7 +105,7 @@ export function GamesTable<G extends GameSummary>({
                   <span className="block text-xs text-highlight">{variantLabel(game.variant)}</span>
                 )}
               </TableCell>
-              <TableCell>
+              <TableCell className={HIDE.opponent}>
                 <span className="inline-flex items-center gap-2">
                   <SideSquare color={game.color} />
                   <span className="text-text-strong">{game.opponent.name}</span>
@@ -102,13 +115,14 @@ export function GamesTable<G extends GameSummary>({
                 </span>
               </TableCell>
               <TableCell className={result.className}>{result.label()}</TableCell>
-              <TableCell className="text-right">{extra.cell(game)}</TableCell>
-              <TableCell>
+              {extra && <TableCell className="text-right">{extra.cell(game)}</TableCell>}
+              <TableCell className="text-right whitespace-nowrap">
+                {action?.(game)}
                 <a
                   href={game.url}
                   target="_blank"
                   rel="noreferrer"
-                  className="text-muted-foreground hover:text-primary"
+                  className="ml-2 inline-block align-middle text-muted-foreground hover:text-primary"
                   title={m.view_on({ platform: SOURCE_LABELS[game.source] })}
                   aria-label={m.view_on({ platform: SOURCE_LABELS[game.source] })}
                 >

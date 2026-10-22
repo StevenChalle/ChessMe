@@ -1,62 +1,51 @@
 import { useInfiniteQuery, useQueryClient } from '@tanstack/react-query'
-import { ChevronLeft, ChevronRight, RefreshCw } from 'lucide-react'
-import { useMemo, useState } from 'react'
+import { Link } from '@tanstack/react-router'
+import { ChevronLeft, ChevronRight, Microscope, RefreshCw } from 'lucide-react'
+import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { GamesTable } from '@/features/games/components/GamesTable'
 import type { GameSummary } from '@/features/games/normalize'
+import type { PlayerUsernames } from '@/features/player/search'
 import { sourceErrorMessage } from '@/features/player/sources'
-import { formatNumber, formatSigned } from '@/lib/format'
+import { gameRef } from '@/features/review/gameRef'
+import { formatNumber } from '@/lib/format'
 import { cn } from '@/lib/utils'
 import { m } from '@/paraglide/messages'
-import {
-  bufferedGames,
-  HISTORY_PAGE_SIZE,
-  withChessComRatingDiffs,
-  type HistoryAccount,
-} from '../feed'
+import { HISTORY_PAGE_SIZE, type HistoryAccount } from '../feed'
 import { historyKeys, historyQueryOptions } from '../queries'
 
-/** "1532 (+8)": rating after the game, and the change when known. Casual games say so. */
-function RatingCell({ game }: { game: GameSummary }) {
-  if (!game.rated)
-    return <span className="text-xs text-muted-foreground">{m.history_casual()}</span>
-  if (game.rating === undefined) return null
-  const diff = game.ratingDiff
+/** Straight to the analysis of this game alone, then its training. */
+function AnalyzeLink({ game, usernames }: { game: GameSummary; usernames: PlayerUsernames }) {
   return (
-    <span className="num inline-flex items-baseline gap-1.5">
-      <span className="text-text-strong">{game.rating}</span>
-      {diff !== undefined && (
-        <span
-          className={cn(
-            'text-sm font-medium',
-            diff > 0 ? 'text-win' : diff < 0 ? 'text-loss' : 'text-muted-foreground',
-          )}
-        >
-          {formatSigned(diff)}
-        </span>
-      )}
-    </span>
+    <Button size="xs" asChild>
+      <Link
+        to="/analysis/run"
+        search={{ ...usernames, game: gameRef(game) }}
+        title={m.history_analyze_title()}
+      >
+        <Microscope data-icon="inline-start" />
+        <span className="max-sm:sr-only">{m.history_analyze()}</span>
+      </Link>
+    </Button>
   )
 }
 
-/** Every game of the linked accounts, newest first, 30 per page; older pages load on demand. */
-export function HistoryTab({ accounts }: { accounts: HistoryAccount[] }) {
+/**
+ * Every game of the linked accounts, newest first, 30 per page; older pages load on demand.
+ * `usernames`: the accounts searched, for the links to the analysis.
+ */
+export function HistoryTab({
+  accounts,
+  usernames,
+}: {
+  accounts: HistoryAccount[]
+  usernames: PlayerUsernames
+}) {
   const queryClient = useQueryClient()
   const query = useInfiniteQuery(historyQueryOptions(accounts))
   const [pageIndex, setPageIndex] = useState(0)
-  const loadedPages = query.data?.pages
-  const pages = loadedPages ?? []
-  // Rating changes need the previous game of each pool: computed over everything fetched so far.
-  const games = useMemo(() => {
-    if (!loadedPages?.length) return []
-    return withChessComRatingDiffs(
-      loadedPages.flatMap((loaded) => loaded.games),
-      bufferedGames(loadedPages.at(-1)!.state),
-    )
-  }, [loadedPages])
+  const pages = query.data?.pages ?? []
   const page = pages[pageIndex]
-  const start = pages.slice(0, pageIndex).reduce((count, loaded) => count + loaded.games.length, 0)
-  const pageGames = page ? games.slice(start, start + page.games.length) : []
   const failures = pages.at(-1)?.state.failures ?? []
   const canGoNext = pageIndex + 1 < pages.length || query.hasNextPage
 
@@ -129,8 +118,8 @@ export function HistoryTab({ accounts }: { accounts: HistoryAccount[] }) {
       ) : (
         <div className="panel-etabli px-2">
           <GamesTable
-            games={pageGames}
-            extra={{ header: m.history_col_rating(), cell: (game) => <RatingCell game={game} /> }}
+            games={page.games}
+            action={(game) => <AnalyzeLink game={game} usernames={usernames} />}
           />
         </div>
       )}

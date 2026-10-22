@@ -2,6 +2,7 @@ import { createFileRoute, Outlet, useBlocker, useLocation } from '@tanstack/reac
 import { useMemo } from 'react'
 import { ConfirmDialog } from '@/components/ConfirmDialog'
 import { PlayerHeader } from '@/features/player/components/PlayerHeader'
+import { useRememberSearch } from '@/features/player/recentSearches'
 import {
   hasAnyUsername,
   type PlayerUsernames,
@@ -13,6 +14,7 @@ import { usePlayerAccounts } from '@/features/player/usePlayerAccounts'
 import { reviewableAccounts } from '@/features/review/accounts'
 import { AnalysisTabs } from '@/features/review/components/AnalysisTabs'
 import { AnalysisActions } from '@/features/review/components/ReviewButtons'
+import { parseGameRef } from '@/features/review/gameRef'
 import { AnalysisSessionProvider } from '@/features/review/session'
 import { useAnalysisSession } from '@/features/review/sessionContext'
 import { TrainingView } from '@/features/training/components/TrainingView'
@@ -25,6 +27,8 @@ import { m } from '@/paraglide/messages'
 type AnalysisSearch = PlayerUsernames & {
   /** "last": start the quick review of the last game right away */
   start?: 'last'
+  /** A game to review on its own right away (see gameRef.ts) */
+  game?: string
 }
 
 /** /analysis?lichess=<name>&chesscom=<name>: the analysis page of these accounts, with tabs. */
@@ -32,6 +36,7 @@ export const Route = createFileRoute('/analysis')({
   validateSearch: (search: Record<string, unknown>): AnalysisSearch => ({
     ...validatePlayerSearch(search),
     ...(search.start === 'last' ? { start: 'last' as const } : {}),
+    ...(parseGameRef(search.game) ? { game: search.game as string } : {}),
   }),
   loaderDeps: ({ search }) => ({ lichess: search.lichess, chesscom: search.chesscom }),
   // prefetchQuery never throws: each source handles its own failure in the UI.
@@ -45,10 +50,13 @@ export const Route = createFileRoute('/analysis')({
 })
 
 function AnalysisLayout() {
-  const { lichess, chesscom, start } = Route.useSearch()
+  const { lichess, chesscom, start, game } = Route.useSearch()
+  const gameToReview = useMemo(() => parseGameRef(game), [game])
   const usernames = useMemo(() => ({ lichess, chesscom }), [lichess, chesscom])
   const { linked, accounts, noAccount } = usePlayerAccounts(usernames)
   usePageMeta({ title: usernamesLabel(usernames) || undefined, noindex: true })
+  // Reached straight from the home page too (review of the last game)
+  useRememberSearch(accounts)
   const reviewable = useMemo(() => reviewableAccounts(accounts), [accounts])
 
   if (!hasAnyUsername(usernames)) {
@@ -70,6 +78,7 @@ function AnalysisLayout() {
       gameTotal={reviewable.gameTotal}
       usernames={usernames}
       start={start}
+      game={gameToReview}
     >
       <AnalysisPage usernames={usernames} accounts={accounts} />
     </AnalysisSessionProvider>

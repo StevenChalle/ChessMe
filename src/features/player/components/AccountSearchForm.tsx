@@ -1,5 +1,5 @@
 import { useNavigate } from '@tanstack/react-router'
-import { ArrowDown, ArrowLeft, ArrowRight, Search } from 'lucide-react'
+import { ArrowDown, ArrowLeft, ArrowRight, History, Search } from 'lucide-react'
 import { useId, useState, type FormEvent, type ReactNode } from 'react'
 import { Button } from '@/components/ui/button'
 import type { ApiSource } from '@/lib/http'
@@ -57,6 +57,12 @@ export function AccountSearchForm({
     event.preventDefault()
     if (!canSubmit) return
     void navigate({ to: '/player', search: { lichess, chesscom } })
+  }
+
+  /** Skips the profile: straight to the review of the last game. */
+  function reviewLastGame() {
+    if (!canSubmit) return
+    void navigate({ to: '/analysis/run', search: { lichess, chesscom, start: 'last' } })
   }
 
   // Full form: a single button on the Chess.com field copies the Lichess username above it.
@@ -135,12 +141,22 @@ export function AccountSearchForm({
         onChange={setValue}
         labelAside={copyButton}
       />
-      <div className="flex items-center gap-3 pt-1">
+      <p className="text-xs text-muted-foreground">{m.search_one_is_enough()}</p>
+      <div className="flex flex-wrap items-center gap-2">
         <Button type="submit" size="lg" disabled={!canSubmit}>
-          <Search />
-          {m.search_submit()}
+          <Search data-icon="inline-start" />
+          {m.search_find_profile()}
         </Button>
-        <span className="text-xs text-muted-foreground">{m.search_one_is_enough()}</span>
+        <Button
+          type="button"
+          variant="secondary"
+          size="lg"
+          disabled={!canSubmit}
+          onClick={reviewLastGame}
+        >
+          <History data-icon="inline-start" />
+          {m.review_button_last()}
+        </Button>
       </div>
     </form>
   )

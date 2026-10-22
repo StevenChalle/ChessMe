@@ -35,6 +35,11 @@ export async function fetchArchives(username: string, signal?: AbortSignal): Pro
   return archives
 }
 
+/** The monthly archive URL of a month (1 to 12), as listed by fetchArchives. */
+export function archiveUrl(username: string, year: number, month: number): string {
+  return `${playerUrl(username)}/games/${year}/${String(month).padStart(2, '0')}`
+}
+
 /** Games of one monthly archive (a URL from fetchArchives), oldest first. */
 export async function fetchArchiveGames(
   archiveUrl: string,

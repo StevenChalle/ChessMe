@@ -42,7 +42,7 @@ export type GameSelection = {
 export const ALL_RATINGS: RatingKind[] = ['rated', 'casual']
 export const ALL_COLORS: Color[] = ['white', 'black']
 export const ALL_RESULTS: GameResult[] = ['win', 'draw', 'loss']
-export const LATEST_SHORTCUTS = [10, 25, 50, 100] as const
+export const LATEST_SHORTCUTS = [3, 5, 10, 50, 100] as const
 export const DATE_PRESETS: DatePreset[] = ['today', 'week', 'month', '3months', 'year']
 /** The period's maximum when first chosen (it can be cleared: no limit). */
 export const DEFAULT_RANGE_MAX = 50

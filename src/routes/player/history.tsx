@@ -11,6 +11,11 @@ export const Route = createFileRoute('/player/history')({
       .filter((account) => !account.closed)
       .map(({ source, username }) => ({ source, username }))
     if (linked.length === 0) return null
-    return <HistoryTab accounts={linked} />
+    return (
+      <HistoryTab
+        accounts={linked}
+        usernames={{ lichess: usernames.lichess, chesscom: usernames.chesscom }}
+      />
+    )
   },
 })

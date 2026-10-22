@@ -17,7 +17,7 @@ Règles à respecter sur tout nouvel écran :
 - **Chiffres en Noto Sans Mono** (`.num`) : classements, compteurs, dates en chiffres. Les phrases qui contiennent des nombres (« 412 parties », « Erreur 3 / 12 ») restent en Noto Sans, avec `tabular-nums`.
 - **Plateformes** : une pastille discrète (`SourceDot`), bleue pour Lichess, verte pour Chess.com (`bg-lichess`, `bg-chesscom`), reprise aussi dans les barres empilées. Jamais leurs logos.
 - **Libellés** (titres de panneaux, en-têtes de colonnes, sections de formulaire) : `.label-etabli`, capitales espacées de 12 px.
-- **Boutons fantômes et raccourcis** (10 / 25 / 50 / 100, « Aujourd'hui »…) : neutres, en gris clair ; la sélection se marque par un fond `raised` et un contour, pas par l'or.
+- **Boutons fantômes et raccourcis** (3 / 5 / 10 / 50 / 100, « Aujourd'hui »…) : neutres, en gris clair ; la sélection se marque par un fond `raised` et un contour, pas par l'or.
 - **Rayons** : 3 px pour les contrôles (`rounded-sm`), 4 px pour les panneaux (`rounded-lg`). Ombre (`shadow-pop`) sur les menus et dialogues seulement.
 - Polices : **Noto Sans** et **Noto Sans Mono**, SIL OFL, hébergées avec l'app (`src/theme/fonts/`).
 - **L'échiquier ne suit pas le thème** (choix de l'utilisateur) : ses couleurs, ses pièces et ses réglages restent ceux de `components/board/` (brun et cburnett par défaut).

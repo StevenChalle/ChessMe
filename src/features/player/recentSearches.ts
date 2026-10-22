@@ -1,4 +1,4 @@
-import { useCallback, useSyncExternalStore } from 'react'
+import { useCallback, useEffect, useSyncExternalStore } from 'react'
 import type { PlayerUsernames } from './search'
 
 /**
@@ -99,6 +99,18 @@ function subscribe(listener: () => void) {
 
 export function saveRecentSearch(usernames: PlayerUsernames) {
   update((list) => addRecentSearch(list, usernames, Date.now()))
+}
+
+/**
+ * Remembers a search once at least one account is found, keeping only found accounts (with their
+ * official casing) so typos never end up in the recent searches.
+ */
+export function useRememberSearch(accounts: { source: string; username: string }[]) {
+  const lichess = accounts.find((account) => account.source === 'lichess')?.username
+  const chesscom = accounts.find((account) => account.source === 'chesscom')?.username
+  useEffect(() => {
+    if (lichess || chesscom) saveRecentSearch({ lichess, chesscom })
+  }, [lichess, chesscom])
 }
 
 export function useRecentSearches(limit: number) {

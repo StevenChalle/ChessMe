@@ -14,7 +14,8 @@ import {
 import { m } from '@/paraglide/messages'
 import { analyzeGames, type Mistake } from './analyze'
 import { DEFAULT_CRITERIA } from './criteria'
-import { findGames, type FoundGames, type ReviewAccount } from './fetch'
+import { findGame, findGames, type FoundGames, type ReviewAccount } from './fetch'
+import type { GameRef } from './gameRef'
 import { defaultSelection } from './selection'
 import {
   loadReviewSettings,
@@ -30,7 +31,7 @@ import {
   type TrainingTab,
 } from './sessionContext'
 
-/** The quick review: the last game, default rules. */
+/** The quick review: the last game (or the one picked in the history), default rules. */
 function quickSettings(accounts: ReviewAccount[]): ReviewSettings {
   return {
     selection: {
@@ -45,13 +46,14 @@ function quickSettings(accounts: ReviewAccount[]): ReviewSettings {
  * Holds the analysis page's state, shared by its tabs (filters, analysis, training) so switching
  * tabs loses nothing. A search, an analysis and a training session are independent: the user can
  * look for other games while an analysis runs. Leaving the page drops everything (nothing is
- * saved). `start="last"` starts the quick review right away.
+ * saved). `start="last"` starts the quick review right away, `game` the review of that game.
  */
 export function AnalysisSessionProvider({
   accounts,
   gameTotal,
   usernames,
   start,
+  game,
   children,
 }: {
   accounts: ReviewAccount[]
@@ -60,6 +62,7 @@ export function AnalysisSessionProvider({
   /** The accounts in the URL, kept when switching tabs */
   usernames: PlayerUsernames
   start?: 'last'
+  game?: GameRef
   children: ReactNode
 }) {
   const navigate = useNavigate()
@@ -67,7 +70,9 @@ export function AnalysisSessionProvider({
   const sources = useMemo(() => accounts.map((account) => account.source), [accounts])
   // The quick review is "running" from the first render, so the analysis tab never thinks there
   // is nothing to show (children's effects run before ours).
-  const [initialQuick] = useState(() => (start === 'last' ? quickSettings(accounts) : undefined))
+  const [initialQuick] = useState(() =>
+    start === 'last' || game ? quickSettings(accounts) : undefined,
+  )
   const [draft, setDraftState] = useState<ReviewSettings>(
     () => initialQuick ?? loadReviewSettings(sources),
   )
@@ -166,7 +171,9 @@ export function AnalysisSessionProvider({
   useEffect(() => {
     if (initialQuick) {
       void runAnalysis(initialQuick, (signal) =>
-        findGames(accounts, initialQuick.selection, { signal }),
+        game
+          ? findGame(accounts, game, { signal })
+          : findGames(accounts, initialQuick.selection, { signal }),
       )
       // Reloading the page later should not start it again.
       void navigate({ to: '.', search: usernames, replace: true })

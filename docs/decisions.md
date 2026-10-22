@@ -273,7 +273,7 @@ Le bouton « Analyser les 10 dernières parties » devient **« Analyse approfon
 ### Filtres
 
 - **Plateformes** : les comptes trouvés, cochés par défaut.
-- **Parties** : les N dernières (de 1 à « ≈ total des parties classées du profil », avec raccourcis 10 / 25 / 50 / 100), ou une **période** (dernière semaine, dernier mois, 3 derniers mois, dernière année, ou dates personnalisées). Une période choisie par raccourci est retenue comme raccourci : « dernière semaine » reste la dernière semaine à la prochaine ouverture.
+- **Parties** : les N dernières (de 1 à « ≈ total des parties classées du profil », avec raccourcis 3 / 5 / 10 / 50 / 100), ou une **période** (dernière semaine, dernier mois, 3 derniers mois, dernière année, ou dates personnalisées). Une période choisie par raccourci est retenue comme raccourci : « dernière semaine » reste la dernière semaine à la prochaine ouverture.
 - **Cadences**, **couleur**, **résultat**, **longueur minimale** (en coups ; 0 = toutes).
 - Les API filtrent ce qu'elles savent filtrer : Lichess les cadences (l'UltraBullet compte comme bullet), la couleur et les dates de **début** ; Chess.com les mois. `matchesSelection` revérifie tout, et la période porte sur la date de **fin**. Côté Lichess, une marge de 60 jours avant le début de la période couvre les parties par correspondance.
 - **« N dernières » avec des filtres que Lichess ne connaît pas** (résultat, longueur) : pagination à rebours par pages de 100 jusqu'à obtenir N parties retenues. Sans ces filtres, on demande exactement N parties à Lichess (le bouton rapide en demande 1).
@@ -345,7 +345,7 @@ La modale enchaînait réglages, récapitulatif, progression, résultats et entr
 
 - Plateformes, cadences et type de partie : des **pastilles** activables, toutes actives par défaut (les plateformes étaient des cases à cocher).
 - Ordre des rangées : plateformes / cadences / type de partie, puis couleur / résultat / longueur minimale, puis **Parties**, puis les seuils.
-- **Parties** : « Dernières parties » et « Période » côte à côte, **toujours visibles**. L'option inactive garde ses dernières valeurs, atténuée, et s'active dès qu'on l'utilise. « Dernières parties » : un champ numérique et des raccourcis 10 / 25 / 50 / 100. Un curseur a été essayé puis retiré : sur des comptes de dizaines de milliers de parties, il ne permettait pas de régler finement. La période gagne le raccourci **Aujourd'hui** (depuis minuit, heure locale).
+- **Parties** : « Dernières parties » et « Période » côte à côte, **toujours visibles**. L'option inactive garde ses dernières valeurs, atténuée, et s'active dès qu'on l'utilise. « Dernières parties » : un champ numérique et des raccourcis 3 / 5 / 10 / 50 / 100. Un curseur a été essayé puis retiré : sur des comptes de dizaines de milliers de parties, il ne permettait pas de régler finement. La période gagne le raccourci **Aujourd'hui** (depuis minuit, heure locale).
 - **« Revenir aux filtres de l'analyse en cours »** est toujours affiché, désactivé tant que les réglages n'ont pas changé.
 - Le bouton rapide n'apparaît plus sur la page d'analyse : l'en-tête n'y garde que « Rejouer mes erreurs (N) ». Le nom du joueur est un lien vers le profil partout, y compris sur le profil.
 
@@ -533,3 +533,15 @@ Le filtre « longueur minimale » de l'analyse approfondie servait peu. Il est r
 - Bornes invalides (minimum au-dessus du maximum, hors de 0 à 4 000, champ vide) : message dédié, pas de recherche.
 - Comme le résultat, ce filtre n'est vérifié que par l'app : avec Lichess, on remonte les parties page par page jusqu'à en avoir assez.
 - Réglages enregistrés : l'ancien `minMoves` est simplement ignoré, sans changer de version.
+
+## 2026-10-22 : parcours plus courts vers l'entraînement
+
+Constat (en comparant avec Chess Rewind) : un nouveau visiteur ne voyait pas vite la valeur de l'outil, et l'usage régulier tient sans doute plus à de courtes analyses (1 à 5 parties) qu'à de grands regroupements. On ajoute donc des raccourcis jusqu'à l'entraînement.
+
+- **Accueil** : la promesse (« Your games are your best puzzles. ») et trois étapes (trouver son compte, analyser, rejouer ses erreurs) au-dessus du formulaire. Deux boutons : « Find profile » (principal) et « Review last game », qui saute la page profil. Les recherches récentes ont le même raccourci. Le champ ne prend le focus que sur ordinateur (pointeur fin) : sur téléphone, le clavier recouvrait la page.
+- **Analyser une partie précise** depuis l'onglet Parties : `/analysis/run?game=…`, comme `start=last`. La référence (`gameRef.ts`) est `lichess:<id>` (un appel à `/game/export/{id}`) ou `chesscom:<AAAA-MM>:<uuid>` : Chess.com ne sert les parties que par archive mensuelle, celle du mois de fin de partie en UTC.
+- **Après une analyse**, un encadré propose l'entraînement rapide (options par défaut, lancé tout de suite) ou l'onglet d'options.
+- Raccourcis du nombre de parties : 3 / 5 / 10 / 50 / 100.
+- Une recherche est aussi enregistrée dans les recherches récentes depuis la page d'analyse, puisqu'on peut maintenant y arriver sans passer par le profil.
+- L'onglet Parties perd la colonne Elo (trop d'informations) et, avec elle, le calcul des variations d'Elo Chess.com. Sur téléphone, les tableaux de parties masquent l'adversaire puis la date, et réduisent la plateforme à sa pastille.
+- Mis de côté : un joueur de démo, et la répétition espacée des erreurs (qui suppose de les enregistrer).

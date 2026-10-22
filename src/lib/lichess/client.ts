@@ -75,6 +75,17 @@ export function exportStandardGames(
   return exportGames(username, exportParams(options), signal, onGame)
 }
 
+/** One game, with moves, Lichess evaluations and clocks. */
+export async function exportGame(id: string, signal?: AbortSignal): Promise<LichessGame> {
+  const query = new URLSearchParams({ evals: 'true', clocks: 'true' })
+  const response = await fetchOk(
+    'lichess',
+    `${BASE_URL}/game/export/${encodeURIComponent(id)}?${query}`,
+    { signal, headers: { Accept: 'application/json' } },
+  )
+  return (await response.json()) as LichessGame
+}
+
 /**
  * One page of the game history: standard games, rated or casual (like the review), newest first,
  * without moves. `until` (Unix ms, exclusive upper bound on the start date) pages backwards.

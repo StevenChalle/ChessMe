@@ -1,9 +1,10 @@
 import type { Category } from '@/features/player/summary'
-import { fetchArchiveGames, fetchArchives } from '@/lib/chesscom/client'
+import { archiveUrl, fetchArchiveGames, fetchArchives } from '@/lib/chesscom/client'
 import type { ChessComGame } from '@/lib/chesscom/types'
 import type { ApiSource } from '@/lib/http'
-import { exportStandardGames, type GameExportOptions } from '@/lib/lichess/client'
+import { exportGame, exportStandardGames, type GameExportOptions } from '@/lib/lichess/client'
 import type { LichessGame } from '@/lib/lichess/types'
+import type { GameRef } from './gameRef'
 import { fromChessComGame, fromLichessGame, latestGames, type ReviewGame } from './games'
 import { activeRatingFilter, ALL_RESULTS, matchesSelection, type GameSelection } from './selection'
 
@@ -169,5 +170,48 @@ export async function findGames(
   return {
     games: latestGames(all, (scope.kind === 'latest' ? scope.count : scope.max) ?? all.length),
     failures,
+  }
+}
+
+export type SingleGameFetchers = {
+  lichessGame: (id: string, signal?: AbortSignal) => Promise<LichessGame>
+  chessComMonth: (archiveUrl: string, signal?: AbortSignal) => Promise<ChessComGame[]>
+}
+
+const SINGLE_GAME_FETCHERS: SingleGameFetchers = {
+  lichessGame: exportGame,
+  chessComMonth: fetchArchiveGames,
+}
+
+/**
+ * One game picked in a list (the history), to analyse on its own: no game when it is not one of
+ * the accounts' standard games (or no longer found).
+ */
+export async function findGame(
+  accounts: ReviewAccount[],
+  ref: GameRef,
+  {
+    signal,
+    fetchers = SINGLE_GAME_FETCHERS,
+  }: { signal?: AbortSignal; fetchers?: SingleGameFetchers } = {},
+): Promise<FoundGames> {
+  const account = accounts.find((item) => item.source === ref.source)
+  if (!account) return { games: [], failures: [] }
+  try {
+    let game: ReviewGame | undefined
+    if (ref.source === 'lichess') {
+      game = fromLichessGame(await fetchers.lichessGame(ref.id, signal), account.username)
+    } else {
+      const month = await fetchers.chessComMonth(
+        archiveUrl(account.username, ref.year, ref.month),
+        signal,
+      )
+      const raw = month.find((item) => item.uuid === ref.id)
+      game = raw && fromChessComGame(raw, account.username)
+    }
+    return { games: game ? [game] : [], failures: [] }
+  } catch (error) {
+    signal?.throwIfAborted()
+    return { games: [], failures: [{ source: ref.source, error: error as Error }] }
   }
 }

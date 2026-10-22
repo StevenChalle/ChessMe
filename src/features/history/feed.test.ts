@@ -1,13 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import type { ChessComGame } from '@/lib/chesscom/types'
 import type { LichessGame } from '@/lib/lichess/types'
-import {
-  bufferedGames,
-  nextPage,
-  startFeed,
-  withChessComRatingDiffs,
-  type FeedFetchers,
-} from './feed'
+import { nextPage, startFeed, type FeedFetchers } from './feed'
 
 const DAY = 86_400_000
 
@@ -105,31 +99,6 @@ describe('history feed', () => {
     expect(page.games.map((game) => game.id)).toEqual(['c-casual', 'casual', 'l1', 'c1'])
   })
 
-  it('gives the rating change: Lichess directly, Chess.com from the previous game of the pool', async () => {
-    const fetchers: FeedFetchers = {
-      lichessPage: async () => [lichessGame('l1', 10)],
-      chessComArchives: async () => ['m1'],
-      chessComMonth: async () => [
-        chessComGame('c1', 1, 1180),
-        chessComGame('r1', 2, 1500, 'rapid'),
-        chessComGame('c2', 3, 1195),
-      ],
-    }
-    const page = await nextPage(
-      startFeed([
-        { source: 'lichess', username: 'alice' },
-        { source: 'chesscom', username: 'alice' },
-      ]),
-      fetchers,
-    )
-    const games = withChessComRatingDiffs(page.games, bufferedGames(page.state))
-    const byId = Object.fromEntries(games.map((game) => [game.id, game]))
-    expect(byId.l1).toMatchObject({ rating: 1507, ratingDiff: 7 })
-    expect(byId.c2).toMatchObject({ rating: 1195, ratingDiff: 15 })
-    expect(byId.c1!.ratingDiff).toBeUndefined()
-    expect(page.hasMore).toBe(false)
-  })
-
   it('keeps going with the other platform when one fails', async () => {
     const fetchers: FeedFetchers = {
       lichessPage: async () => {
@@ -147,23 +116,5 @@ describe('history feed', () => {
     )
     expect(page.games.map((game) => game.id)).toEqual(['c1'])
     expect(page.state.failures.map((failure) => failure.source)).toEqual(['lichess'])
-  })
-
-  it('completes the Chess.com change with games fetched beyond the page', () => {
-    const summary = (id: string, day: number, rating: number) => ({
-      source: 'chesscom' as const,
-      id,
-      url: '',
-      playedAt: new Date(day * DAY),
-      category: 'blitz' as const,
-      timeControl: { kind: 'clock' as const, initial: 180, increment: 0 },
-      rated: true,
-      color: 'white' as const,
-      rating,
-      opponent: { name: 'x' },
-      result: 'win' as const,
-    })
-    const [shown] = withChessComRatingDiffs([summary('new', 3, 1210)], [summary('old', 1, 1200)])
-    expect(shown!.ratingDiff).toBe(10)
   })
 })

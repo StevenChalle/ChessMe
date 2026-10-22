@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import type { ChessComGame } from '@/lib/chesscom/types'
 import type { GameExportOptions } from '@/lib/lichess/client'
 import type { LichessGame } from '@/lib/lichess/types'
-import { findGames, type GameFetchers } from './fetch'
+import { findGame, findGames, type GameFetchers, type SingleGameFetchers } from './fetch'
 import { defaultSelection, type GameSelection } from './selection'
 
 const DAY = 86_400_000
@@ -232,5 +232,46 @@ describe('findGames', () => {
       { fetchers },
     )
     expect(failures).toEqual([])
+  })
+})
+
+describe('findGame', () => {
+  it('fetches a Lichess game by its id', async () => {
+    const fetchers = {
+      lichessGame: async (id: string) => lichessGame(id, 10),
+    } as unknown as SingleGameFetchers
+    const found = await findGame(lichessOnly, { source: 'lichess', id: 'abcd1234' }, { fetchers })
+    expect(found.games.map((game) => game.id)).toEqual(['abcd1234'])
+    expect(found.games[0]?.sanMoves).toEqual(['e4', 'e5', 'Nf3', 'Nc6'])
+  })
+
+  it("looks for a Chess.com game in its month's archive", async () => {
+    const urls: string[] = []
+    const fetchers = {
+      chessComMonth: async (url: string) => {
+        urls.push(url)
+        return [chessComGame('one', 10), chessComGame('two', 11)]
+      },
+    } as unknown as SingleGameFetchers
+    const found = await findGame(
+      [{ source: 'chesscom', username: 'Alice' }],
+      { source: 'chesscom', id: 'two', year: 2026, month: 3 },
+      { fetchers },
+    )
+    expect(urls).toEqual(['https://api.chess.com/pub/player/alice/games/2026/03'])
+    expect(found.games.map((game) => game.id)).toEqual(['two'])
+  })
+
+  it('finds nothing without an account on that platform, and reports failures', async () => {
+    const fetchers = {
+      lichessGame: async () => {
+        throw new Error('down')
+      },
+    } as unknown as SingleGameFetchers
+    const ref = { source: 'lichess' as const, id: 'abcd1234' }
+    expect(await findGame([], ref, { fetchers })).toEqual({ games: [], failures: [] })
+    const failed = await findGame(lichessOnly, ref, { fetchers })
+    expect(failed.games).toEqual([])
+    expect(failed.failures.map((failure) => failure.source)).toEqual(['lichess'])
   })
 })

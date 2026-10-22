@@ -1,5 +1,5 @@
 import { Link } from '@tanstack/react-router'
-import { X } from 'lucide-react'
+import { History, Play, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import type { ApiSource } from '@/lib/http'
 import { cn } from '@/lib/utils'
@@ -10,15 +10,21 @@ import { SourceDot } from './SourceBadge'
 
 const RECENT_LIMIT = 3
 
-/** Last profile searches, one click to reopen them. Hidden until there is at least one. */
+/**
+ * Last profile searches, one click to reopen them or to review their last game. Hidden until there
+ * is at least one.
+ */
 export function RecentSearches({ className }: { className?: string }) {
   const { searches, remove } = useRecentSearches(RECENT_LIMIT)
   if (searches.length === 0) return null
 
   return (
-    <section className={cn('space-y-2', className)}>
-      <h2 className="label-etabli">{m.recent_searches()}</h2>
-      <ul className="space-y-0.5">
+    <section className={cn('rounded-lg border border-border', className)}>
+      <h2 className="label-etabli flex items-center gap-2 border-b border-border px-3 py-2 text-muted-foreground">
+        <History className="size-3.5" />
+        {m.recent_searches()}
+      </h2>
+      <ul className="space-y-0.5 p-1">
         {searches
           .map(({ lichess, chesscom }) => ({ lichess, chesscom }))
           .map((usernames) => (
@@ -33,6 +39,16 @@ export function RecentSearches({ className }: { className?: string }) {
               >
                 <AccountNames usernames={usernames} />
               </Link>
+              <Button variant="ghost" size="xs" asChild className="text-muted-foreground">
+                <Link
+                  to="/analysis/run"
+                  search={{ ...usernames, start: 'last' }}
+                  title={m.review_button_last()}
+                >
+                  <Play data-icon="inline-start" />
+                  {m.recent_last_game()}
+                </Link>
+              </Button>
               <Button
                 type="button"
                 variant="ghost"

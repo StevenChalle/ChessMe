@@ -11,21 +11,23 @@ import { cn } from '@/lib/utils'
 import { m } from '@/paraglide/messages'
 import type { Mistake, ReviewedGame, ReviewOutcome } from '../analyze'
 import { ThemeBars } from './ThemeBars'
+import { TrainingPrompt } from './TrainingPrompt'
 
 const RESULTS_PAGE_SIZE = 20
 
 /**
  * The analysed games, paginated, with each game's errors and a button replaying them.
- * Replaying all the errors is in the page header.
+ * Below them, training on all the errors (TrainingPrompt).
  */
 export function ReviewResults({
-  outcome: { games, failures },
+  outcome,
   onTrain,
 }: {
   outcome: ReviewOutcome
   onTrain: (mistakes: Mistake[]) => void
 }) {
   const [page, setPage] = useState(0)
+  const { games, failures } = outcome
 
   return (
     <div className="min-w-0 space-y-3">
@@ -54,13 +56,13 @@ export function ReviewResults({
                     {formatNumber(game.mistakes.length)}
                   </span>
                   <Button
-                    size="icon-xs"
+                    size="xs"
                     disabled={game.mistakes.length === 0}
                     onClick={() => onTrain(game.mistakes)}
-                    aria-label={m.replay_game()}
                     title={m.replay_game()}
                   >
-                    <Swords />
+                    <Swords data-icon="inline-start" />
+                    <span className="max-sm:sr-only">{m.replay_game_short()}</span>
                   </Button>
                 </span>
               ),
@@ -72,6 +74,7 @@ export function ReviewResults({
             total={games.length}
             onPageChange={setPage}
           />
+          <TrainingPrompt outcome={outcome} />
           <FeedbackNudge text={m.feedback_nudge_results()} />
         </>
       )}
