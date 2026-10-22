@@ -10,12 +10,14 @@ import type { TrainingOptions } from './order'
 const STORAGE_KEY = 'craftyourchess:training-settings'
 const VERSION = 1
 
-/** As the options screen edits them: the games limit keeps its number while unchecked. */
+/** As the options screen edits them: the limits keep their number while unchecked. */
 export type TrainingSettings = {
   interleaveGames: boolean
   shuffleWithinGame: boolean
   limitGames: boolean
   gamesLimit: number
+  limitPositions: boolean
+  positionsLimit: number
   /** undefined: the analysis's own error threshold (every error) */
   minDrop?: number
   /** Only the errors having all of them; none: every error */
@@ -24,12 +26,15 @@ export type TrainingSettings = {
 }
 
 export const DEFAULT_GAMES_LIMIT = 5
+export const DEFAULT_POSITIONS_LIMIT = 10
 
 export const DEFAULT_TRAINING_SETTINGS: TrainingSettings = {
   interleaveGames: false,
   shuffleWithinGame: false,
   limitGames: false,
   gamesLimit: DEFAULT_GAMES_LIMIT,
+  limitPositions: false,
+  positionsLimit: DEFAULT_POSITIONS_LIMIT,
   themes: [],
   openingMoves: OPENING_MOVES.default,
 }
@@ -43,6 +48,7 @@ export function toTrainingOptions(
     interleaveGames: settings.interleaveGames,
     shuffleWithinGame: settings.shuffleWithinGame,
     maxGames: settings.limitGames ? settings.gamesLimit : undefined,
+    maxPositions: settings.limitPositions ? settings.positionsLimit : undefined,
     // Never below the analysis's threshold: there are no errors under it.
     minDrop: Math.max(settings.minDrop ?? errorMinDrop, errorMinDrop),
     themes: settings.themes,
@@ -65,15 +71,16 @@ export function parseTrainingSettings(raw: string | null): TrainingSettings {
   if (data.version !== VERSION) return defaults
   const flag = (value: unknown, fallback: boolean) =>
     typeof value === 'boolean' ? value : fallback
-  const { gamesLimit, minDrop, themes, openingMoves } = data
+  const { gamesLimit, positionsLimit, minDrop, themes, openingMoves } = data
+  const count = (value: unknown, fallback: number) =>
+    Number.isInteger(value) && (value as number) >= 1 ? (value as number) : fallback
   return {
     interleaveGames: flag(data.interleaveGames, defaults.interleaveGames),
     shuffleWithinGame: flag(data.shuffleWithinGame, defaults.shuffleWithinGame),
     limitGames: flag(data.limitGames, defaults.limitGames),
-    gamesLimit:
-      Number.isInteger(gamesLimit) && (gamesLimit as number) >= 1
-        ? (gamesLimit as number)
-        : defaults.gamesLimit,
+    gamesLimit: count(gamesLimit, defaults.gamesLimit),
+    limitPositions: flag(data.limitPositions, defaults.limitPositions),
+    positionsLimit: count(positionsLimit, defaults.positionsLimit),
     minDrop:
       typeof minDrop === 'number' && minDrop >= ERROR_RANGE.min && minDrop <= ERROR_RANGE.max
         ? minDrop

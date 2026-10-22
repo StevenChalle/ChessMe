@@ -81,6 +81,16 @@ describe('trainingPuzzles', () => {
     expect(new Set(puzzles.map((item) => item.game.url)).size).toBe(1)
   })
 
+  it('keeps only the first positions when limited, after the games limit', () => {
+    expect(trainingPuzzles(ALL, { ...DEFAULTS, maxPositions: 4 })).toHaveLength(4)
+    const puzzles = trainingPuzzles(
+      ALL,
+      { ...DEFAULTS, maxGames: 1, maxPositions: 10 },
+      () => 0.999,
+    )
+    expect(puzzles.length).toBeLessThan(ALL.length)
+  })
+
   it('interleaves games, each keeping the order of its moves', () => {
     const puzzles = trainingPuzzles(
       ALL,

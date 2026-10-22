@@ -545,3 +545,9 @@ Constat (en comparant avec Chess Rewind) : un nouveau visiteur ne voyait pas vit
 - Une recherche est aussi enregistrée dans les recherches récentes depuis la page d'analyse, puisqu'on peut maintenant y arriver sans passer par le profil.
 - L'onglet Parties perd la colonne Elo (trop d'informations) et, avec elle, le calcul des variations d'Elo Chess.com. Sur téléphone, les tableaux de parties masquent l'adversaire puis la date, et réduisent la plateforme à sa pastille.
 - Mis de côté : un joueur de démo, et la répétition espacée des erreurs (qui suppose de les enregistrer).
+
+## 2026-10-22 : sections en accordéon, limite de positions
+
+- Les sections des filtres d'analyse et des options d'entraînement partagent un composant (`components/Expandable.tsx`) : un accordéon Radix, une seule section ouverte à la fois, avec un court glissement pour que le changement se voie. Le repliement natif (`<details>`) ne s'anime pas de façon fiable dans tous les navigateurs. En-têtes sur fond `field`, résumé des choix toujours visible, bouton « Reset to default » dans chaque section.
+- Options d'entraînement : une section « Themes », une section « Advanced » (ordre, limites, perte minimale).
+- Nouvelle option **limiter à N positions** (par défaut décochée, 10) : les N premières dans l'ordre de jeu, après la limite de parties. Enregistrée avec les autres options d'entraînement, même clé de stockage.

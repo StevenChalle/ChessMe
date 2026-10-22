@@ -21,6 +21,8 @@ describe('parseTrainingSettings', () => {
       shuffleWithinGame: true,
       limitGames: true,
       gamesLimit: 3,
+      limitPositions: true,
+      positionsLimit: 12,
       minDrop: 15,
       themes: ['endgame', 'findMate'],
       openingMoves: 8,
@@ -31,6 +33,7 @@ describe('parseTrainingSettings', () => {
         saved({
           interleaveGames: 'yes',
           gamesLimit: 0,
+          positionsLimit: 2.5,
           minDrop: 99,
           themes: 'endgame',
           openingMoves: 40,
@@ -47,6 +50,16 @@ describe('toTrainingOptions', () => {
       toTrainingOptions({ ...DEFAULT_TRAINING_SETTINGS, limitGames: true, gamesLimit: 4 }, 10)
         .maxGames,
     ).toBe(4)
+  })
+
+  it('applies the positions limit only when checked', () => {
+    expect(toTrainingOptions(DEFAULT_TRAINING_SETTINGS, 10).maxPositions).toBeUndefined()
+    expect(
+      toTrainingOptions(
+        { ...DEFAULT_TRAINING_SETTINGS, limitPositions: true, positionsLimit: 7 },
+        10,
+      ).maxPositions,
+    ).toBe(7)
   })
 
   it('never goes below the analysis threshold', () => {

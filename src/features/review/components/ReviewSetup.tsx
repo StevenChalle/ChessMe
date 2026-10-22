@@ -1,7 +1,7 @@
 import type { Color } from 'chessops'
-import { ChevronRight, RotateCcw } from 'lucide-react'
 import { useId, useState, type ReactNode } from 'react'
 import { CHIP_CLASS } from '@/components/chip'
+import { Expandable, ExpandableGroup } from '@/components/Expandable'
 import { InfoTip } from '@/components/InfoTip'
 import { LimitField } from '@/components/LimitField'
 import { Button } from '@/components/ui/button'
@@ -35,6 +35,7 @@ import {
   ALL_RESULTS,
   DATE_PRESETS,
   datePresetRange,
+  defaultSelection,
   DEFAULT_RANGE_MAX,
   isRatingFilterValid,
   isSelectionValid,
@@ -90,69 +91,6 @@ function Section({ title, children }: { title: string; children: ReactNode }) {
       <legend className="label-etabli mb-2">{title}</legend>
       {children}
     </fieldset>
-  )
-}
-
-type SectionAction = { disabled: boolean; onClick: () => void }
-
-/** A part of the form that folds away, with a one-line summary of its values when closed. */
-function Expandable({
-  title,
-  summary,
-  open,
-  reset,
-  defaults,
-  children,
-}: {
-  title: string
-  summary: string
-  open?: boolean
-  /** Puts the section back as in the current analysis (no button without an analysis) */
-  reset?: SectionAction
-  /** Puts the section back to the default values */
-  defaults?: SectionAction
-  children: ReactNode
-}) {
-  const actions = [
-    defaults && { ...defaults, label: m.setup_reset_defaults() },
-    reset && { ...reset, label: m.setup_reset_to_analysis() },
-  ].filter((action) => action !== undefined)
-  return (
-    <details open={open} className="group/expandable rounded-md border border-border">
-      <summary className="flex cursor-pointer list-none items-center gap-3 px-4 py-3 select-none [&::-webkit-details-marker]:hidden">
-        <ChevronRight
-          aria-hidden
-          className="size-4 shrink-0 text-muted-foreground transition-transform group-open/expandable:rotate-90"
-        />
-        <span className="font-medium text-text-strong">{title}</span>
-        <span className="min-w-0 truncate text-sm text-muted-foreground group-open/expandable:hidden">
-          {summary}
-        </span>
-        {actions.length > 0 && (
-          // Not a click on the summary, even on a disabled button: the section stays as it is.
-          <span
-            className="ml-auto flex shrink-0 flex-wrap justify-end gap-1"
-            onClick={(event) => event.preventDefault()}
-          >
-            {actions.map(({ label, disabled, onClick }) => (
-              <Button
-                key={label}
-                type="button"
-                variant="ghost"
-                size="xs"
-                disabled={disabled}
-                onClick={onClick}
-                className="text-muted-foreground"
-              >
-                <RotateCcw data-icon="inline-start" />
-                {label}
-              </Button>
-            ))}
-          </span>
-        )}
-      </summary>
-      <div className="space-y-6 border-t border-border p-4">{children}</div>
-    </details>
   )
 }
 
@@ -224,6 +162,7 @@ export function ReviewSetup({
 
   const { scope } = selection
   const valid = isSelectionValid(selection)
+  const defaults = defaultSelection(accounts.map((account) => account.source))
   // Both ways of choosing games stay visible: the inactive one keeps its last values, dimmed,
   // and using it makes it the active one.
   const [lastLatest, setLastLatest] = useState(scope.kind === 'latest' ? scope.count : 10)
@@ -249,262 +188,276 @@ export function ReviewSetup({
 
   return (
     <div className="space-y-3">
-      <Expandable
-        title={m.setup_section_range()}
-        summary={scopeSummary(scope)}
-        open
-        reset={sectionReset(
-          (ref) => sameScope(scope, ref.selection.scope),
-          (ref) => update({ scope: ref.selection.scope }),
-        )}
-      >
-        <RadioGroup
-          value={scope.kind}
-          onValueChange={(kind) => (kind === 'latest' ? setLatest(latest) : setRange(range))}
-          className="grid gap-6 md:grid-cols-2"
+      <ExpandableGroup defaultValue="range">
+        <Expandable
+          value="range"
+          title={m.setup_section_range()}
+          summary={scopeSummary(scope)}
+          defaults={{
+            disabled: sameScope(scope, defaults.scope),
+            onClick: () => update({ scope: defaults.scope }),
+          }}
+          reset={sectionReset(
+            (ref) => sameScope(scope, ref.selection.scope),
+            (ref) => update({ scope: ref.selection.scope }),
+          )}
         >
-          <div className="space-y-3">
-            <RadioField value="latest">{m.setup_latest()}</RadioField>
-            <div
-              className={cn(
-                'space-y-3 pl-6 transition-opacity',
-                scope.kind !== 'latest' && 'opacity-50',
-              )}
-            >
-              <div className="flex flex-wrap items-center gap-2">
-                <Input
-                  type="number"
-                  min={1}
-                  max={gameTotal > 0 ? gameTotal : undefined}
-                  value={Number.isNaN(latest) ? '' : latest}
-                  onChange={(event) => setLatest(event.target.valueAsNumber)}
-                  aria-label={m.setup_latest()}
-                  className="num h-8 w-24 bg-muted"
-                />
-                {gameTotal > 0 && (
-                  <span className="text-xs text-muted-foreground">
-                    {m.setup_latest_total({ total: formatNumber(gameTotal) })}
-                  </span>
+          <RadioGroup
+            value={scope.kind}
+            onValueChange={(kind) => (kind === 'latest' ? setLatest(latest) : setRange(range))}
+            className="grid gap-6 md:grid-cols-2"
+          >
+            <div className="space-y-3">
+              <RadioField value="latest">{m.setup_latest()}</RadioField>
+              <div
+                className={cn(
+                  'space-y-3 pl-6 transition-opacity',
+                  scope.kind !== 'latest' && 'opacity-50',
                 )}
-                {gameTotal > 0 && accounts.some((account) => account.source === 'chesscom') && (
-                  <InfoTip text={m.chesscom_rated_only()} />
-                )}
-              </div>
-              <div className="flex gap-1">
-                {LATEST_SHORTCUTS.map((count) => (
-                  <Button
-                    key={count}
-                    type="button"
-                    variant="ghost"
-                    size="xs"
-                    aria-pressed={scope.kind === 'latest' && latest === count}
-                    className={cn(scope.kind === 'latest' && latest === count && SELECTED_SHORTCUT)}
-                    onClick={() => setLatest(count)}
-                  >
-                    {count}
-                  </Button>
-                ))}
+              >
+                <div className="flex flex-wrap items-center gap-2">
+                  <Input
+                    type="number"
+                    min={1}
+                    max={gameTotal > 0 ? gameTotal : undefined}
+                    value={Number.isNaN(latest) ? '' : latest}
+                    onChange={(event) => setLatest(event.target.valueAsNumber)}
+                    aria-label={m.setup_latest()}
+                    className="num h-8 w-24 bg-muted"
+                  />
+                  {gameTotal > 0 && (
+                    <span className="text-xs text-muted-foreground">
+                      {m.setup_latest_total({ total: formatNumber(gameTotal) })}
+                    </span>
+                  )}
+                  {gameTotal > 0 && accounts.some((account) => account.source === 'chesscom') && (
+                    <InfoTip text={m.chesscom_rated_only()} />
+                  )}
+                </div>
+                <div className="flex gap-1">
+                  {LATEST_SHORTCUTS.map((count) => (
+                    <Button
+                      key={count}
+                      type="button"
+                      variant="ghost"
+                      size="xs"
+                      aria-pressed={scope.kind === 'latest' && latest === count}
+                      className={cn(
+                        scope.kind === 'latest' && latest === count && SELECTED_SHORTCUT,
+                      )}
+                      onClick={() => setLatest(count)}
+                    >
+                      {count}
+                    </Button>
+                  ))}
+                </div>
               </div>
             </div>
-          </div>
-          <div className="space-y-3">
-            <RadioField value="range">{m.setup_period()}</RadioField>
-            <div
-              className={cn(
-                'space-y-3 pl-6 transition-opacity',
-                scope.kind !== 'range' && 'opacity-50',
-              )}
-            >
-              <div className="flex flex-wrap gap-1">
-                {DATE_PRESETS.map((preset) => (
-                  <Button
-                    key={preset}
-                    type="button"
-                    variant="ghost"
-                    size="xs"
-                    aria-pressed={scope.kind === 'range' && range.preset === preset}
-                    className={cn(
-                      scope.kind === 'range' && range.preset === preset && SELECTED_SHORTCUT,
-                    )}
-                    onClick={() =>
-                      setRange({
-                        kind: 'range',
-                        preset,
-                        ...datePresetRange(preset, Date.now()),
-                        max: range.max,
-                      })
-                    }
-                  >
-                    {PRESET_LABELS[preset]()}
-                  </Button>
-                ))}
-              </div>
-              <div className="flex flex-wrap items-center gap-2 text-sm">
-                <DateField
-                  label={m.setup_from()}
-                  value={toDateInput(range.from)}
-                  onChange={(value) => {
-                    const from = fromDateInput(value, false)
-                    if (from !== undefined) {
-                      setRange({ kind: 'range', from, to: range.to, max: range.max })
-                    }
-                  }}
-                />
-                <DateField
-                  label={m.setup_to()}
-                  value={toDateInput(range.to)}
-                  onChange={(value) => {
-                    const to = fromDateInput(value, true)
-                    if (to !== undefined) {
-                      setRange({ kind: 'range', from: range.from, to, max: range.max })
-                    }
-                  }}
-                />
-                {!range.preset && (
-                  <span className="text-xs text-muted-foreground">{m.preset_custom()}</span>
+            <div className="space-y-3">
+              <RadioField value="range">{m.setup_period()}</RadioField>
+              <div
+                className={cn(
+                  'space-y-3 pl-6 transition-opacity',
+                  scope.kind !== 'range' && 'opacity-50',
                 )}
+              >
+                <div className="flex flex-wrap gap-1">
+                  {DATE_PRESETS.map((preset) => (
+                    <Button
+                      key={preset}
+                      type="button"
+                      variant="ghost"
+                      size="xs"
+                      aria-pressed={scope.kind === 'range' && range.preset === preset}
+                      className={cn(
+                        scope.kind === 'range' && range.preset === preset && SELECTED_SHORTCUT,
+                      )}
+                      onClick={() =>
+                        setRange({
+                          kind: 'range',
+                          preset,
+                          ...datePresetRange(preset, Date.now()),
+                          max: range.max,
+                        })
+                      }
+                    >
+                      {PRESET_LABELS[preset]()}
+                    </Button>
+                  ))}
+                </div>
+                <div className="flex flex-wrap items-center gap-2 text-sm">
+                  <DateField
+                    label={m.setup_from()}
+                    value={toDateInput(range.from)}
+                    onChange={(value) => {
+                      const from = fromDateInput(value, false)
+                      if (from !== undefined) {
+                        setRange({ kind: 'range', from, to: range.to, max: range.max })
+                      }
+                    }}
+                  />
+                  <DateField
+                    label={m.setup_to()}
+                    value={toDateInput(range.to)}
+                    onChange={(value) => {
+                      const to = fromDateInput(value, true)
+                      if (to !== undefined) {
+                        setRange({ kind: 'range', from: range.from, to, max: range.max })
+                      }
+                    }}
+                  />
+                  {!range.preset && (
+                    <span className="text-xs text-muted-foreground">{m.preset_custom()}</span>
+                  )}
+                </div>
+                <RangeMaxField value={range.max} onChange={(max) => setRange({ ...range, max })} />
               </div>
-              <RangeMaxField value={range.max} onChange={(max) => setRange({ ...range, max })} />
             </div>
+          </RadioGroup>
+        </Expandable>
+
+        <Expandable
+          value="games"
+          title={m.setup_games()}
+          summary={gamesSummary(selection, accounts)}
+          defaults={{
+            disabled: sameFilters(selection, defaults),
+            onClick: () => update({ ...defaults, scope }),
+          }}
+          reset={sectionReset(
+            (ref) => sameFilters(selection, ref.selection),
+            (ref) => update({ ...ref.selection, scope }),
+          )}
+        >
+          <div className="grid gap-6 md:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)_minmax(0,1.6fr)]">
+            <Section title={m.setup_platforms()}>
+              <ToggleGroup
+                type="multiple"
+                value={selection.sources}
+                onValueChange={(value) => update({ sources: value as ApiSource[] })}
+                className="flex-wrap"
+              >
+                {accounts.map(({ source, username }) => (
+                  <ToggleGroupItem key={source} value={source} size="sm" className={CHIP_CLASS}>
+                    <SourceDot source={source} />
+                    {SOURCE_LABELS[source]}
+                    <span className="text-muted-foreground">{username}</span>
+                  </ToggleGroupItem>
+                ))}
+              </ToggleGroup>
+            </Section>
+
+            <Section title={m.setup_ratings()}>
+              <ToggleGroup
+                type="multiple"
+                value={selection.ratings}
+                onValueChange={(value) => update({ ratings: value as RatingKind[] })}
+                className="flex-wrap"
+              >
+                {ALL_RATINGS.map((rating) => (
+                  <ToggleGroupItem key={rating} value={rating} size="sm" className={CHIP_CLASS}>
+                    {RATING_LABELS[rating]()}
+                  </ToggleGroupItem>
+                ))}
+              </ToggleGroup>
+            </Section>
+
+            <Section title={m.setup_time_controls()}>
+              <ToggleGroup
+                type="multiple"
+                value={selection.categories}
+                onValueChange={(value) => update({ categories: value as Category[] })}
+                className="flex-wrap"
+              >
+                {CATEGORIES.map((category) => (
+                  <ToggleGroupItem key={category} value={category} size="sm" className={CHIP_CLASS}>
+                    {categoryLabel(category)}
+                  </ToggleGroupItem>
+                ))}
+              </ToggleGroup>
+            </Section>
           </div>
-        </RadioGroup>
-      </Expandable>
 
-      <Expandable
-        title={m.setup_games()}
-        summary={gamesSummary(selection, accounts)}
-        reset={sectionReset(
-          (ref) => sameFilters(selection, ref.selection),
-          (ref) => update({ ...ref.selection, scope }),
-        )}
-      >
-        <div className="grid gap-6 md:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)_minmax(0,1.6fr)]">
-          <Section title={m.setup_platforms()}>
-            <ToggleGroup
-              type="multiple"
-              value={selection.sources}
-              onValueChange={(value) => update({ sources: value as ApiSource[] })}
-              className="flex-wrap"
-            >
-              {accounts.map(({ source, username }) => (
-                <ToggleGroupItem key={source} value={source} size="sm" className={CHIP_CLASS}>
-                  <SourceDot source={source} />
-                  {SOURCE_LABELS[source]}
-                  <span className="text-muted-foreground">{username}</span>
-                </ToggleGroupItem>
-              ))}
-            </ToggleGroup>
-          </Section>
+          <div className="grid gap-6 md:grid-cols-3">
+            <Section title={m.setup_color()}>
+              <ToggleGroup
+                type="multiple"
+                value={selection.colors}
+                onValueChange={(value) => update({ colors: value as Color[] })}
+              >
+                {ALL_COLORS.map((color) => (
+                  <ToggleGroupItem key={color} value={color} size="sm" className={CHIP_CLASS}>
+                    {COLOR_LABELS[color]()}
+                  </ToggleGroupItem>
+                ))}
+              </ToggleGroup>
+            </Section>
+            <Section title={m.setup_result()}>
+              <ToggleGroup
+                type="multiple"
+                value={selection.results}
+                onValueChange={(value) => update({ results: value as GameResult[] })}
+                className="flex-wrap"
+              >
+                {ALL_RESULTS.map((result) => (
+                  <ToggleGroupItem key={result} value={result} size="sm" className={CHIP_CLASS}>
+                    {RESULT_LABELS[result]()}
+                  </ToggleGroupItem>
+                ))}
+              </ToggleGroup>
+            </Section>
+            <Section title={m.setup_opponent_rating()}>
+              <RatingRangeField
+                filter={selection.opponentRating}
+                available={selection.ratings.includes('rated')}
+                onChange={(opponentRating) => update({ opponentRating })}
+              />
+            </Section>
+          </div>
+        </Expandable>
 
-          <Section title={m.setup_ratings()}>
-            <ToggleGroup
-              type="multiple"
-              value={selection.ratings}
-              onValueChange={(value) => update({ ratings: value as RatingKind[] })}
-              className="flex-wrap"
-            >
-              {ALL_RATINGS.map((rating) => (
-                <ToggleGroupItem key={rating} value={rating} size="sm" className={CHIP_CLASS}>
-                  {RATING_LABELS[rating]()}
-                </ToggleGroupItem>
-              ))}
-            </ToggleGroup>
-          </Section>
-
-          <Section title={m.setup_time_controls()}>
-            <ToggleGroup
-              type="multiple"
-              value={selection.categories}
-              onValueChange={(value) => update({ categories: value as Category[] })}
-              className="flex-wrap"
-            >
-              {CATEGORIES.map((category) => (
-                <ToggleGroupItem key={category} value={category} size="sm" className={CHIP_CLASS}>
-                  {categoryLabel(category)}
-                </ToggleGroupItem>
-              ))}
-            </ToggleGroup>
-          </Section>
-        </div>
-
-        <div className="grid gap-6 md:grid-cols-3">
-          <Section title={m.setup_color()}>
-            <ToggleGroup
-              type="multiple"
-              value={selection.colors}
-              onValueChange={(value) => update({ colors: value as Color[] })}
-            >
-              {ALL_COLORS.map((color) => (
-                <ToggleGroupItem key={color} value={color} size="sm" className={CHIP_CLASS}>
-                  {COLOR_LABELS[color]()}
-                </ToggleGroupItem>
-              ))}
-            </ToggleGroup>
-          </Section>
-          <Section title={m.setup_result()}>
-            <ToggleGroup
-              type="multiple"
-              value={selection.results}
-              onValueChange={(value) => update({ results: value as GameResult[] })}
-              className="flex-wrap"
-            >
-              {ALL_RESULTS.map((result) => (
-                <ToggleGroupItem key={result} value={result} size="sm" className={CHIP_CLASS}>
-                  {RESULT_LABELS[result]()}
-                </ToggleGroupItem>
-              ))}
-            </ToggleGroup>
-          </Section>
-          <Section title={m.setup_opponent_rating()}>
-            <RatingRangeField
-              filter={selection.opponentRating}
-              available={selection.ratings.includes('rated')}
-              onChange={(opponentRating) => update({ opponentRating })}
+        <Expandable
+          value="training"
+          title={m.setup_section_training()}
+          defaults={{
+            disabled: sameCriteria(criteria, DEFAULT_CRITERIA),
+            onClick: () => setCriteria(DEFAULT_CRITERIA),
+          }}
+          reset={sectionReset(
+            (ref) => sameCriteria(criteria, ref.criteria),
+            (ref) => setCriteria(ref.criteria),
+          )}
+          summary={m.setup_summary_training({
+            error: String(criteria.errorMinDrop),
+            valid: String(criteria.validMaxDrop),
+          })}
+        >
+          <div className="grid gap-6 md:grid-cols-2">
+            <ThresholdSlider
+              label={m.setup_error()}
+              hint={m.setup_error_hint({ value: String(criteria.errorMinDrop) })}
+              value={criteria.errorMinDrop}
+              range={ERROR_RANGE}
+              markers={lichessMarkers()}
+              note={m.setup_markers_note()}
+              onChange={(errorMinDrop) =>
+                setCriteria(normalizeCriteria({ ...criteria, errorMinDrop }, 'errorMinDrop'))
+              }
             />
-          </Section>
-        </div>
-      </Expandable>
-
-      <Expandable
-        title={m.setup_section_training()}
-        defaults={{
-          disabled: sameCriteria(criteria, DEFAULT_CRITERIA),
-          onClick: () => setCriteria(DEFAULT_CRITERIA),
-        }}
-        reset={sectionReset(
-          (ref) => sameCriteria(criteria, ref.criteria),
-          (ref) => setCriteria(ref.criteria),
-        )}
-        summary={m.setup_summary_training({
-          error: String(criteria.errorMinDrop),
-          valid: String(criteria.validMaxDrop),
-        })}
-      >
-        <div className="grid gap-6 md:grid-cols-2">
-          <ThresholdSlider
-            label={m.setup_error()}
-            hint={m.setup_error_hint({ value: String(criteria.errorMinDrop) })}
-            value={criteria.errorMinDrop}
-            range={ERROR_RANGE}
-            markers={lichessMarkers()}
-            note={m.setup_markers_note()}
-            onChange={(errorMinDrop) =>
-              setCriteria(normalizeCriteria({ ...criteria, errorMinDrop }, 'errorMinDrop'))
-            }
-          />
-          <ThresholdSlider
-            label={m.setup_valid()}
-            hint={m.setup_valid_hint({ value: String(criteria.validMaxDrop) })}
-            value={criteria.validMaxDrop}
-            range={VALID_RANGE}
-            markers={lichessMarkers()}
-            note={m.setup_valid_info()}
-            onChange={(validMaxDrop) =>
-              setCriteria(normalizeCriteria({ ...criteria, validMaxDrop }, 'validMaxDrop'))
-            }
-          />
-        </div>
-      </Expandable>
+            <ThresholdSlider
+              label={m.setup_valid()}
+              hint={m.setup_valid_hint({ value: String(criteria.validMaxDrop) })}
+              value={criteria.validMaxDrop}
+              range={VALID_RANGE}
+              markers={lichessMarkers()}
+              note={m.setup_valid_info()}
+              onChange={(validMaxDrop) =>
+                setCriteria(normalizeCriteria({ ...criteria, validMaxDrop }, 'validMaxDrop'))
+              }
+            />
+          </div>
+        </Expandable>
+      </ExpandableGroup>
 
       {!valid && (
         <p className="text-sm text-loss">

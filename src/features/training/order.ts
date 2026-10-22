@@ -11,6 +11,8 @@ export type TrainingOptions = {
   shuffleWithinGame: boolean
   /** Only the first games, in the order they are played; undefined: all of them */
   maxGames?: number
+  /** Only the first positions, in the order they are played; undefined: all of them */
+  maxPositions?: number
   /** Errors losing less than this (% of winning chances) are left out */
   minDrop: number
   /** Only the errors having every one of these themes; none: every error */
@@ -88,5 +90,6 @@ export function trainingPuzzles(
   let games = shuffle(mistakesByGame(mistakes, options), random)
   if (options.maxGames !== undefined) games = games.slice(0, options.maxGames)
   if (options.shuffleWithinGame) games = games.map((game) => shuffle(game, random))
-  return options.interleaveGames ? interleave(games, random) : games.flat()
+  const puzzles = options.interleaveGames ? interleave(games, random) : games.flat()
+  return options.maxPositions === undefined ? puzzles : puzzles.slice(0, options.maxPositions)
 }
