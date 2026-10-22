@@ -75,15 +75,24 @@ export function exportStandardGames(
   return exportGames(username, exportParams(options), signal, onGame)
 }
 
-/** One game, with moves, Lichess evaluations and clocks. */
-export async function exportGame(id: string, signal?: AbortSignal): Promise<LichessGame> {
+/**
+ * One game, with moves, Lichess evaluations and clocks; undefined if it does not exist. Exported by
+ * id list: from a browser, /game/export/{id} answers 401 in JSON (see docs/apis.md).
+ */
+export async function exportGame(
+  id: string,
+  signal?: AbortSignal,
+): Promise<LichessGame | undefined> {
   const query = new URLSearchParams({ evals: 'true', clocks: 'true' })
-  const response = await fetchOk(
-    'lichess',
-    `${BASE_URL}/game/export/${encodeURIComponent(id)}?${query}`,
-    { signal, headers: { Accept: 'application/json' } },
-  )
-  return (await response.json()) as LichessGame
+  const response = await fetchOk('lichess', `${BASE_URL}/api/games/export/_ids?${query}`, {
+    method: 'POST',
+    body: id,
+    signal,
+    headers: { Accept: 'application/x-ndjson', 'Content-Type': 'text/plain' },
+  })
+  if (!response.body) return undefined
+  for await (const game of readNdjson<LichessGame>(response.body)) return game
+  return undefined
 }
 
 /**

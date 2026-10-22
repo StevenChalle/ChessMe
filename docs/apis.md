@@ -25,6 +25,8 @@
 - Aucun moyen de demander une analyse serveur par l'API.
 - Le 2026-10-04, `GET /api/games/user/{username}` renvoyait 404 depuis `curl` et depuis un Chromium headless (alors que `/game/export/{id}` répondait), mais **fonctionne depuis un navigateur normal**, y compris dans l'app : un filtrage côté Lichess des clients automatisés, ou de l'IP de test.
 
+- **Une partie par son id** : `GET /game/export/{id}` avec `Accept: application/json` renvoie **401 depuis un navigateur** (constaté le 2026-10-22, alors que sans cet en-tête il répond). On passe par `POST /api/games/export/_ids` (corps : les ids séparés par des virgules, jusqu'à 300 ; réponse NDJSON au même format que l'export d'un joueur, avec `evals`, `clocks`).
+
 **Export paginé** (historique) : `max=30&moves=false&until=<ms>`, où `until` est une borne sur la date de **début** (`createdAt`) ; la page suivante part de `min(createdAt) − 1`. Sans `perfType`, l'export comprend toutes les variantes et les parties amicales. Chaque joueur a `rating` (avant la partie) et `ratingDiff` (parties classées).
 
 **Débit** : environ 20 parties/s sans token. **Une seule requête à la fois.** En cas de 429, attendre 60 s avant de réessayer.

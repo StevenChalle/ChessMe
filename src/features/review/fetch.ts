@@ -174,7 +174,7 @@ export async function findGames(
 }
 
 export type SingleGameFetchers = {
-  lichessGame: (id: string, signal?: AbortSignal) => Promise<LichessGame>
+  lichessGame: (id: string, signal?: AbortSignal) => Promise<LichessGame | undefined>
   chessComMonth: (archiveUrl: string, signal?: AbortSignal) => Promise<ChessComGame[]>
 }
 
@@ -200,7 +200,8 @@ export async function findGame(
   try {
     let game: ReviewGame | undefined
     if (ref.source === 'lichess') {
-      game = fromLichessGame(await fetchers.lichessGame(ref.id, signal), account.username)
+      const raw = await fetchers.lichessGame(ref.id, signal)
+      game = raw && fromLichessGame(raw, account.username)
     } else {
       const month = await fetchers.chessComMonth(
         archiveUrl(account.username, ref.year, ref.month),
