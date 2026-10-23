@@ -651,3 +651,10 @@ Le but : ne jamais sentir de limite, mais recycler doucement le plus ancien quan
 ## 2026-10-23 : « Entraîner » pour les parties déjà analysées
 
 Dans l'onglet Parties (comptes et import), une partie déjà analysée (entrée du cache d'analyses avec la version et le moteur actuels, retrouvée par sa référence `gameRef`) affiche « Entraîner » au lieu d'« Analyser ». Le lien (`?game=…&train=true`) relance l'analyse de la partie, instantanée grâce au cache, puis ouvre directement son entraînement. Sans erreur, on reste sur les résultats. La liste se met à jour au fil de l'analyse de fond.
+
+## 2026-10-24 : notifications (toasts)
+
+Une notification en bas de l'écran confirme ce qui vient d'être fait ailleurs que là où le joueur regarde, d'abord quand des comptes principaux sont définis (bouton du profil ou « Synchroniser » des réglages) : quels comptes, et combien de parties vont être analysées.
+
+- Écrit à la main (`lib/toast.ts`, `components/Toaster.tsx`, une cinquantaine de lignes) plutôt que Sonner : pas de dépendance pour un besoin si simple. Même aspect que les popovers, annoncé aux lecteurs d'écran (`aria-live`), disparaît après 4 s ou d'un clic.
+- Les infobulles partagées (`ui/tooltip.tsx`) prennent aussi l'aspect des popovers au lieu d'un encadré clair inversé.

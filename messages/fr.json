@@ -606,5 +606,7 @@
   "set_main_confirm_set": "Définir",
   "set_main_unchanged": "inchangé",
   "set_main_added": "nouveau",
-  "set_main_accounts_replace": "Remplacer les comptes principaux"
+  "set_main_accounts_replace": "Remplacer les comptes principaux",
+  "toast_main_accounts_set": "Comptes principaux définis : {accounts}. Leurs {count} dernières parties vont être analysées.",
+  "toast_close": "Fermer"
 }

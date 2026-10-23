@@ -34,6 +34,7 @@ const relativeFormat = cachedPerLocale(
 )
 const regionNames = cachedPerLocale((locale) => new Intl.DisplayNames([locale], { type: 'region' }))
 const orList = cachedPerLocale((locale) => new Intl.ListFormat(locale, { type: 'disjunction' }))
+const andList = cachedPerLocale((locale) => new Intl.ListFormat(locale, { type: 'conjunction' }))
 
 export function formatNumber(value: number): string {
   return numberFormat().format(value)
@@ -156,6 +157,11 @@ export function formatSignedTenths(value: number): string {
 export function formatClock(seconds: number): string {
   const whole = Math.floor(seconds)
   return `${Math.floor(whole / 60)}:${String(whole % 60).padStart(2, '0')}`
+}
+
+/** "a", "a and b", "a, b, and c" */
+export function formatAndList(items: string[]): string {
+  return andList().format(items)
 }
 
 /** "a", "a or b", "a, b, or c" */

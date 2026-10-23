@@ -606,5 +606,7 @@
   "set_main_confirm_set": "Set",
   "set_main_unchanged": "unchanged",
   "set_main_added": "new",
-  "set_main_accounts_replace": "Replace main accounts"
+  "set_main_accounts_replace": "Replace main accounts",
+  "toast_main_accounts_set": "Main accounts set: {accounts}. Their latest {count} games will be analysed.",
+  "toast_close": "Close"
 }

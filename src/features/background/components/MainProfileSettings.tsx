@@ -14,6 +14,7 @@ import { orNullIfNotFound } from '@/lib/http'
 import { fetchUser } from '@/lib/lichess/client'
 import { cn } from '@/lib/utils'
 import { m } from '@/paraglide/messages'
+import { announceMainAccounts } from '../announce'
 import { useBackground } from '../backgroundContext'
 import {
   defaultDepth,
@@ -123,12 +124,14 @@ export function MainProfileSettings() {
         setCheck({ unknown })
         return
       }
-      setMainProfile({
+      const saved: MainProfile = {
         ...(lichessUser && { lichess: lichessUser.username }),
         ...(names.chesscom && { chesscom: names.chesscom }),
         depth,
         deep,
-      })
+      }
+      setMainProfile(saved)
+      announceMainAccounts(saved)
       if (lichessUser) setLichess(lichessUser.username)
       setCheck('saved')
     } catch {

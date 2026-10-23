@@ -12,6 +12,7 @@ import { Search } from 'lucide-react'
 import { Footer } from '@/components/Footer'
 import { FeedbackButton } from '@/components/FeedbackLink'
 import { SettingsMenu } from '@/components/SettingsMenu'
+import { Toaster } from '@/components/Toaster'
 import { UpdateBanner } from '@/components/UpdateBanner'
 import { BackgroundProvider } from '@/features/background/BackgroundProvider'
 import { BackgroundIndicator } from '@/features/background/components/BackgroundIndicator'
@@ -60,6 +61,7 @@ function RootLayout() {
           <Outlet />
         </main>
         <Footer />
+        <Toaster />
         {import.meta.env.DEV && (
           <>
             <TanStackRouterDevtools position="bottom-left" />
