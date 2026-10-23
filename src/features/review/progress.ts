@@ -8,6 +8,8 @@ export type ReviewProgress =
       games: number
       /** Positions of the quick pass, kept to summarize it once done */
       quickTotal: number
+      /** Positions already evaluated in the cache (docs/analysis-cache.md): not searched again */
+      cached: number
       /** Each pass has its own progress: its number of positions is known when it starts. */
       pass: AnalysisPass
       /** Positions evaluated in this pass */

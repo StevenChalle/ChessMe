@@ -27,13 +27,14 @@
 - [ ] Import complet des parties (flux NDJSON vers Dexie), avec la progression affichée
 - [ ] Synchro incrémentale (`since`) et gestion du 429
 - [ ] Courbe Elo (ECharts)
+- [x] Cache des évaluations dans le navigateur (Dexie) : une analyse relancée ou interrompue ne repart pas de zéro
 - [ ] Liste des parties filtrable, et visionneuse de partie (chessground + chessops)
 - [ ] Étendre l'effacement des données locales (page `/legal`) aux parties importées
 
 ## Plus tard
 
 - Mesurer l'analyse sur un vrai téléphone et ajuster l'estimation
-- Mettre en cache les évaluations dans Dexie (une analyse interrompue ou relancée ne repart pas de zéro)
+- Cache des analyses ([analysis-cache.md](analysis-cache.md)) : bouton « Mettre à jour les analyses passées », estimation de durée qui tient compte du cache, coach qui lit le cache, export / import
 - Analyse des parties : détailler les erreurs (positions, meilleur coup)
 - Entraînement : mémoriser les résultats, revoir en priorité les positions ratées, sélecteur de promotion
 - Import des parties Chess.com (archives mensuelles)

@@ -26,6 +26,7 @@ describe('stepStatus', () => {
     phase: 'analysing',
     games: 10,
     quickTotal: 900,
+    cached: 0,
     pass: 'deep',
     done: 3,
     total: 70,

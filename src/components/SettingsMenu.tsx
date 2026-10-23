@@ -14,6 +14,8 @@ import {
 } from '@/components/board/boardStyle'
 import { Button } from '@/components/ui/button'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
+import { CacheSettings } from '@/features/review/components/CacheSettings'
+import { useConfirm } from '@/hooks/useConfirm'
 import { cn } from '@/lib/utils'
 import { m } from '@/paraglide/messages'
 import { getLocale, locales, setLocale, type Locale } from '@/paraglide/runtime'
@@ -65,118 +67,126 @@ function Swatch({ board, className }: { board: BoardColor; className?: string })
 const sameStyle = (a: BoardStyle, b: BoardStyle) => a.board === b.board && a.pieces === b.pieces
 
 /**
- * The gear at the top right: language, and how boards look (a whole style in one click, or
- * colors and pieces one by one). The look is remembered (boardStyle.ts); changing the language
- * reloads the page (Paraglide's model).
+ * The gear at the top right: language, how boards look (a whole style in one click, or colors
+ * and pieces one by one) and the saved analyses. The look is remembered (boardStyle.ts); changing
+ * the language reloads the page (Paraglide's model).
  */
 export function SettingsMenu() {
   const style = useBoardStyle()
   const currentLocale = getLocale()
+  const { confirm, dialog } = useConfirm()
 
   return (
-    <Popover>
-      <PopoverTrigger asChild>
-        <Button
-          variant="ghost"
-          size="icon-sm"
-          aria-label={m.settings()}
-          title={m.settings()}
-          className="text-muted-foreground hover:text-text-strong"
-        >
-          <Settings />
-        </Button>
-      </PopoverTrigger>
-      <PopoverContent align="end" className="w-72 space-y-4">
-        <Group title={m.settings_language()}>
-          <div className="grid grid-cols-2 gap-2">
-            {locales.map((locale) => (
-              <button
-                key={locale}
-                type="button"
-                lang={locale}
-                aria-pressed={locale === currentLocale}
-                onClick={() => locale !== currentLocale && setLocale(locale)}
-                className={cn(
-                  'rounded-md border border-border px-2 py-1.5 text-sm transition-colors hover:bg-muted',
-                  locale === currentLocale && SELECTED,
-                )}
-              >
-                {LANGUAGE_NAMES[locale]}
-              </button>
-            ))}
-          </div>
-        </Group>
-
-        <Group title={m.settings_style()}>
-          <div className="grid grid-cols-2 gap-2">
-            {(Object.keys(BOARD_PRESETS) as (keyof typeof BOARD_PRESETS)[]).map((preset) => {
-              const presetStyle = BOARD_PRESETS[preset]
-              const on = sameStyle(style, presetStyle)
-              return (
+    <>
+      <Popover>
+        <PopoverTrigger asChild>
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            aria-label={m.settings()}
+            title={m.settings()}
+            className="text-muted-foreground hover:text-text-strong"
+          >
+            <Settings />
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent align="end" className="w-72 space-y-4">
+          <Group title={m.settings_language()}>
+            <div className="grid grid-cols-2 gap-2">
+              {locales.map((locale) => (
                 <button
-                  key={preset}
+                  key={locale}
                   type="button"
-                  aria-pressed={on}
-                  onClick={() => setBoardStyle(presetStyle)}
+                  lang={locale}
+                  aria-pressed={locale === currentLocale}
+                  onClick={() => locale !== currentLocale && setLocale(locale)}
                   className={cn(
-                    'flex items-center gap-2 rounded-md border border-border p-2 text-sm transition-colors hover:bg-muted',
-                    on && SELECTED,
+                    'rounded-md border border-border px-2 py-1.5 text-sm transition-colors hover:bg-muted',
+                    locale === currentLocale && SELECTED,
                   )}
                 >
-                  <span className="relative size-9 shrink-0">
-                    <Swatch board={presetStyle.board} className="size-full" />
-                    <img
-                      src={pieceImage(presetStyle.pieces, 'wN')}
-                      alt=""
-                      className="absolute inset-0 size-full p-0.5"
-                    />
-                  </span>
-                  {PRESET_LABELS[preset]}
+                  {LANGUAGE_NAMES[locale]}
                 </button>
-              )
-            })}
-          </div>
-        </Group>
+              ))}
+            </div>
+          </Group>
 
-        <Group title={m.settings_board()}>
-          <div className="flex gap-2">
-            {BOARD_COLORS.map((board) => (
-              <button
-                key={board}
-                type="button"
-                aria-pressed={style.board === board}
-                aria-label={COLOR_LABELS[board]()}
-                title={COLOR_LABELS[board]()}
-                onClick={() => setBoardStyle({ board })}
-                className={cn('rounded-sm', style.board === board && SELECTED)}
-              >
-                <Swatch board={board} className="size-8" />
-              </button>
-            ))}
-          </div>
-        </Group>
+          <Group title={m.settings_style()}>
+            <div className="grid grid-cols-2 gap-2">
+              {(Object.keys(BOARD_PRESETS) as (keyof typeof BOARD_PRESETS)[]).map((preset) => {
+                const presetStyle = BOARD_PRESETS[preset]
+                const on = sameStyle(style, presetStyle)
+                return (
+                  <button
+                    key={preset}
+                    type="button"
+                    aria-pressed={on}
+                    onClick={() => setBoardStyle(presetStyle)}
+                    className={cn(
+                      'flex items-center gap-2 rounded-md border border-border p-2 text-sm transition-colors hover:bg-muted',
+                      on && SELECTED,
+                    )}
+                  >
+                    <span className="relative size-9 shrink-0">
+                      <Swatch board={presetStyle.board} className="size-full" />
+                      <img
+                        src={pieceImage(presetStyle.pieces, 'wN')}
+                        alt=""
+                        className="absolute inset-0 size-full p-0.5"
+                      />
+                    </span>
+                    {PRESET_LABELS[preset]}
+                  </button>
+                )
+              })}
+            </div>
+          </Group>
 
-        <Group title={m.settings_pieces()}>
-          <div className="flex gap-2">
-            {PIECE_SETS.map((pieces) => (
-              <button
-                key={pieces}
-                type="button"
-                aria-pressed={style.pieces === pieces}
-                aria-label={PIECE_LABELS[pieces]}
-                title={PIECE_LABELS[pieces]}
-                onClick={() => setBoardStyle({ pieces })}
-                className={cn(
-                  'rounded-sm bg-muted p-0.5 transition-colors hover:bg-secondary',
-                  style.pieces === pieces && SELECTED,
-                )}
-              >
-                <img src={pieceImage(pieces, 'wN')} alt="" className="size-8" />
-              </button>
-            ))}
-          </div>
-        </Group>
-      </PopoverContent>
-    </Popover>
+          <Group title={m.settings_board()}>
+            <div className="flex gap-2">
+              {BOARD_COLORS.map((board) => (
+                <button
+                  key={board}
+                  type="button"
+                  aria-pressed={style.board === board}
+                  aria-label={COLOR_LABELS[board]()}
+                  title={COLOR_LABELS[board]()}
+                  onClick={() => setBoardStyle({ board })}
+                  className={cn('rounded-sm', style.board === board && SELECTED)}
+                >
+                  <Swatch board={board} className="size-8" />
+                </button>
+              ))}
+            </div>
+          </Group>
+
+          <Group title={m.settings_pieces()}>
+            <div className="flex gap-2">
+              {PIECE_SETS.map((pieces) => (
+                <button
+                  key={pieces}
+                  type="button"
+                  aria-pressed={style.pieces === pieces}
+                  aria-label={PIECE_LABELS[pieces]}
+                  title={PIECE_LABELS[pieces]}
+                  onClick={() => setBoardStyle({ pieces })}
+                  className={cn(
+                    'rounded-sm bg-muted p-0.5 transition-colors hover:bg-secondary',
+                    style.pieces === pieces && SELECTED,
+                  )}
+                >
+                  <img src={pieceImage(pieces, 'wN')} alt="" className="size-8" />
+                </button>
+              ))}
+            </div>
+          </Group>
+
+          <Group title={m.settings_cache()}>
+            <CacheSettings confirm={confirm} />
+          </Group>
+        </PopoverContent>
+      </Popover>
+      {dialog}
+    </>
   )
 }

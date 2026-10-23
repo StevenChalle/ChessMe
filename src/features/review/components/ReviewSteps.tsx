@@ -17,13 +17,16 @@ const STEP_LABELS: Record<ReviewStep, { title: () => string; hint: () => string 
   deep: { title: m.review_step_deep, hint: m.review_step_deep_hint },
 }
 
-/** Short result of a finished step: "10 games", "908 positions". */
+/** Short result of a finished step: "10 games", "908 positions · 600 already analysed". */
 function stepSummary(step: ReviewStep, progress: ReviewProgress): string | undefined {
   if (progress.phase === 'fetching') return undefined
   if (step === 'fetch') return formatGameCount(progress.games)
   if (step === 'quick' && progress.phase === 'analysing') {
-    const count = progress.quickTotal
-    return m.positions_count({ count, formatted: formatNumber(count) })
+    const { quickTotal, cached } = progress
+    const count = quickTotal + cached
+    const total = m.positions_count({ count, formatted: formatNumber(count) })
+    if (cached === 0) return total
+    return `${total} · ${m.review_positions_cached({ count: cached, formatted: formatNumber(cached) })}`
   }
   return undefined
 }

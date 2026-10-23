@@ -2,7 +2,7 @@
 
 Garder dans le navigateur tout ce que Stockfish a calculé, pour qu'une analyse relancée sur des parties déjà vues soit instantanée, et que chaque calcul profite aux suivants (ouvertures communes, approfondissement, changement de critères). Première version locale, sans backend. Décision résumée dans [decisions.md](decisions.md) (2026-10-23).
 
-État : conception validée, pas encore implémentée.
+État : implémenté le 2026-10-23 (`lib/db.ts`, `features/review/cache.ts`, branché dans `analyze.ts`). Le bouton de mise à jour et l'usage par le coach restent pour plus tard.
 
 ## Principes
 
@@ -38,10 +38,8 @@ type CachedPosition = {
   score: StoredScore
   /** UCI, castling as the king move */
   bestMove: string
-  /** Search budget actually used */
+  /** Search budget asked for */
   nodes: number
-  /** Depth reached, for information */
-  depth: number
   /** Last time this evaluation was read or written (ms), for eviction */
   usedAt: number
 }
@@ -50,7 +48,7 @@ type CachedPosition = {
 type CachedGame = {
   /** Hash of the starting position and the moves (see "Identité des parties") */
   hash: string
-  /** Where it comes from: 'lichess:abc123', 'chesscom:2026-10:uuid', 'pgn:<id>'. Several possible */
+  /** Where it comes from: 'lichess:abc123', 'chesscom:2026-10:uuid', 'import:<id>'. Several possible */
   refs: string[]
   initialFen?: string
   sanMoves: string[]
@@ -105,11 +103,11 @@ cached.engine === ENGINE_ID && cached.nodes >= nodes demandés
 1. `prepare` comme aujourd'hui (positions, `finalCp`, `serverCps`).
 2. **Lecture** : pour les positions encore sans évaluation, un `bulkGet` des clés `[key, ENGINE_ID]` (toutes les parties d'un coup). Une évaluation à `QUICK_NODES` ou plus remplit `cps` et `byEngine` ; à `DEEP_NODES` ou plus, aussi `deep`.
 3. **Passe rapide** sur ce qui manque encore, puis **passe profonde** sur les positions suspectes qui ne sont pas déjà dans `deep`. Une analyse entièrement en cache ne démarre aucun moteur (comme aujourd'hui quand tout vient de Lichess).
-4. **Écriture** au fil du calcul, par lots (par partie ou toutes les secondes, dans une transaction), pour ne pas écrire à chaque position. Une analyse arrêtée garde ce qui est calculé.
+4. **Écriture** au fil du calcul, par lots (une seconde après la première évaluation du lot, dans une transaction ; `cacheWriter`), pour ne pas écrire à chaque position. Une analyse arrêtée garde ce qui est calculé.
 5. `deepenGame` écrit aussi ses évaluations : approfondir une partie profite à toutes les suivantes.
-6. Une fois la partie finie, on écrit son entrée `games` (coups, références, version de l'analyse).
+6. Une fois l'analyse finie (pas si elle est arrêtée), on écrit l'entrée `games` de chaque partie (coups, références, version de l'analyse).
 
-La progression affichée doit compter à part les positions trouvées en cache : l'estimation de temps ne porte que sur ce qui reste à calculer.
+La progression compte à part les positions trouvées en cache (`cached`) : la passe rapide ne porte que sur ce qui reste, et son résumé dit « 295 positions · 129 déjà analysées ». Limite connue : l'estimation affichée avant de lancer (onglet Analyse, `estimate.ts`) ignore le cache et surestime donc le temps.
 
 ## Versions
 
@@ -125,7 +123,7 @@ Les critères ne sont pas versionnés : les erreurs sont recalculées avec ceux 
 ## Identité des parties
 
 - **Clé** : un hash de la position de départ et des coups (`initialFen ?? 'startpos'` + `sanMoves.join(' ')`). Le même hash que celui des imports si possible (`import/pgn.ts`), mais sur les coups seuls.
-- **Références** : `refs` garde le lien avec chaque source, au format de `gameRef.ts` (`lichess:<id>`, `chesscom:<AAAA-MM>:<uuid>`) ou `pgn:<id>` pour un import. Une partie Lichess importée ensuite en PGN retrouve le même enregistrement, et ajoute sa référence.
+- **Références** : `refs` garde le lien avec chaque source, au format de `gameRef.ts` (`lichess:<id>`, `chesscom:<AAAA-MM>:<uuid>`) ou `import:<id>` pour un import. Une partie Lichess importée ensuite en PGN retrouve le même enregistrement, et ajoute sa référence.
 - **Cas limite** : deux parties différentes aux coups identiques (abandon très tôt dans une ouverture courante) partagent une entrée. Sans conséquence, puisque les évaluations sont par position ; les informations propres à chaque partie (adversaire, date, cadence) ne sont pas dans le cache, elles restent attachées à la partie récupérée.
 
 ## Place et éviction
@@ -150,7 +148,7 @@ Obligatoire (CLAUDE.md) :
 
 - déclarer la base `craftyourchess` sur la page `/legal` (ce qu'elle contient : les coups et les évaluations des parties analysées, rien d'autre) ;
 - l'effacer dans `clearLocalData()` (`lib/localData.ts`), qui devient alors asynchrone ;
-- dans les réglages : la place utilisée (`navigator.storage.estimate()`, nombre de parties et de positions) et un bouton « Vider le cache des analyses ».
+- dans les réglages (la roue dentée de l'en-tête, section « Analyses enregistrées ») : le nombre de parties et de positions gardées, et un bouton « Vider », avec confirmation.
 
 ## Tests
 

@@ -598,7 +598,7 @@ Pouvoir utiliser toute l'app (analyse, graphique, entraînement) avec des partie
 
 ## 2026-10-23 : cache des analyses dans le navigateur (conception)
 
-Relancer une analyse sur des parties déjà vues doit être instantané, et chaque calcul de Stockfish doit profiter aux suivants. Première version locale, sans backend. Conception détaillée : [analysis-cache.md](analysis-cache.md). Pas encore implémenté.
+Relancer une analyse sur des parties déjà vues doit être instantané, et chaque calcul de Stockfish doit profiter aux suivants. Première version locale, sans backend. Conception détaillée : [analysis-cache.md](analysis-cache.md). Implémenté le même jour.
 
 - **Cache par position, pas par partie** : une évaluation par FEN normalisée (sans les compteurs) et par moteur, réutilisée par toutes les parties qui passent par là (ouvertures de répertoire, transpositions, approfondissement). Plus lourd qu'un tableau d'évaluations par partie (≈ 15 à 20 Ko par partie au lieu de moins de 0,5 Ko), mais la place n'est pas la contrainte : des dizaines de milliers de parties même sur téléphone.
 - **On garde les évaluations, pas le jugement** : les erreurs sont recalculées avec les critères du moment, donc changer de critères reste instantané.
@@ -608,3 +608,5 @@ Relancer une analyse sur des parties déjà vues doit être instantané, et chaq
 - **C'est un cache, pas une sauvegarde** : plafond en nombre d'entrées, éviction des plus anciennement utilisées, `navigator.storage.persist()` demandé, et l'analyse continue sans cache sur une erreur de quota. Le cache survit aux mises à jour de l'app (IndexedDB est lié au domaine), pas à un effacement par le navigateur (Safari sur iPhone, après 7 jours sans visite, sauf PWA installée).
 - Base Dexie `craftyourchess`, déclarée sur `/legal` et effacée par `clearLocalData()`.
 - Écartés : un cache par partie (plus simple et plus compact, mais rien n'est partagé entre parties) ; garder les erreurs calculées (invalidées au moindre changement de critères) ; garder les évaluations de Lichess (redonnées à chaque récupération, et d'un autre moteur).
+- Mise en œuvre : `lib/db.ts` (base Dexie), `features/review/cache.ts`, branché dans `analyzeGames` et `deepenGame`. Une analyse entièrement en cache ne démarre aucun moteur ; si seules des évaluations profondes manquent, seule la passe profonde tourne. Les étapes affichent « N positions · M déjà analysées ». Les réglages (roue dentée) montrent ce qui est gardé et permettent de le vider. Approfondir une partie n'est donc plus perdu à la prochaine analyse (le « à rediscuter » du 2026-10-23).
+- Limite connue : l'estimation de durée avant de lancer une analyse ignore le cache.

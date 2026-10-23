@@ -213,7 +213,7 @@
   "legal_privacy_public_data": "Les profils et parties affichés proviennent des API publiques de Lichess et de Chess.com. Ils sont récupérés à la demande et ne sont pas conservés par nous.",
   "legal_privacy_policies": "Leurs politiques de confidentialité :",
   "legal_clear_title": "Supprimer vos données locales",
-  "legal_clear_body": "Supprime votre choix de langue, vos recherches récentes, vos réglages d'analyse, vos options d'entraînement et l'apparence de l'échiquier de ce navigateur.",
+  "legal_clear_body": "Supprime votre choix de langue, vos recherches récentes, vos réglages d'analyse, vos analyses enregistrées, vos options d'entraînement et l'apparence de l'échiquier de ce navigateur.",
   "legal_clear_button": "Supprimer mes données locales",
   "legal_clear_done": "Données locales supprimées.",
   "legal_license_title": "Licence et crédits",
@@ -526,5 +526,24 @@
   "import_header_games": "{games} importées",
   "search_section": "Trouve ton compte",
   "paste_clipboard": "Coller depuis le presse-papiers",
-  "field_clear": "Effacer"
+  "field_clear": "Effacer",
+  "review_positions_cached": [
+    {
+      "declarations": ["input count", "input formatted", "local countPlural = count: plural"],
+      "selectors": ["countPlural"],
+      "match": {
+        "countPlural=one": "{formatted} déjà analysée",
+        "countPlural=other": "{formatted} déjà analysées"
+      }
+    }
+  ],
+  "settings_cache": "Analyses enregistrées",
+  "settings_cache_hint": "Les positions déjà analysées ne sont pas recalculées : réanalyser vos parties est instantané.",
+  "settings_cache_empty": "Rien d'enregistré pour l'instant.",
+  "settings_cache_unavailable": "Indisponible dans ce navigateur.",
+  "settings_cache_clear": "Vider",
+  "legal_privacy_local_analyses": "les évaluations des positions des parties que vous avez analysées, avec les coups de ces parties et leurs liens, pour que les réanalyser soit instantané ;",
+  "settings_cache_confirm_title": "Vider les analyses enregistrées ?",
+  "settings_cache_confirm_body": "Les parties déjà analysées devront de nouveau être analysées par le moteur.",
+  "settings_cache_confirm_action": "Vider"
 }

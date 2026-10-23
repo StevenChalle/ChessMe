@@ -1,15 +1,24 @@
+import { deleteDatabase } from '@/lib/db'
+
 /**
- * Deletes everything CraftYourChess keeps in this browser's localStorage (language choice, recent
- * searches, analysis settings, training options, board look). The app's offline files (service worker cache) are left alone.
- * When IndexedDB data arrives (imported games), delete it here too.
+ * Deletes everything CraftYourChess keeps in this browser: localStorage (language choice, recent
+ * searches, analysis settings, training options, board look) and the IndexedDB database
+ * (analysis cache). The app's offline files (service worker cache) are left alone.
+ * False if something could not be deleted.
  */
-export function clearLocalData(): boolean {
+export async function clearLocalData(): Promise<boolean> {
+  let cleared = true
   try {
     localStorage.clear()
-    return true
   } catch {
-    return false
+    cleared = false
   }
+  try {
+    await deleteDatabase()
+  } catch {
+    cleared = false
+  }
+  return cleared
 }
 
 const LEGACY_PREFIX = 'chessme:'

@@ -50,6 +50,7 @@ function LegalPage() {
           <li>{m.legal_privacy_local_language()}</li>
           <li>{m.legal_privacy_local_recent()}</li>
           <li>{m.legal_privacy_local_review()}</li>
+          <li>{m.legal_privacy_local_analyses()}</li>
           <li>{m.legal_privacy_local_training()}</li>
           <li>{m.legal_privacy_local_board()}</li>
           <li>{m.legal_privacy_local_app()}</li>
@@ -72,7 +73,7 @@ function LegalPage() {
         <div className="flex items-center gap-3">
           <Button
             variant="destructive"
-            onClick={() => setCleared(clearLocalData())}
+            onClick={() => void clearLocalData().then(setCleared)}
             disabled={cleared}
           >
             {m.legal_clear_button()}

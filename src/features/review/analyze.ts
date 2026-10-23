@@ -2,7 +2,16 @@ import type { Color } from 'chessops'
 import { trackActiveTime } from '@/lib/activeTime'
 import { defaultPoolSize, EnginePool } from '@/lib/engine/pool'
 import type { Stockfish } from '@/lib/engine/stockfish'
+import { ENGINE_ID } from '@/lib/engine/stockfish'
 import type { ApiSource } from '@/lib/http'
+import {
+  analysisCache,
+  cacheWriter,
+  positionKey,
+  type AnalysisRecipe,
+  type CacheEntry,
+  type EvaluationCache,
+} from './cache'
 import { deepCheckMinDrop, type ReviewCriteria } from './criteria'
 import { fromSideToMove, isError, playerMoves, toCp, winChanceDrop } from './errors'
 import { clockBefore, type ReviewGame } from './games'
@@ -15,6 +24,19 @@ import { remainingSeconds, type AnalysisPass, type ReviewProgress } from './prog
  */
 export const QUICK_NODES = 100_000
 export const DEEP_NODES = 1_000_000
+
+/**
+ * Changes with the way games are analysed (budgets, positions of the deep pass…): kept with each
+ * game in the analysis cache, to offer updating old analyses one day.
+ */
+export const ANALYSIS_VERSION = 1
+
+const RECIPE: AnalysisRecipe = {
+  version: ANALYSIS_VERSION,
+  engine: ENGINE_ID,
+  quickNodes: QUICK_NODES,
+  deepNodes: DEEP_NODES,
+}
 
 /** One error of the reviewed player (see errors.ts), with what is needed to replay it. */
 export type Mistake = {
@@ -92,6 +114,37 @@ function missing(work: Work): number[] {
   return work.cps.flatMap((cp, index) => (cp === undefined ? [index] : []))
 }
 
+/**
+ * Fills the missing evaluations the cache knows (at least a quick search), and returns how many.
+ * Those from a deep search count as deep: the deep pass skips them.
+ */
+async function fillFromCache(works: Work[], cache: EvaluationCache): Promise<number> {
+  const wanted = works.map((work) => ({ work, indexes: missing(work) }))
+  const found = await cache.lookup(
+    wanted.flatMap(({ work, indexes }) =>
+      indexes.map((index) => positionKey(work.positions[index]!.fen)),
+    ),
+  )
+  let count = 0
+  for (const { work, indexes } of wanted) {
+    for (const index of indexes) {
+      const position = work.positions[index]!
+      const cached = found.get(positionKey(position.fen))
+      if (!cached || cached.nodes < QUICK_NODES) continue
+      work.cps[index] = toCp(fromSideToMove(cached.score, position.turn))
+      work.byEngine.add(index)
+      if (cached.nodes >= DEEP_NODES) work.deep.add(index)
+      count++
+    }
+  }
+  return count
+}
+
+/** Positions evaluated by the engine but not deeply yet. */
+function shallow(work: Work): boolean {
+  return [...work.byEngine].some((index) => !work.deep.has(index))
+}
+
 /** Engine-evaluated positions around the player's moves that look like errors. */
 function deepCheckPositions(work: Work, criteria: ReviewCriteria): number[] {
   const turns = work.positions.map((position) => position.turn)
@@ -100,7 +153,7 @@ function deepCheckPositions(work: Work, criteria: ReviewCriteria): number[] {
   for (const move of playerMoves(work.cps as number[], turns, work.game.color)) {
     if (winChanceDrop(move.beforeCp, move.afterCp) < minDrop) continue
     for (const index of [move.ply, move.ply + 1]) {
-      if (work.byEngine.has(index)) indexes.add(index)
+      if (work.byEngine.has(index) && !work.deep.has(index)) indexes.add(index)
     }
   }
   return [...indexes].toSorted((a, b) => a - b)
@@ -164,14 +217,23 @@ function mistakeClock(game: ReviewGame, ply: number): Mistake['clock'] {
   return remaining === undefined ? undefined : { remaining, total: game.clock!.total }
 }
 
-async function evaluate(engine: Stockfish, position: GamePosition, nodes: number) {
-  const { score } = await engine.evaluate(position.fen, nodes)
-  return toCp(fromSideToMove(score, position.turn))
+/** White's-side centipawns, and the evaluation as the cache keeps it. */
+async function evaluate(
+  engine: Stockfish,
+  position: GamePosition,
+  nodes: number,
+): Promise<{ cp: number; entry: CacheEntry }> {
+  const { score, bestMove } = await engine.evaluate(position.fen, nodes)
+  return {
+    cp: toCp(fromSideToMove(score, position.turn)),
+    entry: { key: positionKey(position.fen), score, bestMove, nodes },
+  }
 }
 
 /**
- * Fills the missing evaluations of `games` with Stockfish and finds the player's errors in each
- * one, judged with `criteria` (see errors.ts). Aborting the signal terminates the engines.
+ * Fills the missing evaluations of `games` from the cache, then with Stockfish, and finds the
+ * player's errors in each one, judged with `criteria` (see errors.ts). Every evaluation made is
+ * kept in the cache, even if the analysis is aborted. Aborting the signal terminates the engines.
  */
 export async function analyzeGames(
   games: ReviewGame[],
@@ -180,24 +242,40 @@ export async function analyzeGames(
     signal,
     onProgress,
     poolSize = defaultPoolSize(),
+    cache = analysisCache,
   }: {
     signal: AbortSignal
     onProgress: (progress: ReviewProgress) => void
     poolSize?: number
+    cache?: EvaluationCache
   },
 ): Promise<ReviewedGame[]> {
   const works = games.map(prepare)
-  const quickJobs = works.filter((work) => missing(work).length > 0)
-  if (quickJobs.length === 0) return finish(works, criteria)
+  const cached = await fillFromCache(works, cache)
+  signal.throwIfAborted()
+  const quick = works
+    .map((work) => ({ work, indexes: missing(work) }))
+    .filter((job) => job.indexes.length > 0)
+  const deepJobs = () =>
+    works
+      .map((work) => ({ work, indexes: deepCheckPositions(work, criteria) }))
+      .filter((job) => job.indexes.length > 0)
+  // Every quick evaluation in the cache: the deep pass is known right away.
+  const deepOnly = quick.length === 0 ? deepJobs() : []
+  if (quick.length === 0 && deepOnly.length === 0) {
+    await cache.saveGames(games, RECIPE)
+    return finish(works, criteria)
+  }
 
   onProgress({ phase: 'starting-engine', games: games.length })
-  const pool = await EnginePool.start(Math.min(poolSize, quickJobs.length), signal)
+  const busy = works.filter((work) => missing(work).length > 0 || shallow(work)).length
+  const pool = await EnginePool.start(Math.min(poolSize, busy), signal)
+  const writer = cacheWriter(cache)
   // The speed is measured over the whole analysis, so the deep pass gets a time estimate right
   // away from the quick pass; only while the page is shown (a phone freezes a hidden page).
   const active = trackActiveTime()
   try {
     let doneNodes = 0
-    const quick = quickJobs.map((work) => ({ work, indexes: missing(work) }))
     const quickTotal = quick.reduce((sum, job) => sum + job.indexes.length, 0)
 
     const runPass = async (pass: AnalysisPass, jobs: Job[], nodes: number) => {
@@ -208,6 +286,7 @@ export async function analyzeGames(
           phase: 'analysing',
           games: games.length,
           quickTotal,
+          cached,
           pass,
           done,
           total,
@@ -221,7 +300,9 @@ export async function analyzeGames(
       await pool.run(jobs, async (engine, { work, indexes }) => {
         if (pass === 'quick') await engine.newGame()
         for (const index of indexes) {
-          work.cps[index] = await evaluate(engine, work.positions[index]!, nodes)
+          const { cp, entry } = await evaluate(engine, work.positions[index]!, nodes)
+          work.cps[index] = cp
+          writer.add(entry)
           work.byEngine.add(index)
           if (pass === 'deep') work.deep.add(index)
           done++
@@ -232,16 +313,16 @@ export async function analyzeGames(
       })
     }
 
-    await runPass('quick', quick, QUICK_NODES)
-    const deepJobs = works
-      .map((work) => ({ work, indexes: deepCheckPositions(work, criteria) }))
-      .filter((job) => job.indexes.length > 0)
-    if (deepJobs.length > 0) await runPass('deep', deepJobs, DEEP_NODES)
+    if (quick.length > 0) await runPass('quick', quick, QUICK_NODES)
+    const deep = quick.length > 0 ? deepJobs() : deepOnly
+    if (deep.length > 0) await runPass('deep', deep, DEEP_NODES)
   } finally {
     active.stop()
     pool.terminate()
+    await writer.flush()
   }
 
+  await cache.saveGames(games, RECIPE)
   return finish(works, criteria)
 }
 
@@ -252,8 +333,8 @@ export function shallowPositions(game: ReviewedGame): number[] {
 
 /**
  * Evaluates deeply every position of `game` that only had a quick look, several at a time, and
- * reports each new evaluation as it comes (`onPosition`). Aborting the signal stops the engines:
- * what was reported stays.
+ * reports each new evaluation as it comes (`onPosition`), keeping it in the cache. Aborting the
+ * signal stops the engines: what was reported stays.
  */
 export async function deepenGame(
   game: ReviewedGame,
@@ -261,22 +342,27 @@ export async function deepenGame(
     signal,
     onPosition,
     poolSize = defaultPoolSize(),
+    cache = analysisCache,
   }: {
     signal: AbortSignal
     onPosition: (index: number, cp: number) => void
     poolSize?: number
+    cache?: EvaluationCache
   },
 ): Promise<void> {
   const indexes = shallowPositions(game)
   if (indexes.length === 0) return
   const pool = await EnginePool.start(Math.min(poolSize, indexes.length), signal)
+  const writer = cacheWriter(cache)
   try {
     await pool.run(indexes, async (engine, index) => {
-      const cp = await evaluate(engine, game.positions[index]!, DEEP_NODES)
+      const { cp, entry } = await evaluate(engine, game.positions[index]!, DEEP_NODES)
+      writer.add(entry)
       if (!signal.aborted) onPosition(index, cp)
     })
   } finally {
     pool.terminate()
+    await writer.flush()
   }
 }
 

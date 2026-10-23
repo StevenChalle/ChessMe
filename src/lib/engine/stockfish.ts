@@ -7,6 +7,12 @@ import { parseBestMove, parseInfo, type EngineScore } from './uci'
  */
 export const ENGINE_URL = `${import.meta.env.BASE_URL}engine/stockfish-19-lite-single.js`
 
+/**
+ * Names the engine and its network in the analysis cache: change it with either, so that
+ * evaluations of another engine are never reused as they are.
+ */
+export const ENGINE_ID = 'stockfish-19-lite'
+
 export type Evaluation = {
   score: EngineScore
   nodes: number

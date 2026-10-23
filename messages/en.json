@@ -213,7 +213,7 @@
   "legal_privacy_public_data": "Profiles and games shown come from the public APIs of Lichess and Chess.com. They are fetched on demand and not stored by us.",
   "legal_privacy_policies": "Their privacy policies:",
   "legal_clear_title": "Delete your local data",
-  "legal_clear_body": "Removes your language choice, recent searches, analysis settings, training options and board look from this browser.",
+  "legal_clear_body": "Removes your language choice, recent searches, analysis settings, saved analyses, training options and board look from this browser.",
   "legal_clear_button": "Delete my local data",
   "legal_clear_done": "Local data deleted.",
   "legal_license_title": "License & credits",
@@ -526,5 +526,24 @@
   "import_header_games": "{games} imported",
   "search_section": "Find your account",
   "paste_clipboard": "Paste from clipboard",
-  "field_clear": "Clear"
+  "field_clear": "Clear",
+  "review_positions_cached": [
+    {
+      "declarations": ["input count", "input formatted", "local countPlural = count: plural"],
+      "selectors": ["countPlural"],
+      "match": {
+        "countPlural=one": "{formatted} already analysed",
+        "countPlural=other": "{formatted} already analysed"
+      }
+    }
+  ],
+  "settings_cache": "Saved analyses",
+  "settings_cache_hint": "Positions already analysed are not searched again: analysing your games again is instant.",
+  "settings_cache_empty": "Nothing saved yet.",
+  "settings_cache_unavailable": "Not available in this browser.",
+  "settings_cache_clear": "Clear",
+  "legal_privacy_local_analyses": "the evaluations of the positions of the games you analysed, with the moves of these games and their links, so that analysing them again is instant;",
+  "settings_cache_confirm_title": "Clear saved analyses?",
+  "settings_cache_confirm_body": "Games analysed before will have to be analysed again by the engine.",
+  "settings_cache_confirm_action": "Clear"
 }
