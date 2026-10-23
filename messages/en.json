@@ -605,5 +605,6 @@
   "set_main_confirm_new_body": "Your latest {count} games on these accounts will be analysed and saved continuously, while the app is open.",
   "set_main_confirm_set": "Set",
   "set_main_unchanged": "unchanged",
-  "set_main_added": "new"
+  "set_main_added": "new",
+  "set_main_accounts_replace": "Replace main accounts"
 }

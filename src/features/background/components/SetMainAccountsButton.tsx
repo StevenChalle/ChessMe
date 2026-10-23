@@ -87,9 +87,13 @@ export function SetMainAccountsButton({ accounts }: { accounts: ReviewAccount[] 
   const deleteId = useId()
   if (accounts.length === 0) return null
   const already = areMainAccounts(profile, accounts)
-  const label = already ? m.set_main_accounts_already() : m.set_main_accounts()
   const replaced = replacedAccounts(profile, accounts)
   const replacing = replaced.length > 0
+  const label = already
+    ? m.set_main_accounts_already()
+    : replacing
+      ? m.set_main_accounts_replace()
+      : m.set_main_accounts()
   const next = withMainAccounts(profile, accounts)
 
   const confirm = async () => {

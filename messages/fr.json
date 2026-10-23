@@ -605,5 +605,6 @@
   "set_main_confirm_new_body": "Vos {count} dernières parties sur ces comptes seront analysées et enregistrées en continu, pendant que l'app est ouverte.",
   "set_main_confirm_set": "Définir",
   "set_main_unchanged": "inchangé",
-  "set_main_added": "nouveau"
+  "set_main_added": "nouveau",
+  "set_main_accounts_replace": "Remplacer les comptes principaux"
 }
