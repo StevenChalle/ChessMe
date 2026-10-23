@@ -1,4 +1,4 @@
-import { ArrowRight, UserPlus } from 'lucide-react'
+import { ArrowRight, UserCheck, UserPlus } from 'lucide-react'
 import { useId, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
@@ -76,7 +76,7 @@ function ChangeRow({ change: { source, before, after } }: { change: Change }) {
 
 /**
  * After the player's name: makes the accounts shown the main ones (docs/background-analysis.md).
- * Disabled when they already are. Always confirmed: the dialog shows each platform's main account
+ * When they already are, a check mark instead. Always confirmed: the dialog shows each platform's main account
  * before and after (dropped ones struck through), and can delete the games of those dropped.
  */
 export function SetMainAccountsButton({ accounts }: { accounts: ReviewAccount[] }) {
@@ -106,21 +106,29 @@ export function SetMainAccountsButton({ accounts }: { accounts: ReviewAccount[] 
       <TooltipProvider>
         <Tooltip>
           <TooltipTrigger asChild>
-            {/* A disabled button gets no pointer events: the tooltip hangs on its wrapper. */}
-            <span className="inline-flex">
-              <Button
-                variant="outline"
+            {already ? (
+              // Already the main accounts: a mark, not a button (a disabled one would look faded).
+              <span
+                role="img"
                 aria-label={label}
-                disabled={already}
+                tabIndex={0}
+                className="inline-flex size-12 items-center justify-center rounded-md text-win outline-none focus-visible:ring-2 focus-visible:ring-primary"
+              >
+                <UserCheck className="size-8" />
+              </span>
+            ) : (
+              <Button
+                variant="ghost"
+                aria-label={label}
                 onClick={() => {
                   setDeleteGames(false)
                   setOpen(true)
                 }}
-                className="size-12 rounded-md text-muted-foreground hover:text-text-strong"
+                className="size-12 rounded-md text-muted-foreground hover:text-primary"
               >
-                <UserPlus className="size-6" />
+                <UserPlus className="size-8" />
               </Button>
-            </span>
+            )}
           </TooltipTrigger>
           <TooltipContent>{label}</TooltipContent>
         </Tooltip>
