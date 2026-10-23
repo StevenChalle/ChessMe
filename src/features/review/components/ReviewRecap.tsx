@@ -1,6 +1,7 @@
 import { LoaderCircle, Play, TriangleAlert } from 'lucide-react'
 import type { ReactNode } from 'react'
 import { Button } from '@/components/ui/button'
+import { Progress } from '@/components/ui/progress'
 import { SourceLabel } from '@/features/player/components/SourceBadge'
 import { categoryLabel, sourceErrorMessage } from '@/features/player/sources'
 import { detectDevice } from '@/lib/device'
@@ -9,7 +10,7 @@ import { GAME_CATEGORIES, type GameSource } from '@/features/games/normalize'
 import { m } from '@/paraglide/messages'
 import type { ReviewCriteria } from '../criteria'
 import { desktopSpeedup, deviceProfile, estimateSeconds } from '../estimate'
-import type { FoundGames } from '../fetch'
+import type { FetchProgress, FoundGames } from '../fetch'
 import { LARGE_REVIEW } from '../selection'
 
 const SOURCES: GameSource[] = ['lichess', 'chesscom', 'import']
@@ -17,11 +18,14 @@ const SOURCES: GameSource[] = ['lichess', 'chesscom', 'import']
 /** What the search found (shown under the filters), how long the analysis should take, and the button to launch it (top right). */
 export function ReviewRecap({
   found,
+  progress,
   criteria,
   onLaunch,
 }: {
   /** undefined while the games are being looked for: the box shows a loader instead */
   found?: FoundGames
+  /** How far the search is, platform by platform, while it runs */
+  progress?: FetchProgress
   criteria: ReviewCriteria
   onLaunch: () => void
 }) {
@@ -33,11 +37,41 @@ export function ReviewRecap({
             <LoaderCircle aria-hidden className="size-5 animate-spin" />
             {m.setup_finding()}
           </span>
+          {progress && <SearchProgress progress={progress} />}
         </RecapHeader>
       </div>
     )
   }
   return <FoundRecap found={found} criteria={criteria} onLaunch={onLaunch} />
+}
+
+/**
+ * The search's progress: one bar for all platforms (the mean of their shares), the games found on
+ * each, and why Lichess is slow (its export streams about 20 games per second).
+ */
+function SearchProgress({ progress }: { progress: FetchProgress }) {
+  const sources = (['lichess', 'chesscom'] as const).flatMap((source) => {
+    const item = progress[source]
+    return item ? [{ source, ...item }] : []
+  })
+  if (sources.length === 0) return null
+  const ratio = sources.reduce((sum, { ratio }) => sum + ratio, 0) / sources.length
+  return (
+    <div className="w-64 max-w-full space-y-1.5">
+      <Progress value={ratio * 100} aria-label={m.setup_finding()} />
+      <p className="flex flex-wrap gap-x-4 gap-y-1 text-sm">
+        {sources.map(({ source, games }) => (
+          <span key={source} className="inline-flex items-center gap-1.5">
+            <SourceLabel source={source} />
+            <span className="num text-muted-foreground">{formatGameCount(games)}</span>
+          </span>
+        ))}
+      </p>
+      {progress.lichess && progress.lichess.ratio < 1 && (
+        <p className="text-xs text-muted-foreground">{m.setup_finding_lichess_speed()}</p>
+      )}
+    </div>
+  )
 }
 
 /** The box's top: its title and what it holds, the button launching the analysis on the right. */

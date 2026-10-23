@@ -15,7 +15,7 @@ async function exportGames(
   username: string,
   params: Record<string, string>,
   signal?: AbortSignal,
-  onGame?: (count: number) => void,
+  onGame?: (game: LichessGame) => void,
 ): Promise<LichessGame[]> {
   const query = new URLSearchParams(params)
   const url = `${BASE_URL}/api/games/user/${encodeURIComponent(username)}?${query}`
@@ -27,7 +27,7 @@ async function exportGames(
   if (!response.body) return games
   for await (const game of readNdjson<LichessGame>(response.body)) {
     games.push(game)
-    onGame?.(games.length)
+    onGame?.(game)
   }
   return games
 }
@@ -64,13 +64,13 @@ export function exportParams(options: GameExportOptions): Record<string, string>
 
 /**
  * Standard games matching `options`, newest first. A single streamed request: never run
- * several Lichess exports at once. `onGame` reports how many games arrived so far.
+ * several Lichess exports at once. `onGame` reports each game as it arrives (about 20 per second).
  */
 export function exportStandardGames(
   username: string,
   options: GameExportOptions,
   signal?: AbortSignal,
-  onGame?: (count: number) => void,
+  onGame?: (game: LichessGame) => void,
 ): Promise<LichessGame[]> {
   return exportGames(username, exportParams(options), signal, onGame)
 }

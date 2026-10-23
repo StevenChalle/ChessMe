@@ -263,7 +263,7 @@
   "setup_finding": "Recherche des parties…",
   "setup_invalid": "Sélectionne au moins une plateforme, une cadence, une couleur et un résultat.",
   "recap_title": "Parties trouvées",
-  "recap_large_warning": "Les analyses ne sont pas encore enregistrées : fermer cette fenêtre ou laisser l'onglet se mettre en veille fait tout perdre.",
+  "recap_large_warning": "Analyse longue : gardez cet onglet ouvert et visible. Si elle s'arrête, ce qui est calculé est gardé, et la relancer reprend là où elle en était.",
   "recap_none": "Aucune partie ne correspond à ces filtres.",
   "recap_launch": "Lancer l'analyse",
   "replay_game_short": "Entraîner",
@@ -545,5 +545,6 @@
   "legal_privacy_local_analyses": "les évaluations des positions des parties que vous avez analysées, avec les coups de ces parties et leurs liens, pour que les réanalyser soit instantané ;",
   "settings_cache_confirm_title": "Vider les analyses enregistrées ?",
   "settings_cache_confirm_body": "Les parties déjà analysées devront de nouveau être analysées par le moteur.",
-  "settings_cache_confirm_action": "Vider"
+  "settings_cache_confirm_action": "Vider",
+  "setup_finding_lichess_speed": "Lichess envoie environ 20 parties par seconde."
 }

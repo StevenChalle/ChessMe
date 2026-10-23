@@ -50,7 +50,7 @@ export const LATEST_SHORTCUTS = [3, 5, 10, 50, 100] as const
 export const DATE_PRESETS: DatePreset[] = ['today', 'week', 'month', '3months', 'year']
 /** The period's maximum when first chosen (it can be cleared: no limit). */
 export const DEFAULT_RANGE_MAX = 50
-/** From this many games, the recap warns that nothing is saved yet. */
+/** From this many games, the recap advises keeping the tab open (a phone freezes a hidden one). */
 export const LARGE_REVIEW = 100
 /** Bounds of the opponent rating filter, and its range when first turned on. */
 export const RATING_FLOOR = 0

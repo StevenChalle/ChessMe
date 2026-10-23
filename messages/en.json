@@ -263,7 +263,7 @@
   "setup_finding": "Looking for games…",
   "setup_invalid": "Select at least one platform, time control, color and result.",
   "recap_title": "Games found",
-  "recap_large_warning": "Analyses are not saved yet: closing this window or letting the tab go to sleep loses everything.",
+  "recap_large_warning": "A long analysis: keep this tab open and visible. If it stops, what was computed is kept, and launching it again picks up where it left off.",
   "recap_none": "No game matches these filters.",
   "recap_launch": "Start the analysis",
   "replay_game_short": "Train",
@@ -545,5 +545,6 @@
   "legal_privacy_local_analyses": "the evaluations of the positions of the games you analysed, with the moves of these games and their links, so that analysing them again is instant;",
   "settings_cache_confirm_title": "Clear saved analyses?",
   "settings_cache_confirm_body": "Games analysed before will have to be analysed again by the engine.",
-  "settings_cache_confirm_action": "Clear"
+  "settings_cache_confirm_action": "Clear",
+  "setup_finding_lichess_speed": "Lichess sends about 20 games per second."
 }

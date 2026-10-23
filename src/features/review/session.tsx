@@ -243,14 +243,18 @@ export function AnalysisSessionProvider({
     const { selection } = draft
     const signal = restart(searchJob)
     setSearch({ status: 'finding' })
-    library.find(selection, signal).then(
-      (found) => {
-        if (!signal.aborted) setSearch({ status: 'found', found, selection })
-      },
-      (error: Error) => {
-        if (!signal.aborted) setSearch({ status: 'error', error })
-      },
-    )
+    library
+      .find(selection, signal, (progress) => {
+        if (!signal.aborted) setSearch({ status: 'finding', progress })
+      })
+      .then(
+        (found) => {
+          if (!signal.aborted) setSearch({ status: 'found', found, selection })
+        },
+        (error: Error) => {
+          if (!signal.aborted) setSearch({ status: 'error', error })
+        },
+      )
   }, [library, draft])
 
   /** Starting a new analysis replaces the current one, and the training built on it. */

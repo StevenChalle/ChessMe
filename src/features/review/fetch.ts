@@ -22,11 +22,20 @@ export type FoundGames = {
   failures: { source: ApiSource; error: Error }[]
 }
 
+/**
+ * How far the search of each platform is: games found so far (matching the filters) and the share
+ * of the work done (0 to 1), from the games wanted, the period covered or the months read.
+ */
+export type FetchProgress = Partial<Record<ApiSource, { games: number; ratio: number }>>
+
+type Report = (games: number, ratio: number) => void
+
 export type GameFetchers = {
   lichessExport: (
     username: string,
     options: GameExportOptions,
     signal?: AbortSignal,
+    onGame?: (game: LichessGame) => void,
   ) => Promise<LichessGame[]>
   chessComArchives: (username: string, signal?: AbortSignal) => Promise<string[]>
   chessComMonth: (archiveUrl: string, signal?: AbortSignal) => Promise<ChessComGame[]>
@@ -54,10 +63,14 @@ const CORRESPONDENCE_MARGIN = 60 * DAY
 /** Pages of the "latest games" search on Lichess, fetched one after the other. */
 const LICHESS_PAGE = 100
 
+const share = (done: number, total: number) =>
+  total > 0 ? Math.min(Math.max(done / total, 0), 1) : 0
+
 async function findLichessGames(
   username: string,
   selection: GameSelection,
   fetchers: GameFetchers,
+  report: Report,
   signal?: AbortSignal,
 ): Promise<ReviewGame[]> {
   const base: GameExportOptions = {
@@ -80,9 +93,26 @@ async function findLichessGames(
     since = scope.from - margin
     until = scope.to
   }
+  // Games stream in newest first: the share of the period covered, or of the games wanted.
+  const end = until
+  const progress = (found: number, game: LichessGame) =>
+    Math.max(
+      limit === undefined ? 0 : share(found, limit),
+      since === undefined || end === undefined ? 0 : share(end - game.createdAt, end - since),
+    )
+  let streamed = 0
+  const onGame = (base: number) => (game: LichessGame) => {
+    streamed += keep([game]).length
+    report(base + streamed, progress(base + streamed, game))
+  }
+
   // A whole date range, in one request.
   if (limit === undefined) {
-    return keep(await fetchers.lichessExport(username, { ...base, since, until }, signal))
+    const games = keep(
+      await fetchers.lichessExport(username, { ...base, since, until }, signal, onGame(0)),
+    )
+    report(games.length, 1)
+    return games
   }
 
   // Results, opponent ratings and end dates are only checked here: then page backwards until enough games
@@ -94,15 +124,18 @@ async function findLichessGames(
   const pageSize = filteredHere ? Math.max(LICHESS_PAGE, limit) : limit
   const found: ReviewGame[] = []
   while (found.length < limit) {
+    streamed = 0
     const page = await fetchers.lichessExport(
       username,
       { ...base, max: pageSize, since, until },
       signal,
+      onGame(found.length),
     )
     found.push(...keep(page))
     if (page.length < pageSize) break
     until = Math.min(...page.map((game) => game.createdAt)) - 1
   }
+  report(found.length, 1)
   return found
 }
 
@@ -119,6 +152,7 @@ async function findChessComGames(
   username: string,
   selection: GameSelection,
   fetchers: GameFetchers,
+  report: Report,
   signal?: AbortSignal,
 ): Promise<ReviewGame[]> {
   const { scope } = selection
@@ -131,16 +165,25 @@ async function findChessComGames(
     })
   }
   const found: ReviewGame[] = []
+  const limit = scope.kind === 'latest' ? scope.count : scope.max
+  report(0, 0)
   // Newest month first, one request at a time (Chess.com limits parallel requests).
-  for (const archive of archives) {
+  for (const [index, archive] of archives.entries()) {
     const month = await fetchers.chessComMonth(archive, signal)
     for (const game of month) {
       const review = fromChessComGame(game, username)
       if (review && matchesSelection(review, selection)) found.push(review)
     }
-    const limit = scope.kind === 'latest' ? scope.count : scope.max
     if (limit !== undefined && found.length >= limit) break
+    report(
+      found.length,
+      Math.max(
+        limit === undefined ? 0 : share(found.length, limit),
+        share(index + 1, archives.length),
+      ),
+    )
   }
+  report(found.length, 1)
   return found
 }
 
@@ -151,14 +194,33 @@ async function findChessComGames(
 export async function findGames(
   accounts: ReviewAccount[],
   selection: GameSelection,
-  { signal, fetchers = API_FETCHERS }: { signal?: AbortSignal; fetchers?: GameFetchers } = {},
+  {
+    signal,
+    fetchers = API_FETCHERS,
+    onProgress,
+  }: {
+    signal?: AbortSignal
+    fetchers?: GameFetchers
+    /** Called as games arrive, with every platform's progress so far */
+    onProgress?: (progress: FetchProgress) => void
+  } = {},
 ): Promise<FoundGames> {
   const searched = accounts.filter((account) => selection.sources.includes(account.source))
+  let progress: FetchProgress = Object.fromEntries(
+    searched.map(({ source }) => [source, { games: 0, ratio: 0 }]),
+  )
+  const reporter =
+    (source: ApiSource): Report =>
+    (games, ratio) => {
+      if (signal?.aborted) return
+      progress = { ...progress, [source]: { games, ratio } }
+      onProgress?.(progress)
+    }
   const results = await Promise.allSettled(
     searched.map(({ source, username }) =>
       source === 'lichess'
-        ? findLichessGames(username, selection, fetchers, signal)
-        : findChessComGames(username, selection, fetchers, signal),
+        ? findLichessGames(username, selection, fetchers, reporter(source), signal)
+        : findChessComGames(username, selection, fetchers, reporter(source), signal),
     ),
   )
   signal?.throwIfAborted()

@@ -2,7 +2,13 @@ import { describe, expect, it } from 'vitest'
 import type { ChessComGame } from '@/lib/chesscom/types'
 import type { GameExportOptions } from '@/lib/lichess/client'
 import type { LichessGame } from '@/lib/lichess/types'
-import { findGame, findGames, type GameFetchers, type SingleGameFetchers } from './fetch'
+import {
+  findGame,
+  findGames,
+  type FetchProgress,
+  type GameFetchers,
+  type SingleGameFetchers,
+} from './fetch'
 import { defaultSelection, type GameSelection } from './selection'
 
 const DAY = 86_400_000
@@ -232,6 +238,84 @@ describe('findGames', () => {
       { fetchers },
     )
     expect(failures).toEqual([])
+  })
+})
+
+describe('findGames progress', () => {
+  it('reports the Lichess games as they stream in, out of the number wanted', async () => {
+    const fetchers = {
+      lichessExport: async (
+        _user: string,
+        _options: GameExportOptions,
+        _signal: AbortSignal | undefined,
+        onGame?: (game: LichessGame) => void,
+      ) => {
+        const games = [lichessGame('a', 30), lichessGame('b', 20), lichessGame('c', 10)]
+        for (const game of games) onGame?.(game)
+        return games
+      },
+    } as unknown as GameFetchers
+    const reports: FetchProgress[] = []
+    await findGames(
+      lichessOnly,
+      { ...defaultSelection(['lichess']), scope: { kind: 'latest', count: 4 } },
+      { fetchers, onProgress: (progress) => reports.push(progress) },
+    )
+    expect(reports.map((report) => report.lichess)).toEqual([
+      { games: 1, ratio: 0.25 },
+      { games: 2, ratio: 0.5 },
+      { games: 3, ratio: 0.75 },
+      // Fewer games than wanted: the search is over all the same.
+      { games: 3, ratio: 1 },
+    ])
+  })
+
+  it('measures a Lichess period by the dates covered', async () => {
+    const fetchers = {
+      lichessExport: async (
+        _user: string,
+        _options: GameExportOptions,
+        _signal: AbortSignal | undefined,
+        onGame?: (game: LichessGame) => void,
+      ) => {
+        const games = [lichessGame('a', 90), lichessGame('b', 50)]
+        for (const game of games) onGame?.(game)
+        return games
+      },
+    } as unknown as GameFetchers
+    const reports: FetchProgress[] = []
+    await findGames(
+      lichessOnly,
+      {
+        ...defaultSelection(['lichess']),
+        scope: { kind: 'range', from: 1 * DAY, to: 101 * DAY },
+      },
+      { fetchers, onProgress: (progress) => reports.push(progress) },
+    )
+    // From day 101 back to day -59 (60 days of margin for correspondence games): 51 days of 160.
+    expect(reports[1]!.lichess!.ratio).toBeCloseTo(51 / 160)
+    expect(reports.at(-1)!.lichess).toEqual({ games: 2, ratio: 1 })
+  })
+
+  it('counts the Chess.com months read', async () => {
+    const fetchers = {
+      chessComArchives: async () => ['m1', 'm2', 'm3', 'm4'],
+      chessComMonth: async (url: string) => [chessComGame(url, Number(url.slice(1)) * 10)],
+    } as unknown as GameFetchers
+    const reports: FetchProgress[] = []
+    await findGames(
+      [{ source: 'chesscom', username: 'alice' }],
+      { ...defaultSelection(['chesscom']), scope: { kind: 'latest', count: 100 } },
+      { fetchers, onProgress: (progress) => reports.push(progress) },
+    )
+    expect(reports.map((report) => report.chesscom)).toEqual([
+      { games: 0, ratio: 0 },
+      { games: 1, ratio: 0.25 },
+      { games: 2, ratio: 0.5 },
+      { games: 3, ratio: 0.75 },
+      { games: 4, ratio: 1 },
+      { games: 4, ratio: 1 },
+    ])
   })
 })
 

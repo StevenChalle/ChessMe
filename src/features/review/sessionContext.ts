@@ -1,7 +1,7 @@
 import type { ActiveTime } from '@/lib/activeTime'
 import { createContext, useContext } from 'react'
 import type { Mistake, ReviewOutcome } from './analyze'
-import type { FoundGames, ReviewAccount } from './fetch'
+import type { FetchProgress, FoundGames, ReviewAccount } from './fetch'
 import type { GameLibrary } from './library'
 import type { ReviewProgress } from './progress'
 import type { GameSelection } from './selection'
@@ -15,7 +15,8 @@ import type { Exercise, TrainingSettings } from '@/features/training/settings'
 
 export type SearchState =
   | { status: 'idle' }
-  | { status: 'finding' }
+  /** `progress` once the platforms report some */
+  | { status: 'finding'; progress?: FetchProgress }
   | { status: 'found'; found: FoundGames; selection: GameSelection }
   | { status: 'error'; error: Error }
 

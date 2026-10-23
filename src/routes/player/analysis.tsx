@@ -87,6 +87,7 @@ function FiltersTab() {
       {(search.status === 'found' || search.status === 'finding' || canSearch) && (
         <ReviewRecap
           found={search.status === 'found' ? search.found : undefined}
+          progress={search.status === 'finding' ? search.progress : undefined}
           criteria={draft.criteria}
           onLaunch={() => void launch()}
         />

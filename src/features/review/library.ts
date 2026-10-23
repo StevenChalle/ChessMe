@@ -1,5 +1,11 @@
 import type { GameSource } from '@/features/games/normalize'
-import { findGame, findGames, type FoundGames, type ReviewAccount } from './fetch'
+import {
+  findGame,
+  findGames,
+  type FetchProgress,
+  type FoundGames,
+  type ReviewAccount,
+} from './fetch'
 import type { GameRef } from './gameRef'
 import { latestGames, type ReviewGame } from './games'
 import { matchesSelection, type GameSelection } from './selection'
@@ -12,8 +18,12 @@ export type GameLibrary = {
   kind: 'accounts' | 'import'
   /** The origins of its games: the "platforms" the filters offer */
   sources: GameSource[]
-  /** The games of a selection, newest first */
-  find: (selection: GameSelection, signal: AbortSignal) => Promise<FoundGames>
+  /** The games of a selection, newest first, reporting how far the search is */
+  find: (
+    selection: GameSelection,
+    signal: AbortSignal,
+    onProgress?: (progress: FetchProgress) => void,
+  ) => Promise<FoundGames>
   /** One game, picked in a list */
   findOne: (ref: GameRef, signal: AbortSignal) => Promise<FoundGames>
 }
@@ -22,7 +32,7 @@ export function accountsLibrary(accounts: ReviewAccount[]): GameLibrary {
   return {
     kind: 'accounts',
     sources: accounts.map((account) => account.source),
-    find: (selection, signal) => findGames(accounts, selection, { signal }),
+    find: (selection, signal, onProgress) => findGames(accounts, selection, { signal, onProgress }),
     findOne: (ref, signal) => findGame(accounts, ref, { signal }),
   }
 }
