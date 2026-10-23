@@ -654,7 +654,7 @@ Dans l'onglet Parties (comptes et import), une partie déjà analysée (entrée 
 
 ## 2026-10-24 : notifications (toasts)
 
-Une notification en bas de l'écran confirme ce qui vient d'être fait ailleurs que là où le joueur regarde, d'abord quand des comptes principaux sont définis (bouton du profil ou « Synchroniser » des réglages) : quels comptes, et combien de parties vont être analysées.
+Une notification en bas de l'écran confirme ce qui vient d'être fait ailleurs que là où le joueur regarde, d'abord quand des comptes principaux sont définis (bouton du profil ou « Synchroniser » des réglages).
 
-- Écrit à la main (`lib/toast.ts`, `components/Toaster.tsx`, une cinquantaine de lignes) plutôt que Sonner : pas de dépendance pour un besoin si simple. Même aspect que les popovers, annoncé aux lecteurs d'écran (`aria-live`), disparaît après 4 s ou d'un clic.
+- Écrit à la main (`lib/toast.ts`, `components/Toaster.tsx`, une cinquantaine de lignes) plutôt que Sonner : pas de dépendance pour un besoin si simple. Grande, sur fond doré et texte sombre (couleurs du bouton principal), un titre court et une ligne par information (« Comptes principaux enregistrés », puis « Lichess : X », « Chess.com : Y »). Annoncée aux lecteurs d'écran (`aria-live`), disparaît après 4 s ou d'un clic.
 - Les infobulles partagées (`ui/tooltip.tsx`) prennent aussi l'aspect des popovers au lieu d'un encadré clair inversé.

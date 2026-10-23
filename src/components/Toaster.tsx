@@ -15,17 +15,24 @@ export function Toaster() {
         <div
           key={toast.id}
           role="status"
-          className="pointer-events-auto flex max-w-md animate-in items-start gap-2.5 rounded-md border border-border bg-popover px-3.5 py-2.5 text-sm text-popover-foreground shadow-pop fade-in-0 slide-in-from-bottom-2"
+          className="pointer-events-auto flex max-w-md min-w-72 animate-in items-start gap-3 rounded-lg bg-primary px-5 py-4 text-primary-foreground shadow-pop fade-in-0 slide-in-from-bottom-2"
         >
-          <CircleCheck aria-hidden className="mt-0.5 size-4 shrink-0 text-win" />
-          <span className="flex-1">{toast.message}</span>
+          <CircleCheck aria-hidden className="mt-0.5 size-6 shrink-0" />
+          <div className="flex-1 space-y-1">
+            <p className="text-lg font-semibold">{toast.title}</p>
+            {toast.lines.map((line) => (
+              <p key={line} className="text-base">
+                {line}
+              </p>
+            ))}
+          </div>
           <button
             type="button"
             aria-label={m.toast_close()}
             onClick={() => dismissToast(toast.id)}
-            className="mt-0.5 text-muted-foreground hover:text-text-strong"
+            className="mt-1 opacity-70 hover:opacity-100"
           >
-            <X className="size-4" />
+            <X className="size-5" />
           </button>
         </div>
       ))}

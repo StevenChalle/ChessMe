@@ -3,7 +3,8 @@
  * just done elsewhere than where the player looks (Toaster, mounted at the root).
  */
 
-export type Toast = { id: number; message: string }
+/** A title, and a few short lines under it */
+export type Toast = { id: number; title: string; lines: string[] }
 
 /** How long a notification stays */
 export const TOAST_MS = 4000
@@ -23,9 +24,9 @@ export function dismissToast(id: number): void {
   notify()
 }
 
-/** Shows `message` for a few seconds. */
-export function showToast(message: string): void {
-  const toast = { id: nextId++, message }
+/** Shows `title` (and `lines` under it) for a few seconds. */
+export function showToast(title: string, lines: string[] = []): void {
+  const toast = { id: nextId++, title, lines }
   toasts = [...toasts, toast]
   notify()
   setTimeout(() => dismissToast(toast.id), TOAST_MS)

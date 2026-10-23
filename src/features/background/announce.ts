@@ -1,18 +1,14 @@
 import { SOURCE_LABELS } from '@/features/player/summary'
-import { formatAndList, formatNumber } from '@/lib/format'
 import { showToast } from '@/lib/toast'
 import { m } from '@/paraglide/messages'
 import { mainAccounts, type MainProfile } from './profile'
 
-/** A notification once main accounts are set: which ones, and what follows. */
+/** A notification once main accounts are set: short, one line per platform. */
 export function announceMainAccounts(profile: MainProfile): void {
-  const accounts = mainAccounts(profile).map(
-    ({ source, username }) => `${username} (${SOURCE_LABELS[source]})`,
-  )
   showToast(
-    m.toast_main_accounts_set({
-      accounts: formatAndList(accounts),
-      count: formatNumber(profile.depth),
-    }),
+    m.toast_main_accounts_set(),
+    mainAccounts(profile).map(({ source, username }) =>
+      m.toast_account_line({ platform: SOURCE_LABELS[source], username }),
+    ),
   )
 }

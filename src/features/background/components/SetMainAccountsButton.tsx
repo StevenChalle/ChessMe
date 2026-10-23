@@ -126,6 +126,7 @@ export function SetMainAccountsButton({ accounts }: { accounts: ReviewAccount[] 
             ) : (
               <Button
                 variant="ghost"
+                size="icon"
                 aria-label={label}
                 onClick={() => {
                   setDeleteGames(false)
