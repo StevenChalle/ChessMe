@@ -106,6 +106,47 @@ export function useMainProfile(): MainProfile | undefined {
   return useSyncExternalStore(subscribeMainProfile, getMainProfile)
 }
 
+/** 'lichess:alice' for each account: Lichess and Chess.com usernames are case-insensitive. */
+function accountKeys(accounts: ReviewAccount[]): string[] {
+  return accounts.map(({ source, username }) => `${source}:${username.toLowerCase()}`)
+}
+
+/** These accounts are exactly the main ones. */
+export function areMainAccounts(
+  profile: MainProfile | undefined,
+  accounts: ReviewAccount[],
+): boolean {
+  if (!profile) return false
+  const main = accountKeys(mainAccounts(profile))
+  const shown = accountKeys(accounts)
+  return main.length === shown.length && shown.every((key) => main.includes(key))
+}
+
+/** The main accounts of `profile` that making `accounts` the main ones would drop. */
+export function replacedAccounts(
+  profile: MainProfile | undefined,
+  accounts: ReviewAccount[],
+): ReviewAccount[] {
+  if (!profile) return []
+  const kept = accountKeys(accounts)
+  return mainAccounts(profile).filter((account) => !kept.includes(accountKeys([account])[0]!))
+}
+
+/** `accounts` as the main ones, keeping the profile's other choices. */
+export function withMainAccounts(
+  profile: MainProfile | undefined,
+  accounts: ReviewAccount[],
+): MainProfile {
+  const lichess = accounts.find((account) => account.source === 'lichess')?.username
+  const chesscom = accounts.find((account) => account.source === 'chesscom')?.username
+  return {
+    ...(lichess && { lichess }),
+    ...(chesscom && { chesscom }),
+    depth: profile?.depth ?? defaultDepth(),
+    deep: profile?.deep ?? true,
+  }
+}
+
 /** The accounts to search, in the review's terms. */
 export function mainAccounts(profile: MainProfile): ReviewAccount[] {
   return [

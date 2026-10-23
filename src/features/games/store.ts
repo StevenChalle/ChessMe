@@ -309,6 +309,17 @@ export async function storedAccounts(): Promise<{ account: string; games: number
   }
 }
 
+/** Deletes the games of these accounts ('lichess:alice'), and what is known of them. */
+export async function deleteStoredAccounts(accounts: string[]): Promise<boolean> {
+  try {
+    const db = database()
+    for (const account of accounts) await deleteAccount(db, account)
+    return true
+  } catch {
+    return false
+  }
+}
+
 /** Empties the store but for the accounts of `keep` (the analysis cache stays). */
 export async function clearGameStore(keep: string[] = []): Promise<boolean> {
   try {

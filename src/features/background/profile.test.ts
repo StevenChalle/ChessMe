@@ -1,11 +1,14 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import {
+  areMainAccounts,
   defaultDepth,
   depthsFor,
   getMainProfile,
   mainAccounts,
   parseMainProfile,
+  replacedAccounts,
   setMainProfile,
+  withMainAccounts,
 } from './profile'
 
 describe('parseMainProfile', () => {
@@ -51,5 +54,40 @@ describe('setMainProfile', () => {
     setMainProfile(undefined)
     expect(getMainProfile()).toBeUndefined()
     expect(localStorage.getItem('craftyourchess:main-profile')).toBeNull()
+  })
+})
+
+describe('making accounts the main ones', () => {
+  const main = { lichess: 'Alice', chesscom: 'alice_cc', depth: 200, deep: false }
+  const lichess = (username: string) => ({ source: 'lichess' as const, username })
+  const chesscom = (username: string) => ({ source: 'chesscom' as const, username })
+
+  it('knows when the accounts shown are exactly the main ones, whatever the case', () => {
+    expect(areMainAccounts(main, [lichess('alice'), chesscom('ALICE_CC')])).toBe(true)
+    expect(areMainAccounts(main, [lichess('alice')])).toBe(false)
+    expect(areMainAccounts(undefined, [lichess('alice')])).toBe(false)
+  })
+
+  it('lists the main accounts that would be dropped', () => {
+    expect(replacedAccounts(main, [lichess('alice'), chesscom('alice_cc')])).toEqual([])
+    expect(replacedAccounts(main, [lichess('bob')])).toEqual([
+      lichess('Alice'),
+      chesscom('alice_cc'),
+    ])
+    expect(replacedAccounts(main, [lichess('ALICE')])).toEqual([chesscom('alice_cc')])
+    expect(replacedAccounts(undefined, [lichess('bob')])).toEqual([])
+  })
+
+  it('keeps the other choices of the profile', () => {
+    expect(withMainAccounts(main, [chesscom('bob')])).toEqual({
+      chesscom: 'bob',
+      depth: 200,
+      deep: false,
+    })
+    expect(withMainAccounts(undefined, [lichess('bob')])).toEqual({
+      lichess: 'bob',
+      depth: defaultDepth(),
+      deep: true,
+    })
   })
 })

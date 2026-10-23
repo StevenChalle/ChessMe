@@ -6,6 +6,7 @@ import {
   accountKey,
   clearGameStore,
   createGameStore,
+  deleteStoredAccounts,
   GameStoreError,
   storedAccounts,
   storedSummary,
@@ -179,6 +180,8 @@ describe('storedAccounts and clearGameStore', () => {
       { account: 'lichess:bob', games: 3 },
       { account: 'lichess:alice', games: 2 },
     ])
+    await deleteStoredAccounts(['lichess:bob', 'lichess:nobody'])
+    expect(await storedAccounts()).toEqual([{ account: 'lichess:alice', games: 2 }])
     await clearGameStore(['lichess:alice'])
     expect(await storedAccounts()).toEqual([{ account: 'lichess:alice', games: 2 }])
     await clearGameStore()

@@ -7,15 +7,18 @@ import { SOURCE_LABELS, type AccountSummary } from '../summary'
 import { SourceDot } from './SourceBadge'
 
 /**
- * Name, titles, avatar and country, gathered from whichever accounts were found; `actions` on the
- * right. The name always leads to the profile of these accounts (`profileLink`).
+ * Name, titles, avatar and country, gathered from whichever accounts were found; `nameAction`
+ * right after the name, `actions` on the right. The name always leads to the profile of these
+ * accounts (`profileLink`).
  */
 export function PlayerHeader({
   accounts,
+  nameAction,
   actions,
   profileLink,
 }: {
   accounts: AccountSummary[]
+  nameAction?: ReactNode
   actions?: ReactNode
   profileLink: PlayerUsernames
 }) {
@@ -38,24 +41,27 @@ export function PlayerHeader({
           <img src={avatarUrl} alt="" className="size-14 rounded-md bg-card object-cover" />
         )}
         <div>
-          <h1 className="flex flex-wrap items-center gap-x-2.5">
-            {(sameTitle ? titles.slice(0, 1) : titles).map((account) => (
-              <span
-                key={account.source}
-                className="title-badge"
-                title={
-                  sameTitle
-                    ? undefined
-                    : m.player_title_on({ platform: SOURCE_LABELS[account.source] })
-                }
-              >
-                {account.title}
-              </span>
-            ))}
-            <Link to="/player" search={profileLink} className="hover:text-primary">
-              {main?.username}
-            </Link>
-          </h1>
+          <div className="flex items-center gap-1.5">
+            <h1 className="flex flex-wrap items-center gap-x-2.5">
+              {(sameTitle ? titles.slice(0, 1) : titles).map((account) => (
+                <span
+                  key={account.source}
+                  className="title-badge"
+                  title={
+                    sameTitle
+                      ? undefined
+                      : m.player_title_on({ platform: SOURCE_LABELS[account.source] })
+                  }
+                >
+                  {account.title}
+                </span>
+              ))}
+              <Link to="/player" search={profileLink} className="hover:text-primary">
+                {main?.username}
+              </Link>
+            </h1>
+            {nameAction}
+          </div>
           <p className="flex flex-wrap items-center gap-x-3 text-sm text-muted-foreground">
             {country && <span>{country}</span>}
             {!sameName &&

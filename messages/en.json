@@ -594,5 +594,11 @@
         "countPlural=other": "Including {formatted} games already analysed in this browser: ready at once."
       }
     }
-  ]
+  ],
+  "set_main_accounts": "Set as main accounts",
+  "set_main_accounts_already": "These are your main accounts",
+  "set_main_confirm_title": "Replace your main accounts?",
+  "set_main_confirm_body": "These accounts will no longer be followed: their new games won't be analysed automatically.",
+  "set_main_confirm_delete": "Delete the previous main accounts' games",
+  "set_main_confirm_action": "Replace"
 }

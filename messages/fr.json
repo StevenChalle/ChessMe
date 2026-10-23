@@ -594,5 +594,11 @@
         "countPlural=other": "Dont {formatted} parties déjà analysées dans ce navigateur : prêtes tout de suite."
       }
     }
-  ]
+  ],
+  "set_main_accounts": "Définir comme comptes principaux",
+  "set_main_accounts_already": "Ce sont vos comptes principaux",
+  "set_main_confirm_title": "Remplacer vos comptes principaux ?",
+  "set_main_confirm_body": "Ces comptes ne seront plus suivis : leurs nouvelles parties ne seront plus analysées automatiquement.",
+  "set_main_confirm_delete": "Supprimer les parties des anciens comptes principaux",
+  "set_main_confirm_action": "Remplacer"
 }
