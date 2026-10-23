@@ -1,5 +1,6 @@
-import { Link } from '@tanstack/react-router'
+import { Link, useLocation } from '@tanstack/react-router'
 import { History, LayoutGrid, List, Microscope, SlidersHorizontal, Swords, X } from 'lucide-react'
+import { useEffect, useRef } from 'react'
 import { useAnalysisSession } from '@/features/review/sessionContext'
 import { trainingTitle } from '@/features/training/title'
 import { cn } from '@/lib/utils'
@@ -27,8 +28,27 @@ export function PlayerTabs({
   canAnalyse: boolean
 }) {
   const { analysis, analysisId, trainings, closeTraining } = useAnalysisSession()
+  const navRef = useRef<HTMLElement>(null)
+  const pathname = useLocation({ select: (location) => location.pathname })
+  // However a tab gets opened (its link, the profile name, a button), scroll the bar so it shows.
+  useEffect(() => {
+    const nav = navRef.current
+    const tab = nav?.querySelector<HTMLElement>('[data-status="active"]')
+    if (!nav || !tab) return
+    const bar = nav.getBoundingClientRect()
+    const box = tab.getBoundingClientRect()
+    const margin = 24
+    const left =
+      box.left < bar.left
+        ? nav.scrollLeft - (bar.left - box.left) - margin
+        : box.right > bar.right
+          ? nav.scrollLeft + (box.right - bar.right) + margin
+          : undefined
+    if (left !== undefined) nav.scrollTo({ left, behavior: 'smooth' })
+  }, [pathname, trainings.length])
   return (
     <nav
+      ref={navRef}
       className="flex [scrollbar-width:none] gap-6 overflow-x-auto border-b"
       aria-label={m.tabs_label()}
     >

@@ -2,6 +2,7 @@ import { ChevronRight, RotateCcw } from 'lucide-react'
 import { Accordion as AccordionPrimitive } from 'radix-ui'
 import type { ReactNode } from 'react'
 import { Button } from '@/components/ui/button'
+import { cn } from '@/lib/utils'
 import { m } from '@/paraglide/messages'
 
 /**
@@ -53,8 +54,9 @@ export function Expandable({
   children: ReactNode
 }) {
   const actions = [
-    defaults && { ...defaults, label: m.setup_reset_defaults() },
-    reset && { ...reset, label: m.setup_reset_to_analysis() },
+    defaults && { ...defaults, label: m.setup_reset_defaults(), className: undefined },
+    // Too long for a phone's header, next to the title and summary.
+    reset && { ...reset, label: m.setup_reset_to_analysis(), className: 'max-sm:hidden' },
   ].filter((action) => action !== undefined)
   return (
     <AccordionPrimitive.Item
@@ -73,7 +75,7 @@ export function Expandable({
           </AccordionPrimitive.Trigger>
           {actions.length > 0 && (
             <span className="flex shrink-0 flex-wrap justify-end gap-1">
-              {actions.map(({ label, disabled, onClick }) => (
+              {actions.map(({ label, disabled, onClick, className }) => (
                 <Button
                   key={label}
                   type="button"
@@ -81,7 +83,7 @@ export function Expandable({
                   size="xs"
                   disabled={disabled}
                   onClick={onClick}
-                  className="text-muted-foreground"
+                  className={cn('text-muted-foreground', className)}
                 >
                   <RotateCcw data-icon="inline-start" />
                   {label}

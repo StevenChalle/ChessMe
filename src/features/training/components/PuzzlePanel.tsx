@@ -42,11 +42,23 @@ function Feedback({
 }) {
   const style = TONES[tone]
   return (
-    <div className={cn('space-y-3 rounded-md p-4 ring-1', style.box, APPEAR)}>
-      <p className={cn('flex items-center gap-3 text-xl font-semibold', style.title)}>
+    // Denser on a phone, so the verdict, the moves and the buttons fit under the board.
+    <div
+      className={cn(
+        'space-y-3 rounded-md p-4 ring-1 max-md:space-y-2 max-md:p-3',
+        style.box,
+        APPEAR,
+      )}
+    >
+      <p
+        className={cn(
+          'flex items-center gap-3 text-xl font-semibold max-md:gap-2 max-md:text-lg',
+          style.title,
+        )}
+      >
         <span
           className={cn(
-            'flex size-8 shrink-0 items-center justify-center rounded-full text-primary-foreground [&_svg]:size-5',
+            'flex size-8 shrink-0 items-center justify-center rounded-full text-primary-foreground max-md:size-7 [&_svg]:size-5',
             style.icon,
             'animate-in duration-300 ease-out zoom-in-50 motion-reduce:animate-none',
           )}
@@ -108,15 +120,18 @@ function MoveLine({
       ? evalDelta(forColor(baseCp, color), forColor(cp, color))
       : undefined
   return (
-    <div className="space-y-0.5">
-      <p className="text-sm text-muted-foreground">{label}</p>
-      <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
+    // On a phone the label sits on the move's line.
+    <div className="space-y-0.5 max-md:flex max-md:items-center max-md:gap-2 max-md:space-y-0">
+      <p className="text-sm text-muted-foreground max-md:shrink-0 max-md:text-xs">{label}</p>
+      <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 max-md:flex-1">
         {preview ? (
           <MovePreview fen={preview.fen} uci={preview.uci} orientation={color}>
-            <span className="cursor-default text-2xl font-semibold text-text-strong">{san}</span>
+            <span className="cursor-default text-2xl font-semibold text-text-strong max-md:text-lg">
+              {san}
+            </span>
           </MovePreview>
         ) : (
-          <span className="text-2xl font-semibold text-text-strong">{san}</span>
+          <span className="text-2xl font-semibold text-text-strong max-md:text-lg">{san}</span>
         )}
         {cp !== undefined && (
           <span className="ml-auto flex items-center gap-1.5">
@@ -365,7 +380,7 @@ export function PuzzlePanel({
   if (status !== 'solved' && status !== 'revealed') return null
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 max-md:space-y-3">
       {status === 'solved' ? (
         <Feedback tone="good" icon={<Check />} title={m.training_solved_title()}>
           {yourMove}
@@ -395,7 +410,8 @@ export function PuzzlePanel({
         </div>
         <DeeperLinks puzzle={puzzle} />
       </div>
-      <div className="space-y-2">
+      {/* Side by side on a phone */}
+      <div className="grid gap-2 max-md:grid-cols-2">
         {next}
         <Button
           size="lg"

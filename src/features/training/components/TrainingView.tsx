@@ -5,7 +5,6 @@ import { useEffect, useEffectEvent, useMemo, useReducer, useRef, useState } from
 import { Board } from '@/components/board/Board'
 import type { Mistake } from '@/features/review/analyze'
 import { VALID_MAX_DROP } from '@/features/review/errors'
-import { Progress } from '@/components/ui/progress'
 import { formatNumber } from '@/lib/format'
 import { m } from '@/paraglide/messages'
 import { Coach, validMovesOf } from '../coach'
@@ -20,6 +19,7 @@ import {
   sameMove,
 } from '../moves'
 import { currentPuzzle, startTraining, trainingReducer, type TrainingState } from '../session'
+import { TrainingProgress } from './TrainingProgress'
 import { PuzzlePanel } from './PuzzlePanel'
 import { TrainingSummary } from './TrainingSummary'
 import { SIDE_BY_SIDE, useBoardSize } from '../useBoardSize'
@@ -237,7 +237,15 @@ export function TrainingView({
               {m.training_remaining({ count: remaining, formatted: formatNumber(remaining) })}
             </span>
           </p>
-          <Progress value={(state.index / state.puzzles.length) * 100} />
+          <TrainingProgress
+            total={state.puzzles.length}
+            index={state.index}
+            results={state.results}
+            label={m.training_progress({
+              current: formatNumber(state.index + 1),
+              total: formatNumber(state.puzzles.length),
+            })}
+          />
         </div>
         {engineFailed ? (
           <p className="text-loss">{m.training_engine_failed()}</p>

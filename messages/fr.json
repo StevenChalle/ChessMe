@@ -103,6 +103,7 @@
   "review_col_opponent": "Adversaire",
   "review_col_result": "Résultat",
   "review_col_errors": "Erreurs",
+  "games_row_details": "Afficher les détails de la partie",
   "review_col_link": "Lien vers la partie",
   "result_win": "Victoire",
   "result_draw": "Nulle",

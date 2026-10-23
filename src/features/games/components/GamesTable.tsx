@@ -1,6 +1,6 @@
 import type { Color } from 'chessops'
-import type { ReactNode } from 'react'
-import { ExternalLink as ExternalLinkIcon } from 'lucide-react'
+import { useState, type MouseEvent, type ReactNode } from 'react'
+import { ChevronDown, ExternalLink as ExternalLinkIcon } from 'lucide-react'
 import {
   Table,
   TableBody,
@@ -47,7 +47,8 @@ export function SideSquare({ color, className }: { color: Color; className?: str
 
 /**
  * Narrow screens keep, by priority: `extra` (the mistakes), time control, links, result, platform
- * (its dot only on phones). The opponent and then the date give way first.
+ * (its dot only on phones). The opponent and then the date give way first: tapping a row there
+ * shows them under its time control.
  */
 const HIDE = { date: 'hidden md:table-cell', opponent: 'hidden sm:table-cell' }
 
@@ -67,6 +68,13 @@ export function GamesTable<G extends GameSummary>({
   extra?: ExtraColumn<G>
   action?: (game: G) => ReactNode
 }) {
+  const [expanded, setExpanded] = useState<ReadonlySet<string>>(new Set())
+  const toggle = (key: string) =>
+    setExpanded((current) => {
+      const next = new Set(current)
+      if (!next.delete(key)) next.add(key)
+      return next
+    })
   return (
     <Table>
       <TableHeader>
@@ -87,8 +95,15 @@ export function GamesTable<G extends GameSummary>({
       <TableBody>
         {games.map((game) => {
           const result = RESULTS[game.result]
+          const key = `${game.source}-${game.id}`
+          const open = expanded.has(key)
+          // The whole row toggles the details where columns are hidden, except its links.
+          const onRowClick = (event: MouseEvent) => {
+            if ((event.target as Element).closest('a, button')) return
+            if (window.matchMedia('(width < 48rem)').matches) toggle(key)
+          }
           return (
-            <TableRow key={`${game.source}-${game.id}`}>
+            <TableRow key={key} onClick={onRowClick}>
               <TableCell className={cn('num whitespace-nowrap text-muted-foreground', HIDE.date)}>
                 {formatDate(game.playedAt)}{' '}
                 <span className="ml-1 text-muted-foreground/70">{formatTime(game.playedAt)}</span>
@@ -97,12 +112,40 @@ export function GamesTable<G extends GameSummary>({
                 <SourceLabel source={game.source} compact />
               </TableCell>
               <TableCell>
+                <button
+                  type="button"
+                  aria-expanded={open}
+                  aria-label={m.games_row_details()}
+                  onClick={() => toggle(key)}
+                  className="mr-1 align-middle text-muted-foreground md:hidden"
+                >
+                  <ChevronDown
+                    className={cn('size-3.5 transition-transform', open && 'rotate-180')}
+                  />
+                </button>
                 {categoryLabel(game.category)}{' '}
                 <span className="num text-muted-foreground">
                   {timeControlLabel(game.timeControl)}
                 </span>
                 {game.variant && (
                   <span className="block text-xs text-highlight">{variantLabel(game.variant)}</span>
+                )}
+                {open && (
+                  <span className="mt-1 block space-y-0.5 md:hidden">
+                    <span className="num block whitespace-nowrap text-muted-foreground">
+                      {formatDate(game.playedAt)} {formatTime(game.playedAt)}
+                    </span>
+                    <span className="block sm:hidden">
+                      <SourceLabel source={game.source} />
+                    </span>
+                    <span className="flex items-center gap-2 sm:hidden">
+                      <SideSquare color={game.color} />
+                      <span className="text-text-strong">{game.opponent.name}</span>
+                      {game.opponent.rating !== undefined && (
+                        <span className="num text-muted-foreground">{game.opponent.rating}</span>
+                      )}
+                    </span>
+                  </span>
                 )}
               </TableCell>
               <TableCell className={HIDE.opponent}>
