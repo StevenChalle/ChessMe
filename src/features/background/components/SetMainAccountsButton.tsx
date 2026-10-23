@@ -143,20 +143,17 @@ export function SetMainAccountsButton({ accounts }: { accounts: ReviewAccount[] 
       </TooltipProvider>
 
       <Dialog open={open} onOpenChange={setOpen}>
-        {/* Replacing needs no description: the rows say it all. */}
-        <DialogContent
-          className="sm:max-w-md"
-          {...(replacing && { 'aria-describedby': undefined })}
-        >
+        {/* As wide as its sentence on a large screen (one line, whatever the language). */}
+        <DialogContent className="sm:max-w-xl lg:w-auto lg:max-w-[calc(100%-2rem)] lg:min-w-xl">
           <DialogHeader>
             <DialogTitle icon={replacing ? UserPen : UserPlus}>
               {replacing ? m.set_main_confirm_title() : m.set_main_confirm_new_title()}
             </DialogTitle>
-            {!replacing && (
-              <DialogDescription>
-                {m.set_main_confirm_new_body({ count: formatNumber(next.depth) })}
-              </DialogDescription>
-            )}
+            <DialogDescription className="lg:whitespace-nowrap">
+              {replacing
+                ? m.set_main_confirm_body()
+                : m.set_main_confirm_new_body({ count: formatNumber(next.depth) })}
+            </DialogDescription>
           </DialogHeader>
           <ul className="space-y-0.5 text-sm">
             {changes(profile, accounts).map((change) => (

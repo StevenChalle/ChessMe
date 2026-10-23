@@ -608,5 +608,6 @@
   "set_main_accounts_replace": "Remplacer les comptes principaux",
   "toast_main_accounts_set": "Comptes principaux enregistrés",
   "toast_close": "Fermer",
-  "toast_account_line": "{platform} : {username}"
+  "toast_account_line": "{platform} : {username}",
+  "set_main_confirm_body": "Les dernières parties de vos comptes principaux sont automatiquement analysées et enregistrées."
 }

@@ -608,5 +608,6 @@
   "set_main_accounts_replace": "Replace main accounts",
   "toast_main_accounts_set": "Main accounts saved",
   "toast_close": "Close",
-  "toast_account_line": "{platform}: {username}"
+  "toast_account_line": "{platform}: {username}",
+  "set_main_confirm_body": "The latest games of your main accounts are automatically analysed and saved."
 }
