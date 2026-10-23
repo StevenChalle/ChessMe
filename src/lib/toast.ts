@@ -3,13 +3,16 @@
  * just done elsewhere than where the player looks (Toaster, mounted at the root).
  */
 
-/** A title, and a few short lines under it; `leaving` while it fades out */
-export type Toast = { id: number; title: string; lines: string[]; leaving?: boolean }
+/**
+ * A title, and a few short items under it (side by side on a wide screen, one per line on a
+ * phone); `leaving` while it fades out.
+ */
+export type Toast = { id: number; title: string; items: string[]; leaving?: boolean }
 
 /** How long a notification stays */
 export const TOAST_MS = 4000
 /** How long it takes to fade out (Toaster's exit animation) */
-export const TOAST_EXIT_MS = 200
+export const TOAST_EXIT_MS = 150
 
 let toasts: Toast[] = []
 let nextId = 1
@@ -31,9 +34,9 @@ export function dismissToast(id: number): void {
   }, TOAST_EXIT_MS)
 }
 
-/** Shows `title` (and `lines` under it) for a few seconds. */
-export function showToast(title: string, lines: string[] = []): void {
-  const toast = { id: nextId++, title, lines }
+/** Shows `title` (and `items` under it) for a few seconds. */
+export function showToast(title: string, items: string[] = []): void {
+  const toast = { id: nextId++, title, items }
   toasts = [...toasts, toast]
   notify()
   setTimeout(() => dismissToast(toast.id), TOAST_MS)
