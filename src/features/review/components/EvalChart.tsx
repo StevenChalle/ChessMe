@@ -59,6 +59,8 @@ function moveInfo(game: ReviewedGame, index: number) {
 export function EvalChart({ game }: { game: ReviewedGame }) {
   const ids = useId().replaceAll(':', '')
   const wrapRef = useRef<HTMLDivElement>(null)
+  /** The chart with its details: a tap there keeps the frozen move */
+  const rootRef = useRef<HTMLDivElement>(null)
   const [width, setWidth] = useState(0)
   const [hovered, setHovered] = useState<number | undefined>(undefined)
   const [pinned, setPinned] = useState<number | undefined>(undefined)
@@ -79,11 +81,11 @@ export function EvalChart({ game }: { game: ReviewedGame }) {
     return () => observer.disconnect()
   }, [])
 
-  // A click or tap outside the chart lets go of the frozen move.
+  // A click or tap outside the chart and its details lets go of the frozen move.
   useEffect(() => {
     if (pinned === undefined) return
     const onDown = (event: globalThis.PointerEvent) => {
-      if (!wrapRef.current?.contains(event.target as Node)) setPinned(undefined)
+      if (!rootRef.current?.contains(event.target as Node)) setPinned(undefined)
     }
     document.addEventListener('pointerdown', onDown)
     return () => document.removeEventListener('pointerdown', onDown)
@@ -109,7 +111,13 @@ export function EvalChart({ game }: { game: ReviewedGame }) {
 
   const points = (plies: number[]) => plies.map((ply) => ply + 1).filter((index) => index < count)
   return (
-    <div className="space-y-2">
+    <div ref={rootRef} className="space-y-2">
+      {/* Phone: above the chart, once a move is tapped (the finger hides what is below it). */}
+      {pinned !== undefined && (
+        <div className="md:hidden">
+          <MoveDetails game={game} index={pinned} pinned inline />
+        </div>
+      )}
       <div ref={wrapRef} className="relative">
         <svg
           width="100%"
@@ -245,12 +253,6 @@ export function EvalChart({ game }: { game: ReviewedGame }) {
           </div>
         )}
       </div>
-      {/* Phone: under the chart, once a move is tapped. */}
-      {pinned !== undefined && (
-        <div className="md:hidden">
-          <MoveDetails game={game} index={pinned} pinned inline />
-        </div>
-      )}
       <Legend />
     </div>
   )
