@@ -281,7 +281,7 @@
   "search_failed": "Couldn't look for the games.",
   "confirm_cancel": "Cancel",
   "confirm_replace_title": "Replace the current analysis?",
-  "confirm_replace_body": "The current analysis will be stopped and lost: nothing is saved yet. Trainings already started stay open.",
+  "confirm_replace_body": "The current analysis will be stopped; what it computed is kept. Trainings already started stay open.",
   "confirm_replace_action": "Replace",
   "confirm_leave_title": "Leave the analysis?",
   "confirm_leave_body": "The analysis and the training in progress will be lost: nothing is saved yet.",
@@ -582,5 +582,17 @@
   "settings_cache_games_keep": "Keep the games of:",
   "settings_main_saved_games": "{games} saved",
   "settings_main_progress": "latest {done} / {total} analysed",
-  "settings_main_progress_deepened": "latest {done} / {total} deep-analysed"
+  "settings_main_progress_deepened": "latest {done} / {total} deep-analysed",
+  "recap_estimating": "Estimating the time…",
+  "recap_estimate_ready": "Already analysed: ready at once.",
+  "recap_cached": [
+    {
+      "declarations": ["input count", "input formatted", "local countPlural = count: plural"],
+      "selectors": ["countPlural"],
+      "match": {
+        "countPlural=one": "Including {formatted} game already analysed in this browser: ready at once.",
+        "countPlural=other": "Including {formatted} games already analysed in this browser: ready at once."
+      }
+    }
+  ]
 }

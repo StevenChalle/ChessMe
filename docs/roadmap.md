@@ -38,7 +38,7 @@
 ## Plus tard
 
 - Mesurer l'analyse sur un vrai téléphone et ajuster l'estimation
-- Cache des analyses ([analysis-cache.md](analysis-cache.md)) : bouton « Mettre à jour les analyses passées », estimation de durée qui tient compte du cache, coach qui lit le cache, export / import
+- Cache des analyses ([analysis-cache.md](analysis-cache.md)) : bouton « Mettre à jour les analyses passées », coach qui lit le cache, export / import
 - Analyse des parties : détailler les erreurs (positions, meilleur coup)
 - Entraînement : mémoriser les résultats, revoir en priorité les positions ratées, sélecteur de promotion
 - Import des parties Chess.com (archives mensuelles)

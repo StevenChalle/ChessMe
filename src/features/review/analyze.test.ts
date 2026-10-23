@@ -5,6 +5,7 @@ import { EnginePool } from '@/lib/engine/pool'
 import type { Stockfish } from '@/lib/engine/stockfish'
 import type { EngineScore } from '@/lib/engine/uci'
 import {
+  analysisWorkLeft,
   analyzeGames,
   DEEP_NODES,
   deepenGame,
@@ -185,5 +186,28 @@ describe('deepenPositions', () => {
     expect(searches.every((search) => search.nodes === DEEP_NODES)).toBe(true)
     expect(shares.at(-1)).toBe(1)
     expect((await gamesToDeepen(games, cache)).size).toBe(0)
+  })
+})
+
+describe('analysisWorkLeft', () => {
+  it('counts what the cache does not already hold', async () => {
+    const before = await analysisWorkLeft([game('g1', SCHOLAR)], DEFAULT_CRITERIA, cache)
+    // Everything to do but the final mate: its deep pass is not known yet.
+    expect(before).toEqual({ quick: [7], deep: [], fromCache: 0 })
+    await analyze([game('g1', SCHOLAR)])
+    expect(await analysisWorkLeft([game('g1', SCHOLAR)], DEFAULT_CRITERIA, cache)).toEqual({
+      quick: [],
+      deep: [],
+      fromCache: 1,
+    })
+  })
+
+  it('knows the deep pass left of a game evaluated quickly', async () => {
+    await analyze([game('g1', SCHOLAR, 'white')])
+    expect(await analysisWorkLeft([game('g1', SCHOLAR)], DEFAULT_CRITERIA, cache)).toEqual({
+      quick: [],
+      deep: [2],
+      fromCache: 0,
+    })
   })
 })

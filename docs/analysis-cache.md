@@ -107,7 +107,7 @@ cached.engine === ENGINE_ID && cached.nodes >= nodes demandés
 5. `deepenGame` écrit aussi ses évaluations : approfondir une partie profite à toutes les suivantes.
 6. Une fois l'analyse finie (pas si elle est arrêtée), on écrit l'entrée `games` de chaque partie (coups, références, version de l'analyse).
 
-La progression compte à part les positions trouvées en cache (`cached`) : la passe rapide ne porte que sur ce qui reste, et son résumé dit « 295 positions · 129 déjà analysées ». Limite connue : l'estimation affichée avant de lancer (onglet Analyse, `estimate.ts`) ignore le cache et surestime donc le temps.
+La progression compte à part les positions trouvées en cache (`cached`) : la passe rapide ne porte que sur ce qui reste, et son résumé dit « 295 positions · 129 déjà analysées ». L'estimation affichée avant de lancer (onglet Analyse) part du travail réellement restant (`analysisWorkLeft`, `workSeconds`) : positions absentes du cache, et passe profonde exacte des parties déjà évaluées. Tout en cache : « Déjà analysées : prêt tout de suite ».
 
 ## Versions
 

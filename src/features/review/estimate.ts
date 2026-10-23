@@ -1,6 +1,6 @@
 import { defaultPoolSize } from '@/lib/engine/pool'
 import { detectDevice, type DeviceKind } from '@/lib/device'
-import { DEEP_NODES, QUICK_NODES } from './analyze'
+import { DEEP_NODES, QUICK_NODES, type WorkLeft } from './analyze'
 import { deepCheckMinDrop, type ReviewCriteria } from './criteria'
 import type { ReviewGame } from './games'
 
@@ -79,18 +79,45 @@ export function estimateSeconds(
   device: DeviceProfile,
 ): number {
   const perGame = games.map(enginePositions).filter((positions) => positions > 0)
+  return workSeconds({ quick: perGame, deep: [], fromCache: 0 }, criteria, device)
+}
+
+/**
+ * The same from the work actually left (analysisWorkLeft): positions already in the analysis
+ * cache cost nothing, and the deep pass of fully evaluated games is known exactly.
+ */
+export function workSeconds(
+  work: WorkLeft,
+  criteria: ReviewCriteria,
+  device: DeviceProfile,
+): number {
   const deepNodes = deepShare(deepCheckMinDrop(criteria)) * DEEP_NODES
   const seconds = (nodes: number) => nodes / device.nodesPerSecond
   return (
     makespan(
-      perGame.map((positions) => seconds(positions * QUICK_NODES)),
+      work.quick.map((positions) => seconds(positions * QUICK_NODES)),
       device.workers,
     ) +
     makespan(
-      perGame.map((positions) => seconds(positions * deepNodes)),
+      [
+        ...work.quick.map((positions) => seconds(positions * deepNodes)),
+        ...work.deep.map((positions) => seconds(positions * DEEP_NODES)),
+      ],
       device.workers,
     )
   )
+}
+
+/** How many times faster this work would be on a typical computer (see desktopSpeedup). */
+export function workSpeedup(
+  work: WorkLeft,
+  criteria: ReviewCriteria,
+  device: DeviceProfile,
+): number | undefined {
+  const desktop = workSeconds(work, criteria, REFERENCE_DESKTOP)
+  if (desktop === 0) return undefined
+  const ratio = workSeconds(work, criteria, device) / desktop
+  return ratio >= 1.5 ? Math.round(ratio) : undefined
 }
 
 /**

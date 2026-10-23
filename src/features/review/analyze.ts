@@ -327,6 +327,39 @@ export async function analyzeGames(
   return finish(works, criteria)
 }
 
+/** What an analysis of some games would still have to compute, the cache taken into account. */
+export type WorkLeft = {
+  /** Per game with positions not evaluated yet: how many (their deep pass is not known yet) */
+  quick: number[]
+  /** Per game fully evaluated but for the deep pass around its suspicious moves: how many */
+  deep: number[]
+  /** Games with nothing left thanks to the cache; those Lichess analysed are counted apart (recap) */
+  fromCache: number
+}
+
+/** The work left to analyse `games` with `criteria`, for the estimate before launching. */
+export async function analysisWorkLeft(
+  games: ReviewGame[],
+  criteria: ReviewCriteria,
+  cache: EvaluationCache = analysisCache,
+): Promise<WorkLeft> {
+  const works = games.map(prepare)
+  const before = works.map((work) => missing(work).length)
+  await fillFromCache(works, cache)
+  const left: WorkLeft = { quick: [], deep: [], fromCache: 0 }
+  works.forEach((work, index) => {
+    const positions = missing(work).length
+    if (positions > 0) {
+      left.quick.push(positions)
+      return
+    }
+    const deep = deepCheckPositions(work, criteria).length
+    if (deep > 0) left.deep.push(deep)
+    else if (before[index]! > 0 && !work.game.serverCps) left.fromCache++
+  })
+  return left
+}
+
 /**
  * The games (movesHash) with positions the engine only looked at quickly, or not at all: those
  * deepenPositions would work on.

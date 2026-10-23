@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { DEFAULT_CRITERIA } from './criteria'
 import {
+  workSeconds,
   deepShare,
   desktopSpeedup,
   deviceProfile,
@@ -106,5 +107,19 @@ describe('desktopSpeedup', () => {
   it('says nothing when the gain is small or there is nothing to analyse', () => {
     expect(desktopSpeedup(games, DEFAULT_CRITERIA, deviceProfile('desktop', 4))).toBeUndefined()
     expect(desktopSpeedup([game(0)], DEFAULT_CRITERIA, deviceProfile('mobile', 2))).toBeUndefined()
+  })
+})
+
+describe('workSeconds', () => {
+  const device = { workers: 1, nodesPerSecond: 1_000_000 }
+
+  it('costs nothing when everything is in the cache', () => {
+    expect(workSeconds({ quick: [], deep: [], fromCache: 500 }, DEFAULT_CRITERIA, device)).toBe(0)
+  })
+
+  it('counts the positions left, and the deep pass known exactly', () => {
+    // 10 positions at 100,000 nodes, then 10 % of them deeply; 2 known deep positions.
+    const seconds = workSeconds({ quick: [10], deep: [2], fromCache: 0 }, DEFAULT_CRITERIA, device)
+    expect(seconds).toBeCloseTo(1 + 1 + 2)
   })
 })

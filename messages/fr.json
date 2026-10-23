@@ -281,7 +281,7 @@
   "search_failed": "Impossible de rechercher les parties.",
   "confirm_cancel": "Annuler",
   "confirm_replace_title": "Remplacer l'analyse en cours ?",
-  "confirm_replace_body": "L'analyse actuelle sera arrêtée et perdue : rien n'est encore enregistré. Les entraînements déjà lancés restent ouverts.",
+  "confirm_replace_body": "L'analyse actuelle sera arrêtée ; ce qu'elle a calculé est gardé. Les entraînements déjà lancés restent ouverts.",
   "confirm_replace_action": "Remplacer",
   "confirm_leave_title": "Quitter l'analyse ?",
   "confirm_leave_body": "L'analyse et l'entraînement en cours seront perdus : rien n'est encore enregistré.",
@@ -582,5 +582,17 @@
   "settings_cache_games_keep": "Garder les parties de :",
   "settings_main_saved_games": "{games} enregistrées",
   "settings_main_progress": "dernières {done} / {total} analysées",
-  "settings_main_progress_deepened": "dernières {done} / {total} approfondies"
+  "settings_main_progress_deepened": "dernières {done} / {total} approfondies",
+  "recap_estimating": "Estimation du temps…",
+  "recap_estimate_ready": "Déjà analysées : prêt tout de suite.",
+  "recap_cached": [
+    {
+      "declarations": ["input count", "input formatted", "local countPlural = count: plural"],
+      "selectors": ["countPlural"],
+      "match": {
+        "countPlural=one": "Dont {formatted} partie déjà analysée dans ce navigateur : prête tout de suite.",
+        "countPlural=other": "Dont {formatted} parties déjà analysées dans ce navigateur : prêtes tout de suite."
+      }
+    }
+  ]
 }

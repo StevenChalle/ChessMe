@@ -1,5 +1,5 @@
 import { LoaderCircle, Play, Save } from 'lucide-react'
-import type { ReactNode } from 'react'
+import { useEffect, useState, type ReactNode } from 'react'
 import { Button } from '@/components/ui/button'
 import { Progress } from '@/components/ui/progress'
 import { SourceLabel } from '@/features/player/components/SourceBadge'
@@ -9,7 +9,9 @@ import { formatEstimate, formatGameCount, formatNumber } from '@/lib/format'
 import { GAME_CATEGORIES, type GameSource } from '@/features/games/normalize'
 import { m } from '@/paraglide/messages'
 import type { ReviewCriteria } from '../criteria'
-import { desktopSpeedup, deviceProfile, estimateSeconds } from '../estimate'
+import { analysisWorkLeft, type WorkLeft } from '../analyze'
+import type { ReviewGame } from '../games'
+import { deviceProfile, workSeconds, workSpeedup } from '../estimate'
 import type { FetchProgress, FoundGames } from '../fetch'
 import { LARGE_REVIEW } from '../selection'
 
@@ -110,8 +112,27 @@ function FoundRecap({
   // The estimate is for the device running the analysis: its kind and its engines.
   const device = detectDevice()
   const profile = deviceProfile(device)
+  // What is left to compute, the analysis cache taken into account (looked up once per search),
+  // kept with what it was computed for: another search shows "estimating" until its own arrives.
+  const [computed, setComputed] = useState<
+    { games: ReviewGame[]; criteria: ReviewCriteria; work: WorkLeft } | undefined
+  >(undefined)
+  useEffect(() => {
+    let current = true
+    void analysisWorkLeft(games, criteria).then((work) => {
+      if (current) setComputed({ games, criteria, work })
+    })
+    return () => {
+      current = false
+    }
+  }, [games, criteria])
+  const work =
+    computed?.games === games && computed.criteria === criteria ? computed.work : undefined
+  const seconds = work && workSeconds(work, criteria, profile)
+  // Nothing left to compute: the details of why, and the note on long analyses, would only repeat it.
+  const ready = seconds === 0
   // On a phone or a tablet: how much faster a computer would be.
-  const speedup = device === 'mobile' ? desktopSpeedup(games, criteria, profile) : undefined
+  const speedup = work && device === 'mobile' ? workSpeedup(work, criteria, profile) : undefined
   const bySource = SOURCES.map((source) => ({
     source,
     count: games.filter((game) => game.source === source).length,
@@ -155,16 +176,23 @@ function FoundRecap({
           </p>
           <div className="space-y-0.5 pt-1">
             <p className="text-text-strong">
-              {m.recap_estimate({
-                time: formatEstimate(estimateSeconds(games, criteria, profile)),
-              })}
+              {seconds === undefined
+                ? m.recap_estimating()
+                : seconds === 0
+                  ? m.recap_estimate_ready()
+                  : m.recap_estimate({ time: formatEstimate(seconds) })}
             </p>
             {speedup !== undefined && (
               <p className="text-sm text-text-strong">
                 {m.recap_faster_on_desktop({ times: String(speedup) })}
               </p>
             )}
-            {serverAnalysed > 0 && (
+            {work && work.fromCache > 0 && !ready && (
+              <p className="text-xs text-muted-foreground">
+                {m.recap_cached({ count: work.fromCache, formatted: formatNumber(work.fromCache) })}
+              </p>
+            )}
+            {serverAnalysed > 0 && !ready && (
               <p className="text-xs text-muted-foreground">
                 {m.recap_server_analysed({
                   count: serverAnalysed,
@@ -173,7 +201,7 @@ function FoundRecap({
               </p>
             )}
           </div>
-          {games.length >= LARGE_REVIEW && (
+          {games.length >= LARGE_REVIEW && !ready && (
             <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
               <Save aria-hidden className="size-3.5 shrink-0" />
               {m.recap_progress_saved()}

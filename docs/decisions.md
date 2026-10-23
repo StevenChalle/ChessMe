@@ -609,7 +609,7 @@ Relancer une analyse sur des parties déjà vues doit être instantané, et chaq
 - Base Dexie `craftyourchess`, déclarée sur `/legal` et effacée par `clearLocalData()`.
 - Écartés : un cache par partie (plus simple et plus compact, mais rien n'est partagé entre parties) ; garder les erreurs calculées (invalidées au moindre changement de critères) ; garder les évaluations de Lichess (redonnées à chaque récupération, et d'un autre moteur).
 - Mise en œuvre : `lib/db.ts` (base Dexie), `features/review/cache.ts`, branché dans `analyzeGames` et `deepenGame`. Une analyse entièrement en cache ne démarre aucun moteur ; si seules des évaluations profondes manquent, seule la passe profonde tourne. Les étapes affichent « N positions · M déjà analysées ». Les réglages (roue dentée) montrent ce qui est gardé et permettent de le vider. Approfondir une partie n'est donc plus perdu à la prochaine analyse (le « à rediscuter » du 2026-10-23).
-- Limite connue : l'estimation de durée avant de lancer une analyse ignore le cache.
+- L'estimation de durée avant de lancer tient compte du cache (corrigé le même jour).
 
 ## 2026-10-23 : parties des comptes dans le navigateur (conception)
 
