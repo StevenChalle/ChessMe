@@ -595,3 +595,16 @@ Pouvoir utiliser toute l'app (analyse, graphique, entraînement) avec des partie
 - **Rien n'est gardé**, comme pour les comptes : un nouvel import remplace le lot, un rechargement ramène à l'accueil (`import/store.ts`, en mémoire).
 - Origine « Importée » (`GameSource`), lien vers la partie seulement si le PGN en donne un (Site de Lichess, Link de Chess.com), catégorie « Inconnue » sans cadence (cadence classée comme Lichess sinon), parties sans date datées de 1970 dans l'ordre du fichier (affichées « — », écartées par les filtres de période). Les horloges `[%clk]` et évaluations `[%eval]` du PGN sont reprises. Les entraînements regroupent désormais les erreurs par partie selon leur identifiant (plus selon le lien).
 - Filtres d'une analyse d'import : ni plateforme ni « classées / amicales » (un PGN le dit rarement), « Inconnue » parmi les cadences ; ils ne sont pas enregistrés (ce sont ceux des comptes).
+
+## 2026-10-23 : cache des analyses dans le navigateur (conception)
+
+Relancer une analyse sur des parties déjà vues doit être instantané, et chaque calcul de Stockfish doit profiter aux suivants. Première version locale, sans backend. Conception détaillée : [analysis-cache.md](analysis-cache.md). Pas encore implémenté.
+
+- **Cache par position, pas par partie** : une évaluation par FEN normalisée (sans les compteurs) et par moteur, réutilisée par toutes les parties qui passent par là (ouvertures de répertoire, transpositions, approfondissement). Plus lourd qu'un tableau d'évaluations par partie (≈ 15 à 20 Ko par partie au lieu de moins de 0,5 Ko), mais la place n'est pas la contrainte : des dizaines de milliers de parties même sur téléphone.
+- **On garde les évaluations, pas le jugement** : les erreurs sont recalculées avec les critères du moment, donc changer de critères reste instantané.
+- **Réutilisation** : même moteur et au moins autant de nœuds que demandé. Les budgets étant en nœuds, une évaluation vaut la même chose sur tous les appareils. Une seule entrée par position et par moteur, la plus profonde.
+- **Versions** : chaque évaluation garde son moteur (`ENGINE_ID`) et ses nœuds, chaque partie la version de l'analyse (`ANALYSIS_VERSION`). De quoi proposer plus tard de mettre à jour les analyses passées, en se servant des anciennes évaluations pour ne recalculer que l'essentiel.
+- **Identité des parties** : un hash des coups et de la position de départ, plus la liste des références (`lichess:…`, `chesscom:…`, `pgn:…`) pour garder le lien avec la partie d'origine.
+- **C'est un cache, pas une sauvegarde** : plafond en nombre d'entrées, éviction des plus anciennement utilisées, `navigator.storage.persist()` demandé, et l'analyse continue sans cache sur une erreur de quota. Le cache survit aux mises à jour de l'app (IndexedDB est lié au domaine), pas à un effacement par le navigateur (Safari sur iPhone, après 7 jours sans visite, sauf PWA installée).
+- Base Dexie `craftyourchess`, déclarée sur `/legal` et effacée par `clearLocalData()`.
+- Écartés : un cache par partie (plus simple et plus compact, mais rien n'est partagé entre parties) ; garder les erreurs calculées (invalidées au moindre changement de critères) ; garder les évaluations de Lichess (redonnées à chaque récupération, et d'un autre moteur).

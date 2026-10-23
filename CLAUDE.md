@@ -7,6 +7,7 @@ Application web (PWA installable) pour explorer les stats et les parties d'un jo
 - Design (thème « L'Établi ») : [docs/design.md](docs/design.md)
 - APIs Lichess / Chess.com, limites de débit : [docs/apis.md](docs/apis.md)
 - Feuille de route : [docs/roadmap.md](docs/roadmap.md)
+- Cache des analyses (conception, pas encore implémenté) : [docs/analysis-cache.md](docs/analysis-cache.md)
 - Checklists en cours, à supprimer une fois terminées : [docs/domain-craftyourchess.md](docs/domain-craftyourchess.md) (finitions du domaine), [docs/staging.md](docs/staging.md) (environnement de staging, reporté), [docs/logo-prompt.md](docs/logo-prompt.md) (prompt logo pour ChatGPT et Gemini), [docs/identity-brief.md](docs/identity-brief.md) (identité visuelle avec Claude Design)
 
 ## Commandes
