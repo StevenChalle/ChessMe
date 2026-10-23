@@ -376,6 +376,13 @@ export function AnalysisSessionProvider({
 
   const showResults = useCallback(() => goTo('/player/results'), [goTo])
 
+  /** Stops the analysis under way and drops it: back to the filters, to change them. */
+  const stopAnalysis = useCallback(() => {
+    analysisJob.current?.abort()
+    setAnalysis({ status: 'none' })
+    void navigate({ to: '/player/analysis', search: usernames, resetScroll: false })
+  }, [navigate, usernames])
+
   /** Closing the tab on screen shows its neighbor, else the results (or the filters). */
   const closeTraining = useCallback(
     async (number: number) => {
@@ -438,6 +445,7 @@ export function AnalysisSessionProvider({
     closeTraining,
     setTrainingFinished,
     showResults,
+    stopAnalysis,
   }
 
   return (

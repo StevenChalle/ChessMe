@@ -21,6 +21,8 @@ import { m } from '@/paraglide/messages'
 import { keepsMistake, mistakesByGame, type MistakeFilter } from '../order'
 import {
   DEFAULT_TRAINING_SETTINGS,
+  EXERCISES,
+  type Exercise,
   loadTrainingSettings,
   toTrainingOptions,
   type TrainingSettings,
@@ -114,6 +116,44 @@ function ThemeChips({
   )
 }
 
+const EXERCISE_LABELS: Record<Exercise, () => string> = {
+  evaluate: m.exercise_evaluate,
+  replay: m.exercise_replay,
+}
+
+/**
+ * Either exercise or both (the evaluation first, then the move). Never neither: turning off the
+ * last one turns the other one on.
+ */
+function ExerciseChips({
+  value,
+  onChange,
+}: {
+  value: Exercise[]
+  onChange: (exercises: Exercise[]) => void
+}) {
+  return (
+    <div className="flex flex-wrap gap-x-3 gap-y-2">
+      {EXERCISES.map((exercise) => (
+        <Toggle
+          key={exercise}
+          size="sm"
+          pressed={value.includes(exercise)}
+          onPressedChange={(pressed) => {
+            const next = EXERCISES.filter((item) =>
+              item === exercise ? pressed : value.includes(item),
+            )
+            onChange(next.length > 0 ? next : EXERCISES.filter((item) => item !== exercise))
+          }}
+          className={CHIP_CLASS}
+        >
+          {EXERCISE_LABELS[exercise]()}
+        </Toggle>
+      ))}
+    </div>
+  )
+}
+
 /** How many moves count as the opening (its theme), 1 to 20. */
 function OpeningMovesField({
   value,
@@ -199,7 +239,8 @@ export function TrainingSetup({ tab }: { tab: TrainingTab }) {
     !settings.limitPositions &&
     settings.positionsLimit === DEFAULT_TRAINING_SETTINGS.positionsLimit &&
     options.minDrop === tab.errorMinDrop
-  const isDefault = themesDefault && advancedDefault
+  const exercisesDefault = settings.exercises.join() === DEFAULT_TRAINING_SETTINGS.exercises.join()
+  const isDefault = themesDefault && exercisesDefault && advancedDefault
 
   const canLaunch = positions > 0 && limitValid
   const launch = () => launchTraining(tab.number, settings)
@@ -240,6 +281,21 @@ export function TrainingSetup({ tab }: { tab: TrainingTab }) {
               />
             </Section>
           )}
+        </Expandable>
+
+        <Expandable
+          value="exercises"
+          title={m.training_setup_exercises()}
+          summary={settings.exercises.map((exercise) => EXERCISE_LABELS[exercise]()).join(' · ')}
+          defaults={{
+            disabled: exercisesDefault,
+            onClick: () => update({ exercises: DEFAULT_TRAINING_SETTINGS.exercises }),
+          }}
+        >
+          <ExerciseChips
+            value={settings.exercises}
+            onChange={(exercises) => update({ exercises })}
+          />
         </Expandable>
 
         <Expandable

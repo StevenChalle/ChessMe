@@ -82,6 +82,8 @@ export type Session = {
   setTrainingFinished: (number: number, finished: boolean) => void
   /** Back to the analysis results */
   showResults: () => void
+  /** Stops the analysis under way, drops it and shows the filters */
+  stopAnalysis: () => void
 }
 
 export const SessionContext = createContext<Session | undefined>(undefined)

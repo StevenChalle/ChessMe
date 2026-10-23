@@ -19,6 +19,7 @@ import {
   sameMove,
 } from '../moves'
 import { currentPuzzle, startTraining, trainingReducer, type TrainingState } from '../session'
+import type { Exercise } from '../settings'
 import { TrainingProgress } from './TrainingProgress'
 import { PuzzlePanel } from './PuzzlePanel'
 import { TrainingSummary } from './TrainingSummary'
@@ -70,6 +71,7 @@ function bringBoard(board: HTMLElement | null) {
  */
 export function TrainingView({
   puzzles,
+  exercises,
   validMaxDrop = VALID_MAX_DROP,
   active = true,
   onFinishedChange,
@@ -78,6 +80,8 @@ export function TrainingView({
 }: {
   /** The positions to replay, in this order (see trainingPuzzles) */
   puzzles: Mistake[]
+  /** What to do on each position; only "replay" when omitted */
+  exercises?: Exercise[]
   validMaxDrop?: number
   /** The training is on screen (its tab is shown) */
   active?: boolean
@@ -88,7 +92,9 @@ export function TrainingView({
   /** Back to the analysis results, from the summary */
   onExit: () => void
 }) {
-  const [state, dispatch] = useReducer(trainingReducer, puzzles, startTraining)
+  const [state, dispatch] = useReducer(trainingReducer, { puzzles, exercises }, (initial) =>
+    startTraining(initial.puzzles, initial.exercises),
+  )
   const [engineFailed, setEngineFailed] = useState(false)
   const [coach] = useState(() => new Coach(validMaxDrop))
   const layoutRef = useRef<HTMLDivElement>(null)
@@ -103,10 +109,12 @@ export function TrainingView({
   useEffect(() => {
     if (active) bringBoard(boardRef.current)
   }, [active])
-  // On the tab, whenever the board waits for a move again: next mistake, retry, explore. Not after
-  // a move: the feedback shows right below the board.
+  // On the tab, whenever the board waits for a move or an evaluation again: next mistake, retry,
+  // explore, part 2. Not after a move: the feedback shows right below the board.
   useEffect(() => {
-    if (active && state.status === 'thinking') bringBoard(boardRef.current)
+    if (active && (state.status === 'thinking' || state.status === 'evaluating')) {
+      bringBoard(boardRef.current)
+    }
   }, [active, state.index, state.status])
 
   // Told only when it changes (the callback may be a new function on every render).
@@ -198,7 +206,14 @@ export function TrainingView({
   }, [state, puzzle])
 
   if (!puzzle || !config) {
-    return <TrainingSummary results={state.results} onRestart={onRestart} onFinish={onExit} />
+    return (
+      <TrainingSummary
+        results={state.replay ? state.results : undefined}
+        assessments={state.evaluate ? state.assessments : undefined}
+        onRestart={onRestart}
+        onFinish={onExit}
+      />
+    )
   }
 
   const remaining = state.puzzles.length - state.index
@@ -239,8 +254,7 @@ export function TrainingView({
           </p>
           <TrainingProgress
             total={state.puzzles.length}
-            index={state.index}
-            results={state.results}
+            done={state.index}
             label={m.training_progress({
               current: formatNumber(state.index + 1),
               total: formatNumber(state.puzzles.length),

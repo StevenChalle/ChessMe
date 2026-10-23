@@ -1,4 +1,6 @@
 import { createFileRoute, Navigate } from '@tanstack/react-router'
+import { Square } from 'lucide-react'
+import { Button } from '@/components/ui/button'
 import { ReviewResults } from '@/features/review/components/ReviewResults'
 import { ReviewSteps } from '@/features/review/components/ReviewSteps'
 import { Stopwatch } from '@/features/review/components/Stopwatch'
@@ -11,7 +13,7 @@ export const Route = createFileRoute('/player/results')({
 
 /** The analysis: its steps while it runs, then the games and their errors. */
 function ResultsTab() {
-  const { analysis, trainGame } = useAnalysisSession()
+  const { analysis, trainGame, stopAnalysis } = useAnalysisSession()
   const search = Route.useSearch()
 
   // Nothing in memory (page reloaded, link shared): back to the filters. A review asked by the
@@ -40,7 +42,14 @@ function ResultsTab() {
         <ReviewResults outcome={analysis.outcome} onTrain={trainGame} />
       )}
       {analysis.status === 'running' && (
-        <p className="text-sm text-muted-foreground">{m.analysis_keep_open()}</p>
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <p className="text-sm text-muted-foreground">{m.analysis_keep_open()}</p>
+          {/* A large analysis launched by mistake: stop it and change the filters. */}
+          <Button variant="outline" onClick={stopAnalysis}>
+            <Square data-icon="inline-start" />
+            {m.analysis_stop()}
+          </Button>
+        </div>
       )}
       <Stopwatch
         clock={analysis.status === 'running' ? analysis.clock : undefined}

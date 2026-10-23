@@ -133,6 +133,20 @@ export function formatSigned(value: number): string {
   return signedFormat().format(value)
 }
 
+const signedHundredthsFormat = cachedPerLocale(
+  (locale) =>
+    new Intl.NumberFormat(locale, {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+      signDisplay: 'exceptZero',
+    }),
+)
+
+/** Two decimals, always signed except zero: "+0.32" / "+0,32", "−1.75", "0.00" */
+export function formatSignedHundredths(value: number): string {
+  return signedHundredthsFormat().format(value)
+}
+
 /** One decimal, always signed except zero: "+1.5" / "+1,5", "−0.3", "0.0" */
 export function formatSignedTenths(value: number): string {
   return signedTenthsFormat().format(value)

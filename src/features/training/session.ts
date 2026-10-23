@@ -1,6 +1,9 @@
 import type { Mistake } from '@/features/review/analyze'
+import { forColor } from '@/features/review/errors'
+import { isAccepted, type Assessment } from './assessment'
 import type { ScoredMove } from './coach'
 import { sameMove } from './moves'
+import type { Exercise } from './settings'
 
 /**
  * Replaying one's errors, one position at a time:
@@ -9,14 +12,21 @@ import { sameMove } from './moves'
  *   solved | revealed → (next) next position, or the summary after the last one
  *   solved | revealed → (explore) thinking: try another move to see what it gives.
  * The position's result is settled by the first solve or reveal; exploring never changes it.
+ * With the "evaluate" exercise, each position starts with saying how it stands:
+ *   evaluating → (assess) evaluated → (next) thinking, or the next position without "replay".
  */
-export type PuzzleStatus = 'thinking' | 'checking' | 'wrong' | 'solved' | 'revealed'
+export type PuzzleStatus =
+  'evaluating' | 'evaluated' | 'thinking' | 'checking' | 'wrong' | 'solved' | 'revealed'
 
 export type PuzzleResult = 'first-try' | 'after-retries' | 'revealed'
 
 export type TrainingState = {
   /** Shuffled */
   puzzles: Mistake[]
+  /** Say how each position stands first */
+  evaluate: boolean
+  /** Find a valid move (after the evaluation, if any) */
+  replay: boolean
   index: number
   status: PuzzleStatus | 'summary'
   /** Moves tried on the current position */
@@ -37,9 +47,14 @@ export type TrainingState = {
   /** Result of the current position, once solved or revealed */
   outcome?: PuzzleResult
   results: PuzzleResult[]
+  /** The player's word for the current position, once given */
+  assessment?: Assessment
+  /** Whether each position done was well evaluated (with the "evaluate" exercise) */
+  assessments: boolean[]
 }
 
 export type TrainingAction =
+  | { type: 'assess'; answer: Assessment }
   | { type: 'try'; uci: string }
   | { type: 'verdict'; puzzleId: string; valid: boolean; afterCp: number; reply?: string }
   | {
@@ -66,14 +81,31 @@ export function shuffle<T>(items: T[], random: () => number = Math.random): T[] 
 }
 
 /** A training on these positions, in this order (see trainingPuzzles, order.ts). */
-export function startTraining(puzzles: Mistake[]): TrainingState {
+export function startTraining(
+  puzzles: Mistake[],
+  exercises: Exercise[] = ['replay'],
+): TrainingState {
+  const evaluate = exercises.includes('evaluate')
   return {
     puzzles,
+    evaluate,
+    replay: !evaluate || exercises.includes('replay'),
     index: 0,
-    status: puzzles.length > 0 ? 'thinking' : 'summary',
+    status: puzzles.length === 0 ? 'summary' : evaluate ? 'evaluating' : 'thinking',
     attempts: 0,
     results: [],
+    assessments: [],
   }
+}
+
+/**
+ * The player's evaluation judged against the engine's (known once the best move is): undefined
+ * until both are there.
+ */
+export function assessmentVerdict(state: TrainingState): boolean | undefined {
+  const puzzle = currentPuzzle(state)
+  if (!puzzle || !state.assessment || state.bestCp === undefined) return undefined
+  return isAccepted(state.assessment, forColor(state.bestCp, puzzle.color))
 }
 
 export function currentPuzzle(state: TrainingState): Mistake | undefined {
@@ -84,6 +116,9 @@ export function trainingReducer(state: TrainingState, action: TrainingAction): T
   const puzzle = currentPuzzle(state)
   if (!puzzle) return state
   switch (action.type) {
+    case 'assess':
+      if (state.status !== 'evaluating') return state
+      return { ...state, status: 'evaluated', assessment: action.answer }
     case 'try':
       if (state.status !== 'thinking') return state
       return { ...state, status: 'checking', attempts: state.attempts + 1, tried: action.uci }
@@ -140,26 +175,43 @@ export function trainingReducer(state: TrainingState, action: TrainingAction): T
         triedReply: undefined,
       }
     case 'next': {
+      if (state.status === 'evaluated') {
+        // Judged once the engine's evaluation is known.
+        const verdict = assessmentVerdict(state)
+        if (verdict === undefined) return state
+        // Part 2: the same position, to find a valid move.
+        if (state.replay) return { ...state, status: 'thinking' }
+        return advance(state, [...state.assessments, verdict])
+      }
       // Once settled, the player may move on from any state, even while exploring.
       if (!state.outcome) return state
-      const result = state.outcome
-      const index = state.index + 1
-      return {
-        ...state,
-        index,
-        status: index < state.puzzles.length ? 'thinking' : 'summary',
-        attempts: 0,
-        tried: undefined,
-        triedCp: undefined,
-        triedReply: undefined,
-        best: undefined,
-        bestCp: undefined,
-        validMoves: undefined,
-        validCapped: undefined,
-        outcome: undefined,
-        results: [...state.results, result],
-      }
+      const verdict = assessmentVerdict(state)
+      return advance(
+        { ...state, results: [...state.results, state.outcome] },
+        verdict === undefined ? state.assessments : [...state.assessments, verdict],
+      )
     }
+  }
+}
+
+/** On to the next position (or the summary), with the results of this one recorded. */
+function advance(state: TrainingState, assessments: boolean[]): TrainingState {
+  const index = state.index + 1
+  return {
+    ...state,
+    index,
+    status: index >= state.puzzles.length ? 'summary' : state.evaluate ? 'evaluating' : 'thinking',
+    attempts: 0,
+    tried: undefined,
+    triedCp: undefined,
+    triedReply: undefined,
+    best: undefined,
+    bestCp: undefined,
+    validMoves: undefined,
+    validCapped: undefined,
+    outcome: undefined,
+    assessment: undefined,
+    assessments,
   }
 }
 

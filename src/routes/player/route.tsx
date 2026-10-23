@@ -110,6 +110,7 @@ function Trainings() {
         <TrainingView
           key={tab.phase.run}
           puzzles={tab.phase.puzzles}
+          exercises={tab.phase.settings.exercises}
           validMaxDrop={tab.validMaxDrop}
           active={shown}
           onFinishedChange={(finished) => setTrainingFinished(tab.number, finished)}

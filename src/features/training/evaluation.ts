@@ -1,5 +1,5 @@
 import { MATE_CP } from '@/features/review/errors'
-import { formatSignedTenths } from '@/lib/format'
+import { formatSignedHundredths, formatSignedTenths } from '@/lib/format'
 
 /**
  * Evaluations shown while training, in pawns from White's side as usual in chess: "+1.5" White
@@ -8,6 +8,12 @@ import { formatSignedTenths } from '@/lib/format'
 export function formatEval(cp: number): string {
   if (Math.abs(cp) >= MATE_CP) return cp > 0 ? '+#' : '-#'
   return formatSignedTenths(cp / 100)
+}
+
+/** The same with two decimals ("+0.32"), where the exact value matters (evaluating a position). */
+export function formatEvalPrecise(cp: number): string {
+  if (Math.abs(cp) >= MATE_CP) return cp > 0 ? '+#' : '-#'
+  return formatSignedHundredths(cp / 100)
 }
 
 /** Change from the position's evaluation; undefined when a mate makes it meaningless. */

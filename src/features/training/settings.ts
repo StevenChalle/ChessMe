@@ -10,8 +10,16 @@ import type { TrainingOptions } from './order'
 const STORAGE_KEY = 'craftyourchess:training-settings'
 const VERSION = 1
 
+/**
+ * What the player does on each position: say how it stands, find a valid move, or both (in that
+ * order). Never neither.
+ */
+export type Exercise = 'evaluate' | 'replay'
+export const EXERCISES: Exercise[] = ['evaluate', 'replay']
+
 /** As the options screen edits them: the limits keep their number while unchecked. */
 export type TrainingSettings = {
+  exercises: Exercise[]
   interleaveGames: boolean
   shuffleWithinGame: boolean
   limitGames: boolean
@@ -29,6 +37,7 @@ export const DEFAULT_GAMES_LIMIT = 5
 export const DEFAULT_POSITIONS_LIMIT = 10
 
 export const DEFAULT_TRAINING_SETTINGS: TrainingSettings = {
+  exercises: ['replay'],
   interleaveGames: false,
   shuffleWithinGame: false,
   limitGames: false,
@@ -71,10 +80,14 @@ export function parseTrainingSettings(raw: string | null): TrainingSettings {
   if (data.version !== VERSION) return defaults
   const flag = (value: unknown, fallback: boolean) =>
     typeof value === 'boolean' ? value : fallback
-  const { gamesLimit, positionsLimit, minDrop, themes, openingMoves } = data
+  const { exercises, gamesLimit, positionsLimit, minDrop, themes, openingMoves } = data
+  const chosen = Array.isArray(exercises)
+    ? EXERCISES.filter((exercise) => exercises.includes(exercise))
+    : []
   const count = (value: unknown, fallback: number) =>
     Number.isInteger(value) && (value as number) >= 1 ? (value as number) : fallback
   return {
+    exercises: chosen.length > 0 ? chosen : defaults.exercises,
     interleaveGames: flag(data.interleaveGames, defaults.interleaveGames),
     shuffleWithinGame: flag(data.shuffleWithinGame, defaults.shuffleWithinGame),
     limitGames: flag(data.limitGames, defaults.limitGames),

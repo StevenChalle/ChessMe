@@ -14,6 +14,7 @@ import { m } from '@/paraglide/messages'
 import { evalDelta, formatDelta, formatEval } from '../evaluation'
 import { REFERENCE_LINES } from '../coach'
 import { lichessAnalysisUrl, play, sameMove, sanOf } from '../moves'
+import { EvaluationPanel } from './EvaluationPanel'
 import { MovePreview } from './MovePreview'
 import type { TrainingAction, TrainingState } from '../session'
 
@@ -243,11 +244,14 @@ function ValidMoves({ state, puzzle }: { state: TrainingState; puzzle: Mistake }
 /** Side to move and the task, large: the first thing to read. */
 function Prompt({
   puzzle,
-  exploring,
+  exploring = false,
+  evaluating = false,
   positionCp,
 }: {
   puzzle: Mistake
-  exploring: boolean
+  exploring?: boolean
+  /** The task is to say how the position stands, not to find a move */
+  evaluating?: boolean
   /** Shown once a first try has revealed it: never a hint before that. */
   positionCp?: number
 }) {
@@ -259,7 +263,11 @@ function Prompt({
       </p>
       {/* Explanations are left out on phones, for the board and the feedback to fit. */}
       <p className="hidden text-base text-muted-foreground md:block">
-        {exploring ? m.training_explore_hint() : m.training_find_move()}
+        {evaluating
+          ? m.training_assess_question()
+          : exploring
+            ? m.training_explore_hint()
+            : m.training_find_move()}
       </p>
       {positionCp !== undefined && (
         <p className="flex items-center gap-2 pt-1 text-sm text-muted-foreground">
@@ -271,22 +279,52 @@ function Prompt({
   )
 }
 
-export function PuzzlePanel({
-  state,
-  puzzle,
-  dispatch,
-}: {
+type PanelProps = {
   state: TrainingState
   puzzle: Mistake
   dispatch: (action: TrainingAction) => void
-}) {
+}
+
+/**
+ * The panel next to the board: the evaluation exercise, then (or only) finding a valid move. With
+ * both, a small title says which part the player is in.
+ */
+export function PuzzlePanel(props: PanelProps) {
+  const { state, puzzle, dispatch } = props
+  const evaluating = state.status === 'evaluating' || state.status === 'evaluated'
+  return (
+    <div className="space-y-3 max-md:space-y-2">
+      {state.evaluate && state.replay && (
+        <p className="label-etabli text-muted-foreground">
+          {evaluating ? m.training_part_evaluation() : m.training_part_move()}
+        </p>
+      )}
+      {evaluating ? (
+        <div className="space-y-4 max-md:space-y-3">
+          {state.status === 'evaluating' && <Prompt puzzle={puzzle} evaluating />}
+          <EvaluationPanel state={state} puzzle={puzzle} dispatch={dispatch} />
+        </div>
+      ) : (
+        <MovePanel {...props} />
+      )}
+    </div>
+  )
+}
+
+/** Finding a valid move: the board is played, the engine judges the move. */
+function MovePanel({ state, puzzle, dispatch }: PanelProps) {
   const { status, tried, triedCp, best, bestCp } = state
   const last = state.index === state.puzzles.length - 1
   // Already solved or revealed: the player is trying other moves and may move on at any time.
   const exploring = state.outcome !== undefined
-  // The position's evaluation stays visible once the first verdict has shown it.
+  // The position's evaluation stays visible once the first verdict has shown it, or from the start
+  // when the player has just evaluated the position (part 1).
   const positionCp =
-    state.attempts > 1 || (state.attempts === 1 && status !== 'checking') ? bestCp : undefined
+    state.assessment !== undefined ||
+    state.attempts > 1 ||
+    (state.attempts === 1 && status !== 'checking')
+      ? bestCp
+      : undefined
   const next = (
     <Button size="lg" className="w-full" onClick={() => dispatch({ type: 'next' })}>
       {last ? m.training_see_summary() : m.training_next()}

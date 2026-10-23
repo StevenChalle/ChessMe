@@ -17,6 +17,7 @@ describe('parseTrainingSettings', () => {
 
   it('restores saved settings, replacing invalid fields one by one', () => {
     const settings: TrainingSettings = {
+      exercises: ['evaluate', 'replay'],
       interleaveGames: true,
       shuffleWithinGame: true,
       limitGames: true,
@@ -31,6 +32,7 @@ describe('parseTrainingSettings', () => {
     expect(
       parseTrainingSettings(
         saved({
+          exercises: [],
           interleaveGames: 'yes',
           gamesLimit: 0,
           positionsLimit: 2.5,

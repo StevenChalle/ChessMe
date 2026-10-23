@@ -12,23 +12,39 @@ const ROWS: { result: PuzzleResult; label: () => string; className: string }[] =
   { result: 'revealed', label: m.training_revealed, className: 'text-loss' },
 ]
 
-/** Totals once every error has been replayed. */
+/** Totals once every error has been replayed (or evaluated): each exercise done has its own. */
 export function TrainingSummary({
   results,
+  assessments,
   onRestart,
   onFinish,
 }: {
-  results: PuzzleResult[]
+  /** With the "replay" exercise */
+  results?: PuzzleResult[]
+  /** With the "evaluate" exercise: each position well evaluated or not */
+  assessments?: boolean[]
   /** The same positions again, in a new draw */
   onRestart?: () => void
   onFinish: () => void
 }) {
-  const totals = summarize(results)
+  const totals = summarize(results ?? [])
+  const wellEvaluated = assessments?.filter(Boolean).length ?? 0
   return (
     <div className="mx-auto w-full max-w-sm space-y-4 py-2">
       <h3 className="text-lg font-semibold">{m.training_summary_title()}</h3>
       <dl className="space-y-2">
-        {ROWS.map(({ result, label, className }) => (
+        {assessments && (
+          <div className="flex items-baseline justify-between gap-4">
+            <dt className="text-muted-foreground">{m.training_summary_assessments()}</dt>
+            <dd className="num text-2xl font-medium text-text-strong">
+              {m.training_summary_assessments_value({
+                right: formatNumber(wellEvaluated),
+                total: formatNumber(assessments.length),
+              })}
+            </dd>
+          </div>
+        )}
+        {(results ? ROWS : []).map(({ result, label, className }) => (
           <div key={result} className="flex items-baseline justify-between gap-4">
             <dt className="text-muted-foreground">{label()}</dt>
             <dd className={cn('num text-2xl font-medium', className)}>

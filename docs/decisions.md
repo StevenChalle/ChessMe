@@ -562,3 +562,14 @@ La page `/analysis` doublait le profil (même en-tête, mêmes comptes) et oblig
 - Une revue rapide se demande par lien (`?start=last` ou `?game=…`), à l'arrivée comme depuis la page : la session la lance (en demandant avant de remplacer une analyse existante) puis retire la demande de l'adresse.
 - En-tête du profil : « Review last game » et « Advanced analysis » (qui ouvre l'onglet Analyse). Le bouton « New training » de l'ancienne page est retiré : l'encadré sous les résultats et les boutons « Train » suffisent.
 - Les anciennes adresses `/analysis…` redirigent vers les onglets.
+
+## 2026-10-23 : exercice « Évaluer la position »
+
+Un second exercice d'entraînement, en option : dire comment se présente la position de l'erreur avant (ou au lieu de) rejouer son coup. Sans rien changer pour qui garde les options par défaut.
+
+- Options d'entraînement, section **Exercices** (entre Thèmes et Avancé) : « Évaluer la position » et « Rejouer son coup », l'un, l'autre ou les deux, jamais aucun (désactiver le dernier réactive l'autre). Par défaut, seulement « Rejouer son coup ». Enregistré avec les autres options (`exercises`).
+- Cinq réponses, du côté des Blancs comme d'habitude aux échecs : égalité de −0,3 à +0,3, avantage jusqu'à ±2,0, gain à partir de ±2,0 ; un mat est un gain. Les boutons de la couleur du joueur sont dans la colonne de gauche. L'échiquier ne se joue pas pendant l'évaluation.
+- **La bonne réponse vient du moteur de l'entraînement** (la même évaluation que celle affichée ensuite pour trouver un coup), pas de l'analyse : les deux peuvent différer de quelques dixièmes, et l'app se contredirait. Si le moteur n'a pas fini, le verdict attend.
+- **Marge près des frontières** : les moteurs varient de quelques dixièmes d'une recherche à l'autre. À ±0,15 de ±0,3 et à ±0,3 de ±2,0, les deux réponses autour de la frontière comptent. Une marge de 0,3 partout aurait vidé « Égalité » (à 0,00, trois réponses auraient été justes). Le verdict montre l'évaluation du moteur à deux décimales (`assessment.ts`).
+- Avec les deux exercices : « Partie 1 : évaluation » puis « Partie 2 : trouver un coup valide », un seul bouton entre les deux. En partie 2, l'évaluation de la position est affichée d'emblée, puisque le joueur vient de la voir.
+- Le bilan ajoute « Positions bien évaluées : X / Y » ; avec l'évaluation seule, seulement cette ligne.

@@ -61,7 +61,7 @@ function ContactPage() {
               />
             </p>
             <p>{m.contact_project_body()}</p>
-            <hr className="mx-auto my-5 w-16 border-border" />
+            <hr className="mx-auto my-5 w-20 border-t-2 border-border-strong/70" />
             <p>{m.contact_project_curious()}</p>
             <p>{m.contact_project_reach()}</p>
           </Section>

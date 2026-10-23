@@ -10,7 +10,7 @@ import {
 } from './session'
 
 const START = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1'
-const mistake = (id: string) => ({ id, fen: START }) as Mistake
+const mistake = (id: string) => ({ id, fen: START, color: 'white' }) as Mistake
 
 function run(state: TrainingState, ...actions: TrainingAction[]): TrainingState {
   return actions.reduce(trainingReducer, state)
@@ -150,5 +150,69 @@ describe('trainingReducer', () => {
     const state = run(start(), ...solve('a'), ...solve('b'))
     expect(state.status).toBe('summary')
     expect(summarize(state.results)).toEqual({ 'first-try': 2, 'after-retries': 0, revealed: 0 })
+  })
+})
+
+describe('evaluating the position', () => {
+  const best = (puzzleId: string, cp: number): TrainingAction => ({
+    type: 'best',
+    puzzleId,
+    uci: 'e2e4',
+    cp,
+    validMoves: [],
+    validCapped: false,
+  })
+
+  it('evaluates, then finds a move, with both exercises', () => {
+    const state = startTraining([mistake('a'), mistake('b')], ['evaluate', 'replay'])
+    expect(state.status).toBe('evaluating')
+    // The board is not played while evaluating.
+    expect(run(state, { type: 'try', uci: 'e2e4' }).status).toBe('evaluating')
+    const evaluated = run(state, { type: 'assess', answer: 'white-better' })
+    expect(evaluated.status).toBe('evaluated')
+    // Waits for the engine's evaluation before going on.
+    expect(run(evaluated, { type: 'next' }).status).toBe('evaluated')
+    const part2 = run(evaluated, best('a', 120), { type: 'next' })
+    expect(part2).toMatchObject({ status: 'thinking', index: 0, assessment: 'white-better' })
+    const done = run(
+      part2,
+      { type: 'try', uci: 'e2e4' },
+      { type: 'verdict', puzzleId: 'a', valid: true, afterCp: 120 },
+      { type: 'next' },
+    )
+    expect(done).toMatchObject({
+      index: 1,
+      status: 'evaluating',
+      results: ['first-try'],
+      assessments: [true],
+      assessment: undefined,
+    })
+  })
+
+  it('goes straight to the next position without the replay exercise', () => {
+    const state = run(
+      startTraining([mistake('a'), mistake('b')], ['evaluate']),
+      { type: 'assess', answer: 'equal' },
+      best('a', 120),
+      { type: 'next' },
+    )
+    expect(state).toMatchObject({
+      index: 1,
+      status: 'evaluating',
+      results: [],
+      assessments: [false],
+    })
+  })
+
+  it('judges the evaluation from White side, whatever the player color', () => {
+    const black = { ...mistake('a'), color: 'black' } as Mistake
+    // +1.2 for Black, so Black is better
+    const state = run(
+      startTraining([black], ['evaluate']),
+      { type: 'assess', answer: 'black-better' },
+      best('a', 120),
+      { type: 'next' },
+    )
+    expect(state).toMatchObject({ status: 'summary', assessments: [true] })
   })
 })
