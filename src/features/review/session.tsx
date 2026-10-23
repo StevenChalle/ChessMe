@@ -357,7 +357,25 @@ export function AnalysisSessionProvider({
                   toTrainingOptions(tab.phase.settings, tab.errorMinDrop),
                 ),
                 run,
+                exercises: undefined,
               },
+              finished: false,
+            }
+          : tab,
+      )
+    },
+    [updateTraining],
+  )
+
+  const replayMissed = useCallback(
+    (number: number, puzzles: Mistake[]) => {
+      runCount.current += 1
+      const run = runCount.current
+      updateTraining(number, (tab) =>
+        tab.phase.kind === 'running'
+          ? {
+              ...tab,
+              phase: { ...tab.phase, puzzles, run, exercises: ['replay'] },
               finished: false,
             }
           : tab,
@@ -442,6 +460,7 @@ export function AnalysisSessionProvider({
     trainGame,
     launchTraining,
     restartTraining,
+    replayMissed,
     closeTraining,
     setTrainingFinished,
     showResults,

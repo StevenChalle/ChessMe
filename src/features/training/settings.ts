@@ -22,6 +22,9 @@ export type TrainingSettings = {
   exercises: Exercise[]
   interleaveGames: boolean
   shuffleWithinGame: boolean
+  /** A single position of each game: at random, or its first one with `firstOfGame` */
+  onePerGame: boolean
+  firstOfGame: boolean
   limitGames: boolean
   gamesLimit: number
   limitPositions: boolean
@@ -40,6 +43,8 @@ export const DEFAULT_TRAINING_SETTINGS: TrainingSettings = {
   exercises: ['replay'],
   interleaveGames: false,
   shuffleWithinGame: false,
+  onePerGame: false,
+  firstOfGame: false,
   limitGames: false,
   gamesLimit: DEFAULT_GAMES_LIMIT,
   limitPositions: false,
@@ -55,7 +60,9 @@ export function toTrainingOptions(
 ): TrainingOptions {
   return {
     interleaveGames: settings.interleaveGames,
-    shuffleWithinGame: settings.shuffleWithinGame,
+    // One position per game: nothing to shuffle within a game.
+    shuffleWithinGame: settings.shuffleWithinGame && !settings.onePerGame,
+    onePerGame: settings.onePerGame ? (settings.firstOfGame ? 'first' : 'random') : undefined,
     maxGames: settings.limitGames ? settings.gamesLimit : undefined,
     maxPositions: settings.limitPositions ? settings.positionsLimit : undefined,
     // Never below the analysis's threshold: there are no errors under it.
@@ -90,6 +97,8 @@ export function parseTrainingSettings(raw: string | null): TrainingSettings {
     exercises: chosen.length > 0 ? chosen : defaults.exercises,
     interleaveGames: flag(data.interleaveGames, defaults.interleaveGames),
     shuffleWithinGame: flag(data.shuffleWithinGame, defaults.shuffleWithinGame),
+    onePerGame: flag(data.onePerGame, defaults.onePerGame),
+    firstOfGame: flag(data.firstOfGame, defaults.firstOfGame),
     limitGames: flag(data.limitGames, defaults.limitGames),
     gamesLimit: count(gamesLimit, defaults.gamesLimit),
     limitPositions: flag(data.limitPositions, defaults.limitPositions),

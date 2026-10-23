@@ -1,6 +1,7 @@
-import { RotateCcw } from 'lucide-react'
+import { RotateCcw, Target } from 'lucide-react'
 import { FeedbackNudge } from '@/components/FeedbackLink'
 import { Button } from '@/components/ui/button'
+import type { Mistake } from '@/features/review/analyze'
 import { formatNumber } from '@/lib/format'
 import { cn } from '@/lib/utils'
 import { m } from '@/paraglide/messages'
@@ -16,9 +17,14 @@ const ROWS: { result: PuzzleResult; label: () => string; className: string }[] =
 export function TrainingSummary({
   results,
   assessments,
+  missed = [],
+  onReplayMissed,
   onRestart,
   onFinish,
 }: {
+  /** Positions whose move was not found at first */
+  missed?: Mistake[]
+  onReplayMissed?: (puzzles: Mistake[]) => void
   /** With the "replay" exercise */
   results?: PuzzleResult[]
   /** With the "evaluate" exercise: each position well evaluated or not */
@@ -54,8 +60,23 @@ export function TrainingSummary({
         ))}
       </dl>
       <div className="grid gap-2">
+        {/* The main action when some moves were missed: replaying just those. */}
+        {onReplayMissed && missed.length > 0 && (
+          <div className="space-y-1.5 pb-1">
+            <Button size="lg" className="w-full" onClick={() => onReplayMissed(missed)}>
+              <Target data-icon="inline-start" />
+              {m.training_replay_missed({ count: formatNumber(missed.length) })}
+            </Button>
+            <p className="text-xs text-muted-foreground">{m.training_replay_missed_hint()}</p>
+          </div>
+        )}
         {onRestart && (
-          <Button size="lg" className="w-full" onClick={onRestart}>
+          <Button
+            size="lg"
+            variant={onReplayMissed && missed.length > 0 ? 'outline' : 'default'}
+            className="w-full"
+            onClick={onRestart}
+          >
             <RotateCcw data-icon="inline-start" />
             {m.training_restart()}
           </Button>

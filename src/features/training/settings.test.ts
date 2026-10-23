@@ -20,6 +20,8 @@ describe('parseTrainingSettings', () => {
       exercises: ['evaluate', 'replay'],
       interleaveGames: true,
       shuffleWithinGame: true,
+      onePerGame: true,
+      firstOfGame: true,
       limitGames: true,
       gamesLimit: 3,
       limitPositions: true,
@@ -62,6 +64,19 @@ describe('toTrainingOptions', () => {
         10,
       ).maxPositions,
     ).toBe(7)
+  })
+
+  it('keeps one position per game, and then never shuffles within a game', () => {
+    const one = { ...DEFAULT_TRAINING_SETTINGS, onePerGame: true, shuffleWithinGame: true }
+    expect(toTrainingOptions(one, 10)).toMatchObject({
+      onePerGame: 'random',
+      shuffleWithinGame: false,
+    })
+    expect(toTrainingOptions({ ...one, firstOfGame: true }, 10).onePerGame).toBe('first')
+    // "first" alone means nothing
+    expect(
+      toTrainingOptions({ ...DEFAULT_TRAINING_SETTINGS, firstOfGame: true }, 10).onePerGame,
+    ).toBeUndefined()
   })
 
   it('never goes below the analysis threshold', () => {

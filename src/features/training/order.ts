@@ -9,6 +9,8 @@ export type TrainingOptions = {
   interleaveGames: boolean
   /** Positions of a game in any order, not the order they came in the game */
   shuffleWithinGame: boolean
+  /** A single position of each game: drawn at random, or its first one; undefined: all of them */
+  onePerGame?: 'random' | 'first'
   /** Only the first games, in the order they are played; undefined: all of them */
   maxGames?: number
   /** Only the first positions, in the order they are played; undefined: all of them */
@@ -88,6 +90,10 @@ export function trainingPuzzles(
   random: () => number = Math.random,
 ): Mistake[] {
   let games = shuffle(mistakesByGame(mistakes, options), random)
+  if (options.onePerGame === 'first') games = games.map((game) => game.slice(0, 1))
+  else if (options.onePerGame === 'random') {
+    games = games.map((game) => [game[Math.floor(random() * game.length)]!])
+  }
   if (options.maxGames !== undefined) games = games.slice(0, options.maxGames)
   if (options.shuffleWithinGame) games = games.map((game) => shuffle(game, random))
   const puzzles = options.interleaveGames ? interleave(games, random) : games.flat()

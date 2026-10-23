@@ -43,9 +43,12 @@ function ResultsTab() {
       )}
       {analysis.status === 'running' && (
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <p className="text-sm text-muted-foreground">{m.analysis_keep_open()}</p>
+          {/* Only phones freeze a hidden page: a computer goes on computing in the background. */}
+          <p className="hidden text-sm text-muted-foreground pointer-coarse:block">
+            {m.analysis_keep_open()}
+          </p>
           {/* A large analysis launched by mistake: stop it and change the filters. */}
-          <Button variant="outline" onClick={stopAnalysis}>
+          <Button variant="outline" onClick={stopAnalysis} className="ml-auto">
             <Square data-icon="inline-start" />
             {m.analysis_stop()}
           </Button>

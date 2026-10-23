@@ -5,7 +5,7 @@ import type { FoundGames, ReviewAccount } from './fetch'
 import type { ReviewProgress } from './progress'
 import type { GameSelection } from './selection'
 import type { ReviewSettings } from './settings'
-import type { TrainingSettings } from '@/features/training/settings'
+import type { Exercise, TrainingSettings } from '@/features/training/settings'
 
 /**
  * The analysis page's state, shared by its tabs (filters, analysis, training): see
@@ -34,7 +34,14 @@ export type AnalysisState =
  */
 export type TrainingPhase =
   | { kind: 'options' }
-  | { kind: 'running'; puzzles: Mistake[]; settings: TrainingSettings; run: number }
+  | {
+      kind: 'running'
+      puzzles: Mistake[]
+      settings: TrainingSettings
+      run: number
+      /** Replaces the settings' exercises: replaying the missed moves only replays moves */
+      exercises?: Exercise[]
+    }
 
 export type TrainingTab = {
   /** Fixed for the tab's life, the smallest free one when opened: its title and route */
@@ -77,6 +84,8 @@ export type Session = {
   launchTraining: (number: number, settings: TrainingSettings) => void
   /** The same training again, in a new draw */
   restartTraining: (number: number) => void
+  /** These positions again (the moves missed at first), moves only */
+  replayMissed: (number: number, puzzles: Mistake[]) => void
   /** Closes a training tab (asks first unless every position has been played) */
   closeTraining: (number: number) => Promise<void>
   setTrainingFinished: (number: number, finished: boolean) => void

@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import type { Mistake } from '@/features/review/analyze'
 import {
+  missedPuzzles,
   shuffle,
   startTraining,
   summarize,
@@ -214,5 +215,18 @@ describe('evaluating the position', () => {
       { type: 'next' },
     )
     expect(state).toMatchObject({ status: 'summary', assessments: [true] })
+  })
+})
+
+describe('missedPuzzles', () => {
+  it('keeps the positions not solved at first, in the order played', () => {
+    const puzzles = ['a', 'b', 'c', 'd'].map(mistake)
+    const missed = missedPuzzles({
+      puzzles,
+      results: ['first-try', 'revealed', 'first-try', 'after-retries'],
+    })
+    expect(missed.map((puzzle) => puzzle.id)).toEqual(['b', 'd'])
+    // Positions not played yet are not missed.
+    expect(missedPuzzles({ puzzles, results: ['after-retries'] }).map((p) => p.id)).toEqual(['a'])
   })
 })

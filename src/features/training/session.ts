@@ -227,6 +227,17 @@ function mergeMoves(engine: ScoredMove[], found: ScoredMove[] | undefined, fen: 
   return (found ?? []).reduce((list, move) => withMove(list, fen, move), engine)
 }
 
+/**
+ * The positions whose move was not found at first (found after retries, or solution shown), in
+ * the order played. Evaluations play no part.
+ */
+export function missedPuzzles(state: Pick<TrainingState, 'puzzles' | 'results'>): Mistake[] {
+  return state.puzzles.filter((_, index) => {
+    const result = state.results[index]
+    return result !== undefined && result !== 'first-try'
+  })
+}
+
 export function summarize(results: PuzzleResult[]): Record<PuzzleResult, number> {
   const totals: Record<PuzzleResult, number> = { 'first-try': 0, 'after-retries': 0, revealed: 0 }
   for (const result of results) totals[result]++

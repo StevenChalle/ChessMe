@@ -17,6 +17,7 @@ import { ThresholdSlider } from '@/features/review/components/ThresholdSlider'
 import { lichessMarkers } from '@/features/review/markers'
 import { useAnalysisSession, type TrainingTab } from '@/features/review/sessionContext'
 import { formatGameCount, formatNumber } from '@/lib/format'
+import { cn } from '@/lib/utils'
 import { m } from '@/paraglide/messages'
 import { keepsMistake, mistakesByGame, type MistakeFilter } from '../order'
 import {
@@ -40,23 +41,35 @@ function Section({ title, info, children }: { title: string; info?: string; chil
   )
 }
 
+/** `disabled`: dimmed, its value kept for when it applies again. */
 function CheckboxField({
   label,
   info,
   checked,
+  disabled = false,
+  className,
   onChange,
 }: {
   label: string
   info: string
   checked: boolean
+  disabled?: boolean
+  className?: string
   onChange: (checked: boolean) => void
 }) {
   const id = useId()
   return (
-    <div className="flex items-center gap-2 text-sm">
+    <div
+      className={cn(
+        'flex items-center gap-2 text-sm transition-opacity',
+        disabled && 'opacity-50',
+        className,
+      )}
+    >
       <Checkbox
         id={id}
         checked={checked}
+        disabled={disabled}
         onCheckedChange={(value) => onChange(value === true)}
         className="border-border-strong"
       />
@@ -193,7 +206,11 @@ function advancedSummary(
 ): string {
   const parts: string[] = []
   if (settings.interleaveGames) parts.push(m.training_summary_interleave())
-  if (settings.shuffleWithinGame) parts.push(m.training_summary_shuffle())
+  if (settings.onePerGame) {
+    parts.push(
+      settings.firstOfGame ? m.training_summary_first_of_game() : m.training_summary_one_per_game(),
+    )
+  } else if (settings.shuffleWithinGame) parts.push(m.training_summary_shuffle())
   if (settings.limitGames) {
     parts.push(m.training_summary_max({ items: formatGameCount(settings.gamesLimit) }))
   }
@@ -220,7 +237,10 @@ export function TrainingSetup({ tab }: { tab: TrainingTab }) {
 
   const options = toTrainingOptions(settings, tab.errorMinDrop)
   const games = mistakesByGame(tab.mistakes, options)
-  const positions = games.reduce((sum, game) => sum + game.length, 0)
+  // One position per game: as many positions as games.
+  const positions = settings.onePerGame
+    ? games.length
+    : games.reduce((sum, game) => sum + game.length, 0)
   const validCount = (limited: boolean, count: number) =>
     !limited || (Number.isInteger(count) && count >= 1)
   const limitValid =
@@ -234,6 +254,8 @@ export function TrainingSetup({ tab }: { tab: TrainingTab }) {
   const advancedDefault =
     !settings.interleaveGames &&
     !settings.shuffleWithinGame &&
+    !settings.onePerGame &&
+    !settings.firstOfGame &&
     !settings.limitGames &&
     settings.gamesLimit === DEFAULT_TRAINING_SETTINGS.gamesLimit &&
     !settings.limitPositions &&
@@ -308,6 +330,8 @@ export function TrainingSetup({ tab }: { tab: TrainingTab }) {
               update({
                 interleaveGames: false,
                 shuffleWithinGame: false,
+                onePerGame: false,
+                firstOfGame: false,
                 limitGames: false,
                 gamesLimit: DEFAULT_TRAINING_SETTINGS.gamesLimit,
                 limitPositions: false,
@@ -316,22 +340,22 @@ export function TrainingSetup({ tab }: { tab: TrainingTab }) {
               }),
           }}
         >
-          <Section title={m.training_setup_order()}>
-            <CheckboxField
-              label={m.training_setup_interleave()}
-              info={m.training_setup_interleave_info()}
-              checked={settings.interleaveGames}
-              onChange={(interleaveGames) => update({ interleaveGames })}
-            />
-            <CheckboxField
-              label={m.training_setup_shuffle()}
-              info={m.training_setup_shuffle_info()}
-              checked={settings.shuffleWithinGame}
-              onChange={(shuffleWithinGame) => update({ shuffleWithinGame })}
-            />
-          </Section>
-
           <Section title={m.training_setup_positions()}>
+            <CheckboxField
+              label={m.training_setup_one_per_game()}
+              info={m.training_setup_one_per_game_info()}
+              checked={settings.onePerGame}
+              onChange={(onePerGame) => update({ onePerGame })}
+            />
+            {/* Only with one position per game */}
+            <CheckboxField
+              label={m.training_setup_first_of_game()}
+              info={m.training_setup_first_of_game_info()}
+              checked={settings.firstOfGame}
+              disabled={!settings.onePerGame}
+              className="pl-6"
+              onChange={(firstOfGame) => update({ firstOfGame })}
+            />
             <LimitField
               label={m.training_setup_limit()}
               unit={m.setup_range_max_unit()}
@@ -352,7 +376,27 @@ export function TrainingSetup({ tab }: { tab: TrainingTab }) {
                 update({ limitPositions, positionsLimit: count })
               }
             />
-            <div className="max-w-xl pt-2">
+          </Section>
+
+          <Section title={m.training_setup_order()}>
+            <CheckboxField
+              label={m.training_setup_interleave()}
+              info={m.training_setup_interleave_info()}
+              checked={settings.interleaveGames}
+              onChange={(interleaveGames) => update({ interleaveGames })}
+            />
+            <CheckboxField
+              label={m.training_setup_shuffle()}
+              info={m.training_setup_shuffle_info()}
+              checked={settings.shuffleWithinGame}
+              // One position per game: nothing to shuffle.
+              disabled={settings.onePerGame}
+              onChange={(shuffleWithinGame) => update({ shuffleWithinGame })}
+            />
+          </Section>
+
+          <Section title={m.training_setup_mistakes()}>
+            <div className="max-w-xl">
               <ThresholdSlider
                 label={m.training_setup_min_drop()}
                 hint={m.training_setup_min_drop_hint({ value: String(options.minDrop) })}

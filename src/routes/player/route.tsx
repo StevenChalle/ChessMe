@@ -100,7 +100,8 @@ function PlayerLayout() {
  * content changes.
  */
 function Trainings() {
-  const { trainings, restartTraining, setTrainingFinished, showResults } = useAnalysisSession()
+  const { trainings, restartTraining, replayMissed, setTrainingFinished, showResults } =
+    useAnalysisSession()
   const pathname = useLocation({ select: (location) => location.pathname })
   return trainings.map((tab) => {
     if (tab.phase.kind !== 'running') return null
@@ -110,11 +111,12 @@ function Trainings() {
         <TrainingView
           key={tab.phase.run}
           puzzles={tab.phase.puzzles}
-          exercises={tab.phase.settings.exercises}
+          exercises={tab.phase.exercises ?? tab.phase.settings.exercises}
           validMaxDrop={tab.validMaxDrop}
           active={shown}
           onFinishedChange={(finished) => setTrainingFinished(tab.number, finished)}
           onRestart={() => restartTraining(tab.number)}
+          onReplayMissed={(puzzles) => replayMissed(tab.number, puzzles)}
           onExit={showResults}
         />
       </div>

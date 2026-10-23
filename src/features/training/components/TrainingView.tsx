@@ -18,7 +18,13 @@ import {
   positionFromFen,
   sameMove,
 } from '../moves'
-import { currentPuzzle, startTraining, trainingReducer, type TrainingState } from '../session'
+import {
+  currentPuzzle,
+  missedPuzzles,
+  startTraining,
+  trainingReducer,
+  type TrainingState,
+} from '../session'
 import type { Exercise } from '../settings'
 import { TrainingProgress } from './TrainingProgress'
 import { PuzzlePanel } from './PuzzlePanel'
@@ -76,6 +82,7 @@ export function TrainingView({
   active = true,
   onFinishedChange,
   onRestart,
+  onReplayMissed,
   onExit,
 }: {
   /** The positions to replay, in this order (see trainingPuzzles) */
@@ -89,6 +96,8 @@ export function TrainingView({
   onFinishedChange?: (finished: boolean) => void
   /** The same training again, from the summary */
   onRestart?: () => void
+  /** The positions whose move was missed at first, again, from the summary */
+  onReplayMissed?: (puzzles: Mistake[]) => void
   /** Back to the analysis results, from the summary */
   onExit: () => void
 }) {
@@ -210,6 +219,8 @@ export function TrainingView({
       <TrainingSummary
         results={state.replay ? state.results : undefined}
         assessments={state.evaluate ? state.assessments : undefined}
+        missed={state.replay ? missedPuzzles(state) : []}
+        onReplayMissed={onReplayMissed}
         onRestart={onRestart}
         onFinish={onExit}
       />

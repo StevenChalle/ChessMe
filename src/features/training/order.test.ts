@@ -81,6 +81,17 @@ describe('trainingPuzzles', () => {
     expect(new Set(puzzles.map((item) => item.game.url)).size).toBe(1)
   })
 
+  it('keeps one position per game: its first one, or one at random', () => {
+    const first = trainingPuzzles(ALL, { ...DEFAULTS, onePerGame: 'first' })
+    expect(first).toHaveLength(new Set(ALL.map((item) => item.game.url)).size)
+    for (const puzzle of first) {
+      const plies = ALL.filter((item) => item.game.url === puzzle.game.url).map((i) => i.ply)
+      expect(puzzle.ply).toBe(Math.min(...plies))
+    }
+    const random = trainingPuzzles(ALL, { ...DEFAULTS, onePerGame: 'random' })
+    expect(new Set(random.map((item) => item.game.url)).size).toBe(random.length)
+  })
+
   it('keeps only the first positions when limited, after the games limit', () => {
     expect(trainingPuzzles(ALL, { ...DEFAULTS, maxPositions: 4 })).toHaveLength(4)
     const puzzles = trainingPuzzles(
