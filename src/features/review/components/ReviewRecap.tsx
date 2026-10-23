@@ -1,4 +1,4 @@
-import { LoaderCircle, Play, TriangleAlert } from 'lucide-react'
+import { LoaderCircle, Play, Save } from 'lucide-react'
 import type { ReactNode } from 'react'
 import { Button } from '@/components/ui/button'
 import { Progress } from '@/components/ui/progress'
@@ -174,9 +174,9 @@ function FoundRecap({
             )}
           </div>
           {games.length >= LARGE_REVIEW && (
-            <p className="flex gap-2 rounded-md border border-highlight/40 bg-highlight/10 p-3 text-sm text-text-strong">
-              <TriangleAlert aria-hidden className="mt-0.5 size-4 shrink-0 text-highlight" />
-              {m.recap_large_warning()}
+            <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
+              <Save aria-hidden className="size-3.5 shrink-0" />
+              {m.recap_progress_saved()}
             </p>
           )}
         </div>

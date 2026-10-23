@@ -263,7 +263,7 @@
   "setup_finding": "Looking for games…",
   "setup_invalid": "Select at least one platform, time control, color and result.",
   "recap_title": "Games found",
-  "recap_large_warning": "A long analysis: keep this tab open and visible. If it stops, what was computed is kept, and launching it again picks up where it left off.",
+  "recap_progress_saved": "Progress is saved in this browser: you can stop and pick up again anytime.",
   "recap_none": "No game matches these filters.",
   "recap_launch": "Start the analysis",
   "replay_game_short": "Train",

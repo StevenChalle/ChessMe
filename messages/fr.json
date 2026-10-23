@@ -263,7 +263,7 @@
   "setup_finding": "Recherche des parties…",
   "setup_invalid": "Sélectionne au moins une plateforme, une cadence, une couleur et un résultat.",
   "recap_title": "Parties trouvées",
-  "recap_large_warning": "Analyse longue : gardez cet onglet ouvert et visible. Si elle s'arrête, ce qui est calculé est gardé, et la relancer reprend là où elle en était.",
+  "recap_progress_saved": "La progression est enregistrée dans ce navigateur : vous pouvez arrêter et reprendre quand vous voulez.",
   "recap_none": "Aucune partie ne correspond à ces filtres.",
   "recap_launch": "Lancer l'analyse",
   "replay_game_short": "Entraîner",
