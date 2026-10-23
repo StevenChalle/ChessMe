@@ -1,6 +1,7 @@
 import { CircleCheck, X } from 'lucide-react'
 import { useSyncExternalStore } from 'react'
 import { dismissToast, getToasts, subscribeToasts } from '@/lib/toast'
+import { cn } from '@/lib/utils'
 import { m } from '@/paraglide/messages'
 
 /** The notifications (lib/toast.ts), at the bottom of the screen, announced to screen readers. */
@@ -15,7 +16,12 @@ export function Toaster() {
         <div
           key={toast.id}
           role="status"
-          className="pointer-events-auto flex max-w-md min-w-72 animate-in items-start gap-3 rounded-lg bg-primary px-5 py-4 text-primary-foreground shadow-pop fade-in-0 slide-in-from-bottom-2"
+          className={cn(
+            'pointer-events-auto flex max-w-lg items-start gap-3 rounded-lg bg-primary px-5 py-4 text-primary-foreground shadow-pop duration-200',
+            toast.leaving
+              ? 'animate-out fade-out-0 fill-mode-forwards slide-out-to-bottom-4'
+              : 'animate-in fade-in-0 slide-in-from-bottom-4',
+          )}
         >
           <CircleCheck aria-hidden className="mt-0.5 size-6 shrink-0" />
           <div className="flex-1 space-y-1">
