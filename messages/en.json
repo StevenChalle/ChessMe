@@ -524,5 +524,7 @@
   "import_section": "Import your games",
   "import_page_title": "Imported games",
   "import_header_games": "{games} imported",
-  "search_section": "Find your account"
+  "search_section": "Find your account",
+  "paste_clipboard": "Paste from clipboard",
+  "field_clear": "Clear"
 }

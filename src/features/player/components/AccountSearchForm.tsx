@@ -1,6 +1,7 @@
 import { useNavigate } from '@tanstack/react-router'
 import { ArrowDown, ArrowLeft, ArrowRight, History, Search } from 'lucide-react'
 import { useId, useState, type FormEvent, type ReactNode } from 'react'
+import { FieldButtons } from '@/components/FieldButtons'
 import { Button } from '@/components/ui/button'
 import type { ApiSource } from '@/lib/http'
 import { cn } from '@/lib/utils'
@@ -8,6 +9,8 @@ import { m } from '@/paraglide/messages'
 import { cleanUsername, copySource, otherSource, type PlayerUsernames } from '../search'
 import { SOURCE_LABELS } from '../summary'
 import { SourceDot } from './SourceBadge'
+
+const TIGHT = 'gap-1.5 px-3 has-data-[icon=inline-start]:pl-2.5'
 
 const INPUT_CLASS =
   'h-control w-full rounded-sm border border-input bg-field px-3 text-sm text-text-strong outline-none placeholder:text-muted-foreground focus-visible:border-primary focus-visible:ring-1 focus-visible:ring-primary focus-visible:outline-none'
@@ -142,8 +145,9 @@ export function AccountSearchForm({
         labelAside={copyButton}
       />
       <p className="text-xs text-muted-foreground">{m.search_one_is_enough()}</p>
+      {/* Tighter than other large buttons: both fit on one line, beside the import column */}
       <div className="flex flex-wrap items-center gap-2">
-        <Button type="submit" size="lg" disabled={!canSubmit}>
+        <Button type="submit" size="lg" disabled={!canSubmit} className={TIGHT}>
           <Search data-icon="inline-start" />
           {m.search_find_profile()}
         </Button>
@@ -153,6 +157,7 @@ export function AccountSearchForm({
           size="lg"
           disabled={!canSubmit}
           onClick={reviewLastGame}
+          className={TIGHT}
         >
           <History data-icon="inline-start" />
           {m.review_button_last()}
@@ -191,7 +196,7 @@ function UsernameInput({
       spellCheck={false}
       autoComplete="off"
       autoCapitalize="off"
-      className={cn(INPUT_CLASS, compact && 'pl-6')}
+      className={cn(INPUT_CLASS, compact ? 'pl-6' : 'pr-15')}
     />
   )
 
@@ -213,7 +218,16 @@ function UsernameInput({
         </label>
         {labelAside}
       </div>
-      {input}
+      {/* While focused: clear it, or paste the clipboard (a username copied from the platform) */}
+      <div className="group relative">
+        {input}
+        <FieldButtons
+          hasValue={value !== ''}
+          onClear={() => onChange(source, '')}
+          onPaste={(text) => onChange(source, text.trim())}
+          className="top-1/2 right-1.5 -translate-y-1/2"
+        />
+      </div>
     </div>
   )
 }

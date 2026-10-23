@@ -1,6 +1,7 @@
 import { useNavigate } from '@tanstack/react-router'
 import { FileUp, Upload } from 'lucide-react'
 import { useId, useMemo, useRef, useState, type DragEvent } from 'react'
+import { FieldButtons } from '@/components/FieldButtons'
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
 import { cn } from '@/lib/utils'
@@ -96,15 +97,23 @@ export function ImportBox({ className }: { className?: string }) {
         </Label>
         {/* One line high: pasted, never edited. The button sits next to it. */}
         <div className="flex items-start gap-2">
-          <textarea
-            id={ids.paste}
-            rows={1}
-            value={text}
-            onChange={(event) => setText(event.target.value)}
-            placeholder={m.import_paste_placeholder()}
-            spellCheck={false}
-            className="num h-control min-w-0 flex-1 resize-none overflow-hidden rounded-sm border border-input bg-field px-3 py-2.5 text-xs leading-4 whitespace-nowrap text-text-strong outline-none placeholder:font-sans placeholder:text-muted-foreground focus-visible:border-primary focus-visible:ring-1 focus-visible:ring-primary focus-visible:outline-none"
-          />
+          <div className="group relative min-w-0 flex-1">
+            <textarea
+              id={ids.paste}
+              rows={1}
+              value={text}
+              onChange={(event) => setText(event.target.value)}
+              placeholder={m.import_paste_placeholder()}
+              spellCheck={false}
+              className="num h-control w-full resize-none overflow-hidden rounded-sm border border-input bg-field py-2.5 pr-15 pl-3 text-xs leading-4 whitespace-nowrap text-text-strong outline-none placeholder:font-sans placeholder:text-muted-foreground focus-visible:border-primary focus-visible:ring-1 focus-visible:ring-primary focus-visible:outline-none"
+            />
+            <FieldButtons
+              hasValue={text !== ''}
+              onClear={() => setText('')}
+              onPaste={setText}
+              className="top-1/2 right-1.5 -translate-y-1/2"
+            />
+          </div>
           <Button variant="secondary" disabled={!text.trim()} onClick={() => read(text)}>
             {m.import_paste_submit()}
           </Button>

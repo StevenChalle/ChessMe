@@ -524,5 +524,7 @@
   "import_section": "Importe tes parties",
   "import_page_title": "Parties importées",
   "import_header_games": "{games} importées",
-  "search_section": "Trouve ton compte"
+  "search_section": "Trouve ton compte",
+  "paste_clipboard": "Coller depuis le presse-papiers",
+  "field_clear": "Effacer"
 }
