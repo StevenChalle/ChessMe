@@ -8,7 +8,7 @@ Application web (PWA installable) pour explorer les stats et les parties d'un jo
 - APIs Lichess / Chess.com, limites de débit : [docs/apis.md](docs/apis.md)
 - Feuille de route : [docs/roadmap.md](docs/roadmap.md)
 - Cache des analyses dans le navigateur (conception et règles) : [docs/analysis-cache.md](docs/analysis-cache.md)
-- Parties des comptes dans le navigateur, synchro incrémentale (conception, pas encore implémenté) : [docs/game-store.md](docs/game-store.md)
+- Parties des comptes dans le navigateur, synchro incrémentale : [docs/game-store.md](docs/game-store.md)
 - Checklists en cours, à supprimer une fois terminées : [docs/domain-craftyourchess.md](docs/domain-craftyourchess.md) (finitions du domaine), [docs/staging.md](docs/staging.md) (environnement de staging, reporté), [docs/logo-prompt.md](docs/logo-prompt.md) (prompt logo pour ChatGPT et Gemini), [docs/identity-brief.md](docs/identity-brief.md) (identité visuelle avec Claude Design)
 
 ## Commandes
@@ -29,7 +29,7 @@ pnpm uniquement (pas npm ni yarn). Node ≥ 24.
 
 ## Stack
 
-Vite + React 19 + TypeScript (strict, `noUncheckedIndexedAccess`) · Paraglide JS (i18n) · TanStack Router (routes sous forme de fichiers) + TanStack Query · Tailwind v4 + shadcn/ui (Radix, icônes Lucide) · `@lichess-org/chessground` (plateau) + chessops (règles, PGN) · Stockfish 19 lite (WASM mono-thread) · Dexie (IndexedDB, cache des analyses) · ECharts, installé mais pas encore utilisé · vite-plugin-pwa · Vitest + Testing Library · oxlint + Prettier.
+Vite + React 19 + TypeScript (strict, `noUncheckedIndexedAccess`) · Paraglide JS (i18n) · TanStack Router (routes sous forme de fichiers) + TanStack Query · Tailwind v4 + shadcn/ui (Radix, icônes Lucide) · `@lichess-org/chessground` (plateau) + chessops (règles, PGN) · Stockfish 19 lite (WASM mono-thread) · Dexie (IndexedDB : parties des comptes, cache des analyses) · ECharts, installé mais pas encore utilisé · vite-plugin-pwa · Vitest + Testing Library · oxlint + Prettier.
 
 ## Organisation du code
 
@@ -44,7 +44,7 @@ src/
   hooks/              # hooks transverses (useConfirm, useKeepAwake, usePageMeta : titre et référencement de chaque page)
   features/<nom>/     # code propre à une fonctionnalité, à créer au besoin
   features/player/    # profil croisé : summary.ts (normalisation), search.ts (paramètres ?lichess=&chesscom=), recentSearches.ts, hook, composants
-  features/games/     # résumé commun d'une partie (normalize.ts) et table des parties (GamesTable)
+  features/games/     # résumé commun d'une partie (normalize.ts), table des parties (GamesTable), magasin des parties des comptes (store.ts, periods.ts)
   features/history/   # onglet Parties : feed.ts (fusion paginée Lichess + Chess.com), queries.ts
   features/review/    # analyse : criteria.ts, selection.ts, fetch.ts (recherche), estimate.ts, errors.ts (erreur, coup valide), analyze.ts (deux passes, approfondissement), cache.ts (évaluations gardées par position dans IndexedDB), library.ts (parties des comptes ou importées), themes.ts (thèmes des erreurs), phases.ts, settings.ts, session des onglets d'analyse (session.tsx), graphique d'évaluation (components/EvalChart.tsx)
   features/training/  # rejouer ses erreurs : session.ts (reducer), order.ts (ordre de jeu, options), settings.ts (options mémorisées), coach.ts (Stockfish), moves.ts (FEN/UCI), evaluation.ts
@@ -56,7 +56,7 @@ src/
   lib/http.ts         # fetchJson, ApiError, null sur 404, politique de retry
   lib/format.ts       # formats (nombres, dates, pays…) dans la langue courante
   lib/contact.ts      # envoi des retours via Web3Forms (clé VITE_WEB3FORMS_KEY)
-  lib/db.ts           # base Dexie `craftyourchess` (cache des analyses)
+  lib/db.ts           # base Dexie `craftyourchess` (parties des comptes, cache des analyses)
   lib/localData.ts    # clearLocalData() (localStorage et base IndexedDB) et migration des anciennes clés chessme:*
   lib/project.ts      # lien du code source, hébergeur, adresse de contact
   lib/                # utilitaires transverses
@@ -73,7 +73,7 @@ project.inlang/       # configuration Paraglide (langues, langue de base)
 - Tests à côté du code (`foo.test.ts`). Tester en priorité la logique pure : parsing, calculs de stats, synchro.
 - Appels réseau : une fonction dans `lib/<source>/client.ts` (via `fetchJson`), puis un `queryOptions` dans `queries.ts`. « Compte inexistant » vaut `null`, pas une erreur. Les loaders font un `prefetchQuery` (qui ne lève jamais d'erreur) et les composants un `useQuery`, en gérant les états chargement / absent / erreur source par source.
 - **Ne jamais additionner ni convertir des Elo entre plateformes.** Seuls les compteurs et les dates se combinent (voir `summary.ts`).
-- Données persistantes (cache des analyses, voir docs/analysis-cache.md) : Dexie. Données distantes éphémères : TanStack Query. Ne pas dupliquer l'une dans l'autre.
+- Données persistantes : Dexie, pour les parties des comptes (docs/game-store.md) et le cache des analyses (docs/analysis-cache.md). Les autres données distantes (profil, statistiques, onglet Parties pour l'instant) : TanStack Query. Ne pas dupliquer l'une dans l'autre.
 - **Couleurs : uniquement via les tokens** (`bg-card`, `bg-field`, `text-muted-foreground`, `text-win`, `text-title`…) définis dans `src/theme/etabli.css`. Jamais de code hexadécimal dans un composant. Un seul bouton principal par écran (voir `docs/design.md`).
 - chessground gère lui-même son DOM : passer par le wrapper `components/board/Board.tsx`, sans le manipuler depuis React.
 

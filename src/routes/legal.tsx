@@ -50,6 +50,7 @@ function LegalPage() {
           <li>{m.legal_privacy_local_language()}</li>
           <li>{m.legal_privacy_local_recent()}</li>
           <li>{m.legal_privacy_local_review()}</li>
+          <li>{m.legal_privacy_local_games()}</li>
           <li>{m.legal_privacy_local_analyses()}</li>
           <li>{m.legal_privacy_local_training()}</li>
           <li>{m.legal_privacy_local_board()}</li>

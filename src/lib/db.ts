@@ -1,5 +1,9 @@
 import Dexie, { type Table } from 'dexie'
+import type { GameSummary } from '@/features/games/normalize'
+import type { Period } from '@/features/games/periods'
+import type { ChessComGame } from '@/lib/chesscom/types'
 import type { EngineScore } from '@/lib/engine/uci'
+import type { LichessGame } from '@/lib/lichess/types'
 
 /**
  * The app's IndexedDB database. Declared on the /legal page; deleted by clearLocalData().
@@ -39,15 +43,50 @@ export type CachedGame = {
   usedAt: number
 }
 
+/** A game of an account, as the platform's API gives it (see docs/game-store.md). */
+export type StoredGame = {
+  /** 'lichess:alice': the platform and the lowercase username */
+  account: string
+  /** Lichess id, or Chess.com uuid */
+  id: string
+  /** End of the game (ms): the order of the lists */
+  playedAt: number
+  /** Lichess only: start of the game (ms), the date the API filters on */
+  createdAt?: number
+  /** The game seen from the account's side, to filter without parsing the moves */
+  summary: GameSummary
+  /** Rules `summary` was made with: recomputed from `raw` when they change */
+  summaryVersion: number
+  raw: LichessGame | ChessComGame
+}
+
+/** What is known of an account's games. */
+export type AccountSync = {
+  account: string
+  /** Lichess: per perf (bullet, blitz…), the periods whose games are all stored (createdAt, ms) */
+  lichess?: Record<string, Period[]>
+  /** Chess.com: when each month ('2026/10') was read (ms) */
+  chesscomMonths?: Record<string, number>
+  /** Last search on this account (ms), for eviction */
+  usedAt: number
+}
+
 export class AppDatabase extends Dexie {
   positions!: Table<CachedPosition, [string, string]>
   games!: Table<CachedGame, string>
+  accountGames!: Table<StoredGame, [string, string]>
+  accountSync!: Table<AccountSync, string>
 
   constructor() {
     super(DB_NAME)
     this.version(1).stores({
       positions: '[key+engine], usedAt',
       games: 'hash, *refs, usedAt',
+    })
+    // The accounts' games (docs/game-store.md).
+    this.version(2).stores({
+      accountGames: '[account+id], [account+playedAt]',
+      accountSync: 'account, usedAt',
     })
   }
 }

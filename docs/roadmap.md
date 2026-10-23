@@ -28,6 +28,8 @@
 - [ ] Synchro incrémentale (`since`) et gestion du 429
 - [ ] Courbe Elo (ECharts)
 - [x] Cache des évaluations dans le navigateur (Dexie) : une analyse relancée ou interrompue ne repart pas de zéro
+- [x] Parties des comptes gardées dans le navigateur, synchro incrémentale ([game-store.md](game-store.md)) pour la recherche de l'analyse
+- [ ] Onglet Parties : lire le magasin des parties au lieu de paginer l'API
 - [ ] Liste des parties filtrable, et visionneuse de partie (chessground + chessops)
 - [ ] Étendre l'effacement des données locales (page `/legal`) aux parties importées
 

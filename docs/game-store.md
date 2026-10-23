@@ -2,7 +2,7 @@
 
 Garder dans le navigateur les parties déjà récupérées sur Lichess et Chess.com, et ne plus demander aux plateformes que ce qui manque. Aujourd'hui, réanalyser 500 parties est instantané côté moteur (voir [analysis-cache.md](analysis-cache.md)) mais demande encore environ 20 s de téléchargement : Lichess envoie environ 20 parties par seconde sans token. Décision résumée dans [decisions.md](decisions.md) (2026-10-23).
 
-État : conception, pas encore implémentée.
+État : implémenté le 2026-10-23 pour la recherche des parties de l'analyse (`features/games/store.ts`, `features/games/periods.ts`, `features/review/fetch.ts`). L'onglet Parties télécharge encore lui-même ses pages.
 
 ## Principes
 
@@ -20,25 +20,23 @@ Garder dans le navigateur les parties déjà récupérées sur Lichess et Chess.
 
 ## Schéma Dexie
 
-Dans la base `craftyourchess` existante (`lib/db.ts`), une `db.version(2)` qui ajoute deux tables. Le code dans `features/games/store.ts` (il servira aussi à l'onglet Parties plus tard).
+Dans la base `craftyourchess` existante (`lib/db.ts`), une `db.version(2)` qui ajoute deux tables. Le magasin dans `features/games/store.ts`, les périodes dans `features/games/periods.ts`, les recherches dans `features/review/fetch.ts`.
 
 ```ts
 /** A game of an account, as the platform's API gives it. Key: [account+id] */
 type StoredGame = {
-  source: 'lichess' | 'chesscom'
-  /** Lichess id, or Chess.com uuid */
-  id: string
   /** 'lichess:alice': platform and lowercase username */
   account: string
+  /** Lichess id, or Chess.com uuid */
+  id: string
   /** End of the game (ms): the order of the lists, as ReviewGame.playedAt */
   playedAt: number
   /** Lichess only: start of the game (ms), the date the API filters on */
   createdAt?: number
-  /** Precomputed to filter before normalizing (see "Lecture") */
-  category: GameCategory
-  rated: boolean
-  /** The account's color in this game */
-  color: Color
+  /** The game seen from the account's side, to filter without parsing the moves */
+  summary: GameSummary
+  /** Rules `summary` was made with (SUMMARY_VERSION): made again from `raw` when they change */
+  summaryVersion: number
   raw: LichessGame | ChessComGame
 }
 
@@ -46,9 +44,7 @@ type StoredGame = {
 type AccountSync = {
   account: string
   /** Lichess: per perf (bullet, blitz…), the periods whose games are all stored (createdAt, ms) */
-  lichess?: Record<LichessPerf, { from: number; to: number }[]>
-  /** Lichess: perfs whose first game was reached (nothing before the oldest period) */
-  lichessStart?: LichessPerf[]
+  lichess?: Record<string, Period[]>
   /** Chess.com: when each month ('2026/10') was read (ms) */
   chesscomMonths?: Record<string, number>
   /** Last search on this account, for eviction */
@@ -65,7 +61,7 @@ db.version(2).stores({
 
 - `accountGames` : une ligne par compte et par partie. Quand deux comptes cherchés se sont affrontés, leur partie est enregistrée deux fois : c'est rare, sans gravité, et bien plus simple qu'une liste de comptes par partie (chaque compte garde ses propres périodes et s'évince seul).
 
-- `category`, `rated` et `color` sont calculés à l'écriture : filtrer 10 000 parties sur ces champs ne demande pas de les normaliser (lire le PGN d'une partie Chess.com coûte cher).
+- Le **résumé** (`GameSummary`, vu du compte) est calculé à l'écriture : `matchesSelection` s'applique directement dessus, sans lire les coups (lire le PGN d'une partie Chess.com coûte cher). Seules les parties retenues sont normalisées.
 - `[account+playedAt]` sert aussi à tout supprimer pour un compte (éviction), et à lire les parties d'un compte de la plus récente à la plus ancienne, ou sur une période.
 
 ## Lichess : périodes couvertes, par cadence
@@ -74,19 +70,18 @@ L'API filtre par cadence (`perfType`), par couleur et par classée/amicale. Ne t
 
 - Une **période** `{ from, to }` (sur `createdAt`, la date que filtre l'API) veut dire : toutes les parties standard de cette cadence commencées dans cet intervalle sont enregistrées. Plusieurs périodes par cadence, fusionnées dès qu'elles se touchent.
 - **Ce qui manque** pour une recherche = la période demandée moins les périodes couvertes, cadence par cadence. Les cadences qui ont les mêmes manques partagent une requête (le cas courant : elles ont toujours été cherchées ensemble). Sinon, une requête par groupe, l'une après l'autre.
-- **Parties terminées seulement** : l'API n'exporte pas une partie en cours. Une partie commencée avant `to` mais finie après serait manquée : chaque mise à jour repart de `to − chevauchement`, soit 3 h pour les cadences en direct et 60 jours pour la correspondance (la marge qu'utilise déjà `fetch.ts`). Les doublons sont écrasés par leur identifiant.
-- **Ordre des requêtes** : vers le présent, `sort=dateAsc` à partir de `since`. Sur un arrêt, `to` avance jusqu'à la dernière partie reçue. Vers le passé, ordre normal à partir de `until` : `from` recule jusqu'à la dernière partie reçue. Une page incomplète (moins de parties que `max`) veut dire qu'on a atteint la première partie de ces cadences (`lichessStart`). **À vérifier** : le paramètre `sort` de l'export, à noter dans [apis.md](apis.md).
-- **Une seule requête Lichess à la fois**, dans toute l'app : le magasin passe par une file unique, que l'onglet Parties et la revue rapide doivent aussi utiliser.
+- **Parties terminées seulement** : l'API n'exporte pas une partie en cours, et filtre sur la date de début. Une partie commencée avant une recherche mais finie après serait manquée. Une période enregistrée s'arrête donc **avant** sa requête : 3 h avant pour les cadences en direct, 60 jours pour la correspondance (la marge qu'utilise déjà `fetch.ts`). La recherche suivante redemande naturellement ce bout, et les doublons sont écrasés par leur identifiant. Pendant la recherche elle-même, ce qu'elle vient de télécharger compte comme couvert.
+- **Ordre des requêtes** : toujours l'ordre normal de l'export, de la plus récente à la plus ancienne. Sur un arrêt, tout ce qui va de `until` à la dernière partie reçue est là : la période s'enregistre jusque-là. Une page incomplète (moins de parties que `max`) couvre toute la période demandée ; une période qui part de 0 veut dire qu'on a atteint la première partie. Pas besoin de `sort=dateAsc`.
+- **Une requête après l'autre**, la plus récente lacune d'abord, pour les cadences qui ont exactement la même : la correspondance (60 jours ouverts) part dans sa propre requête, les cadences en direct ensemble.
+- **Pas encore de file unique** pour toutes les requêtes Lichess de l'app : comme avant, la page d'analyse attend que la recherche d'une analyse en cours soit finie avant de chercher.
 
-### « Les N dernières parties »
+### L'algorithme (« les N dernières » comme une période)
 
-1. Mettre à jour le présent pour les cadences demandées (depuis le `to` de leur période la plus récente, ou toute première requête si rien n'est couvert).
-2. Lire sur place, de la plus récente à la plus ancienne, les parties qui passent les filtres, dans la période continue qui part d'aujourd'hui.
-3. S'il en manque, reculer par pages (`max(100, manquantes)`, comme aujourd'hui) jusqu'à en avoir assez ou atteindre la première partie.
+1. Pour chaque cadence demandée, les **lacunes** de l'intervalle cherché : `[0, maintenant]` pour les N dernières, la période choisie (avec la marge de `fetch.ts` : 1 jour, 60 jours avec la correspondance) sinon.
+2. Le **plancher** est la fin de la plus récente lacune, toutes cadences confondues : au-dessus, toutes les parties sont là. Lire sur place les parties commencées au-dessus du plancher qui passent les filtres, de la plus récente à la plus ancienne, au plus N.
+3. Assez de parties, ou plus aucune lacune : c'est fini. Sinon, demander la plus récente lacune (`max` : ce qui manque, au moins 100 si des filtres s'appliquent ici, comme avant), enregistrer, et recommencer.
 
-### Une période
-
-Mettre à jour le présent si la période atteint aujourd'hui, puis télécharger seulement les trous de la période demandée (avec la marge actuelle de `fetch.ts` : 1 jour, 60 jours avec la correspondance). Une période déjà couverte ne fait aucune requête, à part le présent.
+Résultat, la deuxième fois : les 3 dernières heures des cadences en direct, et 60 jours de correspondance (deux petites requêtes), puis une lecture locale. Une période passée déjà couverte ne fait aucune requête.
 
 ## Chess.com : mois lus
 
@@ -94,16 +89,16 @@ Chess.com ne sert que des mois entiers, toutes cadences confondues : la couvertu
 
 - La liste des mois (`/games/archives`) est redemandée à chaque recherche (une requête).
 - **Un mois passé est définitif** une fois lu plus de 24 h après sa fin (le délai de cache de Chess.com, jusqu'à 12 h) : on ne le redemande jamais.
-- Le mois en cours, et le précédent tant qu'il n'est pas définitif, sont redemandés à chaque recherche, comme aujourd'hui.
+- Le mois en cours, et le précédent tant qu'il n'est pas définitif, sont redemandés à chaque recherche, comme avant.
 - Toujours en série, du plus récent au plus ancien, en s'arrêtant dès qu'on a assez de parties.
 
 ## Lecture
 
-- Lire `accountGames` par `[account+playedAt]` de la plus récente à la plus ancienne, par lots, filtrer sur `category`, `rated` et `color`, puis normaliser seulement ce qui reste (`fromLichessGame` / `fromChessComGame`) et appliquer `matchesSelection` (dates exactes, résultats, Elo adverse).
-- La normalisation dépend du pseudo (la couleur du joueur) : on la refait à chaque lecture, elle n'est pas stockée.
-- Si les règles qui calculent `category`, `rated` ou `color` changent, une nouvelle `db.version(n).upgrade(...)` les recalcule à partir de `raw`.
+- Lire `accountGames` par `[account+playedAt]` de la plus récente à la plus ancienne, appliquer `matchesSelection` au résumé gardé, puis normaliser seulement ce qui reste (`fromLichessGame` / `fromChessComGame`).
+- Si les règles du résumé changent, augmenter `SUMMARY_VERSION` : les résumés d'avant sont refaits à partir de `raw` à la lecture.
+- **Repli** : toute erreur du magasin (`GameStoreError`, à distinguer d'une erreur des plateformes) relance la recherche sans lui, comme avant.
 
-## Ce qui reste comme aujourd'hui (et pourquoi)
+## Ce qui ne change pas (et pourquoi)
 
 - **Les évaluations Lichess ajoutées après coup** (analyse serveur demandée plus tard) ne sont pas rafraîchies. C'est sans gravité : notre propre moteur évalue ce qui manque, et le cache d'analyses le garde.
 - **Le profil et les statistiques** (Aperçu) restent dans TanStack Query : ce sont des données courtes, toujours redemandées.
@@ -119,7 +114,7 @@ Chess.com ne sert que des mois entiers, toutes cadences confondues : la couvertu
 
 - Les parties sont publiques, mais elles sont maintenant stockées : à déclarer sur `/legal` (« les parties des comptes que vous avez cherchés, telles que Lichess et Chess.com les publient, pour ne pas les retélécharger »).
 - `clearLocalData()` supprime déjà toute la base.
-- Réglages : la section « Analyses enregistrées » devient « Données enregistrées », avec une ligne pour les parties (nombre de comptes, nombre de parties, bouton pour les vider) et une pour les analyses.
+- Réglages : la section « Analyses enregistrées » devient « Données enregistrées », avec une ligne pour les parties (leur nombre, bouton pour les vider) et une pour les analyses.
 - La règle de CLAUDE.md « Données distantes éphémères : TanStack Query, ne pas dupliquer » change : les parties des comptes passent dans Dexie, le reste des données distantes reste dans TanStack Query.
 
 ## Tests

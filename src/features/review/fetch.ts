@@ -1,12 +1,28 @@
 import type { GameCategory } from '@/features/games/normalize'
+import { missingPeriods, type Period } from '@/features/games/periods'
+import {
+  accountKey,
+  GameStoreError,
+  storedSummary,
+  toStoredGame,
+  type GameStore,
+} from '@/features/games/store'
 import { archiveUrl, fetchArchiveGames, fetchArchives } from '@/lib/chesscom/client'
 import type { ChessComGame } from '@/lib/chesscom/types'
 import type { ApiSource } from '@/lib/http'
 import { exportGame, exportStandardGames, type GameExportOptions } from '@/lib/lichess/client'
+import type { StoredGame } from '@/lib/db'
 import type { LichessGame } from '@/lib/lichess/types'
 import type { GameRef } from './gameRef'
 import { fromChessComGame, fromLichessGame, latestGames, type ReviewGame } from './games'
-import { activeRatingFilter, ALL_RESULTS, matchesSelection, type GameSelection } from './selection'
+import {
+  activeRatingFilter,
+  ALL_COLORS,
+  ALL_RATINGS,
+  ALL_RESULTS,
+  matchesSelection,
+  type GameSelection,
+} from './selection'
 
 /**
  * Finds the games of the advanced review: the APIs filter what they can (Lichess: time controls,
@@ -62,6 +78,12 @@ const DAY = 86_400_000
 const CORRESPONDENCE_MARGIN = 60 * DAY
 /** Pages of the "latest games" search on Lichess, fetched one after the other. */
 const LICHESS_PAGE = 100
+/**
+ * Lichess only exports finished games, and filters on their start: a game started before a search
+ * but finished after it would be missed. The store's periods end this long before their search.
+ */
+const LIVE_OVERLAP = 3 * 60 * 60 * 1000
+const overlap = (perf: string) => (perf === 'correspondence' ? CORRESPONDENCE_MARGIN : LIVE_OVERLAP)
 
 const share = (done: number, total: number) =>
   total > 0 ? Math.min(Math.max(done / total, 0), 1) : 0
@@ -148,6 +170,17 @@ function archiveMonth(url: string): { start: number; end: number } | undefined {
   return { start: Date.UTC(year, month, 1), end: Date.UTC(year, month + 1, 1) }
 }
 
+/** The archives to read, newest first: those of the period, if one is chosen. */
+function monthsToRead(archives: string[], { scope }: GameSelection): string[] {
+  const newest = archives.toReversed()
+  if (scope.kind !== 'range') return newest
+  return newest.filter((url) => {
+    const month = archiveMonth(url)
+    // A day of margin for time zones: games are checked on their exact end date anyway.
+    return !month || (month.end + DAY > scope.from && month.start - DAY <= scope.to)
+  })
+}
+
 async function findChessComGames(
   username: string,
   selection: GameSelection,
@@ -156,14 +189,7 @@ async function findChessComGames(
   signal?: AbortSignal,
 ): Promise<ReviewGame[]> {
   const { scope } = selection
-  let archives = (await fetchers.chessComArchives(username, signal)).toReversed()
-  if (scope.kind === 'range') {
-    archives = archives.filter((url) => {
-      const month = archiveMonth(url)
-      // A day of margin for time zones: games are checked on their exact end date anyway.
-      return !month || (month.end + DAY > scope.from && month.start - DAY <= scope.to)
-    })
-  }
+  const archives = monthsToRead(await fetchers.chessComArchives(username, signal), selection)
   const found: ReviewGame[] = []
   const limit = scope.kind === 'latest' ? scope.count : scope.max
   report(0, 0)
@@ -173,6 +199,208 @@ async function findChessComGames(
     for (const game of month) {
       const review = fromChessComGame(game, username)
       if (review && matchesSelection(review, selection)) found.push(review)
+    }
+    if (limit !== undefined && found.length >= limit) break
+    report(
+      found.length,
+      Math.max(
+        limit === undefined ? 0 : share(found.length, limit),
+        share(index + 1, archives.length),
+      ),
+    )
+  }
+  report(found.length, 1)
+  return found
+}
+
+/** Whether the Lichess games must be filtered here, so that pages bigger than asked are worth it. */
+function filteredHere(selection: GameSelection): boolean {
+  return (
+    selection.scope.kind === 'range' ||
+    selection.results.length < ALL_RESULTS.length ||
+    selection.colors.length < ALL_COLORS.length ||
+    selection.ratings.length < ALL_RATINGS.length ||
+    activeRatingFilter(selection) !== undefined
+  )
+}
+
+/**
+ * The Lichess games of the selection, through the store: only what it lacks is asked for, the
+ * newest gap first, perf by perf (docs/game-store.md). Color and rated or casual are filtered here,
+ * so that the periods only depend on the perfs. Every game received is stored at once, and the
+ * period it proves complete with it: stopping loses nothing.
+ */
+async function findLichessGamesStored(
+  username: string,
+  selection: GameSelection,
+  fetchers: GameFetchers,
+  store: GameStore,
+  report: Report,
+  now: () => number,
+  signal?: AbortSignal,
+): Promise<ReviewGame[]> {
+  const account = accountKey('lichess', username)
+  const perfs = [...new Set(selection.categories.flatMap((category) => LICHESS_PERFS[category]))]
+  const { scope } = selection
+  const limit = scope.kind === 'latest' ? scope.count : scope.max
+  const start = now()
+  let bottom = 0
+  let top = start
+  if (scope.kind === 'range') {
+    bottom = scope.from - (selection.categories.includes('daily') ? CORRESPONDENCE_MARGIN : DAY)
+    top = Math.min(scope.to, start)
+  }
+  const sync = await store.loadSync(account)
+  /** What this search fetched: complete for its duration, even the hours a period leaves out */
+  const fetched: Record<string, Period[]> = {}
+  const newestGap = (perf: string) =>
+    missingPeriods([...(sync.lichess?.[perf] ?? []), ...(fetched[perf] ?? [])], {
+      from: bottom,
+      to: top,
+    }).at(-1)
+  const matches = (game: StoredGame) => {
+    const summary = storedSummary(game, username)
+    return summary !== undefined && matchesSelection(summary, selection)
+  }
+  const started = (game: StoredGame) => game.createdAt ?? game.playedAt
+  const progress = (found: number, createdAt: number) =>
+    Math.max(limit === undefined ? 0 : share(found, limit), share(top - createdAt, top - bottom))
+
+  while (perfs.length > 0) {
+    // Games started from `floor` on are all stored, for every perf asked.
+    const gaps = perfs.flatMap((perf) => {
+      const gap = newestGap(perf)
+      return gap ? [{ perf, gap }] : []
+    })
+    const floor = Math.max(bottom, ...gaps.map(({ gap }) => gap.to + 1))
+    const found = await store.query(
+      account,
+      bottom,
+      Infinity,
+      (game) => started(game) >= floor && started(game) <= top && matches(game),
+      limit,
+    )
+    if (gaps.length === 0 || (limit !== undefined && found.length >= limit)) {
+      report(found.length, 1)
+      return found.flatMap((game) => fromLichessGame(game.raw as LichessGame, username) ?? [])
+    }
+    report(found.length, progress(found.length, floor))
+
+    // The newest gap (the shortest one if several end together), for every perf that has the same:
+    // correspondence keeps 60 days open, the others 3 hours, so they are not asked together.
+    const { from, to } = gaps
+      .map(({ gap }) => gap)
+      .reduce((best, gap) =>
+        gap.to > best.to || (gap.to === best.to && gap.from > best.from) ? gap : best,
+      )
+    const group = gaps.filter(({ gap }) => gap.from === from && gap.to === to)
+    const groupPerfs = group.map(({ perf }) => perf)
+    const wanted = limit === undefined ? undefined : limit - found.length
+    const max =
+      wanted === undefined
+        ? undefined
+        : filteredHere(selection)
+          ? Math.max(LICHESS_PAGE, wanted)
+          : wanted
+
+    const requestedAt = now()
+    let received = 0
+    let oldest = to + 1
+    let streamed = 0
+    let batch: StoredGame[] = []
+    let writing = Promise.resolve()
+    const flush = () => {
+      if (batch.length > 0) {
+        const games = batch
+        batch = []
+        writing = writing.then(() => store.put(games))
+      }
+      return writing
+    }
+    const receive = (game: LichessGame) => {
+      received++
+      oldest = Math.min(oldest, game.createdAt)
+      const stored = toStoredGame('lichess', username, game)
+      if (stored) {
+        batch.push(stored)
+        if (matches(stored)) streamed++
+      }
+      if (batch.length >= 100) flush().catch(() => {})
+      report(found.length + streamed, progress(found.length + streamed, game.createdAt))
+    }
+    /** Stores what arrived, then the period it covers: all of it, or down to the oldest game. */
+    const record = async (complete: boolean) => {
+      await flush()
+      const low = complete ? from : oldest
+      if (low > to) return
+      const periods: Record<string, Period> = {}
+      for (const perf of groupPerfs) {
+        fetched[perf] = [...(fetched[perf] ?? []), { from: low, to }]
+        const end = Math.min(to, requestedAt - overlap(perf))
+        if (end >= low) periods[perf] = { from: low, to: end }
+      }
+      if (Object.keys(periods).length > 0) await store.addLichessPeriods(account, periods)
+    }
+
+    try {
+      const page = await fetchers.lichessExport(
+        username,
+        { perfTypes: groupPerfs, max, since: from, until: to },
+        signal,
+        receive,
+      )
+      // A fetcher that does not stream gives its games at the end.
+      if (received === 0) page.forEach(receive)
+      await record(max === undefined || page.length < max)
+    } catch (error) {
+      // Newest first: every game from `to` down to the oldest one received is there.
+      if (!(error instanceof GameStoreError)) await record(false).catch(() => {})
+      throw error
+    }
+  }
+  report(0, 1)
+  return []
+}
+
+/**
+ * The Chess.com games of the selection, through the store: a past month read more than a day
+ * after its end is final and never asked for again (Chess.com caches its data for up to 12 h).
+ */
+async function findChessComGamesStored(
+  username: string,
+  selection: GameSelection,
+  fetchers: GameFetchers,
+  store: GameStore,
+  report: Report,
+  now: () => number,
+  signal?: AbortSignal,
+): Promise<ReviewGame[]> {
+  const account = accountKey('chesscom', username)
+  const { scope } = selection
+  const archives = monthsToRead(await fetchers.chessComArchives(username, signal), selection)
+  const sync = await store.loadSync(account)
+  const found: ReviewGame[] = []
+  const limit = scope.kind === 'latest' ? scope.count : scope.max
+  report(0, 0)
+  for (const [index, archive] of archives.entries()) {
+    const month = archiveMonth(archive)
+    const key = month && archive.slice(-7)
+    const readAt = key ? sync.chesscomMonths?.[key] : undefined
+    let games: StoredGame[]
+    if (month && readAt !== undefined && readAt > month.end + DAY) {
+      games = await store.query(account, month.start, month.end - 1, () => true)
+    } else {
+      const requestedAt = now()
+      const raw = await fetchers.chessComMonth(archive, signal)
+      games = raw.flatMap((game) => toStoredGame('chesscom', username, game) ?? [])
+      await store.put(games)
+      if (key) await store.markMonth(account, key, requestedAt)
+    }
+    for (const game of games) {
+      const summary = storedSummary(game, username)
+      if (!summary || !matchesSelection(summary, selection)) continue
+      const review = fromChessComGame(game.raw as ChessComGame, username)
+      if (review) found.push(review)
     }
     if (limit !== undefined && found.length >= limit) break
     report(
@@ -198,11 +426,16 @@ export async function findGames(
     signal,
     fetchers = API_FETCHERS,
     onProgress,
+    store,
+    now = Date.now,
   }: {
     signal?: AbortSignal
     fetchers?: GameFetchers
     /** Called as games arrive, with every platform's progress so far */
     onProgress?: (progress: FetchProgress) => void
+    /** Where games already fetched are kept (docs/game-store.md); without it, everything is fetched */
+    store?: GameStore
+    now?: () => number
   } = {},
 ): Promise<FoundGames> {
   const searched = accounts.filter((account) => selection.sources.includes(account.source))
@@ -216,13 +449,29 @@ export async function findGames(
       progress = { ...progress, [source]: { games, ratio } }
       onProgress?.(progress)
     }
-  const results = await Promise.allSettled(
-    searched.map(({ source, username }) =>
-      source === 'lichess'
-        ? findLichessGames(username, selection, fetchers, reporter(source), signal)
-        : findChessComGames(username, selection, fetchers, reporter(source), signal),
-    ),
-  )
+  const search = async ({ source, username }: ReviewAccount): Promise<ReviewGame[]> => {
+    const report = reporter(source)
+    if (store) {
+      try {
+        return source === 'lichess'
+          ? await findLichessGamesStored(username, selection, fetchers, store, report, now, signal)
+          : await findChessComGamesStored(username, selection, fetchers, store, report, now, signal)
+      } catch (error) {
+        // The store failed (not the platform): search as without it.
+        if (!(error instanceof GameStoreError)) throw error
+        console.warn('Game store unavailable', error.cause)
+      }
+    }
+    return source === 'lichess'
+      ? findLichessGames(username, selection, fetchers, report, signal)
+      : findChessComGames(username, selection, fetchers, report, signal)
+  }
+  const results = await Promise.allSettled(searched.map(search))
+  if (store) {
+    for (const { source, username } of searched) {
+      store.touch(accountKey(source, username)).catch(() => {})
+    }
+  }
   signal?.throwIfAborted()
   const failures = results.flatMap((result, index) =>
     result.status === 'rejected'

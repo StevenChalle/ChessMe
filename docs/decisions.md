@@ -613,13 +613,15 @@ Relancer une analyse sur des parties déjà vues doit être instantané, et chaq
 
 ## 2026-10-23 : parties des comptes dans le navigateur (conception)
 
-Avec le cache d'analyses, réanalyser des parties déjà vues est instantané côté moteur, mais il faut encore les télécharger : environ 20 s pour 500 parties Lichess (20 parties par seconde sans token). Conception détaillée : [game-store.md](game-store.md). Pas encore implémenté.
+Avec le cache d'analyses, réanalyser des parties déjà vues est instantané côté moteur, mais il faut encore les télécharger : environ 20 s pour 500 parties Lichess (20 parties par seconde sans token). Conception détaillée : [game-store.md](game-store.md). Implémenté le même jour pour la recherche de l'analyse.
 
 - **Un magasin qui grandit au fil des recherches**, plutôt que l'import complet imaginé au départ (2026-10-04) : une carrière de 10 000 parties demanderait environ 8 minutes sur Lichess avant la première analyse.
 - **Couverture connue exactement** : Lichess, des périodes par cadence (l'API filtre par cadence, et ne télécharger que celles demandées compte) ; Chess.com, les mois lus, un mois passé étant définitif une fois lu plus de 24 h après sa fin. La couleur et classée/amicale restent filtrées sur place.
-- **Mise à jour du présent avec chevauchement** (3 h, 60 jours avec la correspondance) : l'API ne donne que les parties terminées et filtre sur la date de début.
-- **Parties brutes** stockées telles que les API les donnent, normalisées à la lecture ; quelques champs précalculés (cadence, classée, couleur) pour filtrer sans tout normaliser.
-- **Arrêt sans perte** : écriture au fil de l'eau, la période couverte avance avec la dernière partie reçue (vers le présent, `sort=dateAsc`, à vérifier).
+- **Périodes arrêtées avant leur requête** (3 h, 60 jours pour la correspondance) : l'API ne donne que les parties terminées et filtre sur la date de début. La recherche suivante redemande ce bout ; en pratique, deux petites requêtes.
+- **Parties brutes** stockées telles que les API les donnent, avec leur résumé vu du compte (`GameSummary`) pour filtrer sans lire les coups ; les coups ne sont lus que pour les parties retenues.
+- **Arrêt sans perte** : écriture au fil de l'eau ; l'export allant du plus récent au plus ancien, la période couverte descend jusqu'à la dernière partie reçue (pas besoin de `sort=dateAsc`).
 - **Éviction par compte entier**, le moins récemment cherché, au-delà d'environ 150 000 parties ou sur une erreur de quota.
 - **Règle changée** à l'implémentation : les parties des comptes passent dans Dexie ; les autres données distantes (profil, statistiques) restent dans TanStack Query.
 - Écartés : un import complet obligatoire (trop long) ; une couverture unique toutes cadences confondues (une recherche de blitz téléchargerait tout le bullet) ; des périodes aussi par couleur et classée/amicale (trop de périodes pour un gain d'au plus deux fois moins de parties) ; stocker les parties normalisées (la normalisation dépend du pseudo et évolue).
+- Mesuré dans le navigateur : 500 parties Lichess déjà vues retrouvées en 0,6 s (deux requêtes : 3 h des cadences en direct, 60 jours de correspondance), au lieu d'environ 20 s.
+- Repli : si le magasin échoue, la recherche repart sans lui, comme avant. Pas encore de file unique pour toutes les requêtes Lichess de l'app ; l'onglet Parties télécharge encore ses pages lui-même.

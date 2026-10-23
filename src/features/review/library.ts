@@ -1,4 +1,5 @@
 import type { GameSource } from '@/features/games/normalize'
+import { gameStore } from '@/features/games/store'
 import {
   findGame,
   findGames,
@@ -32,7 +33,9 @@ export function accountsLibrary(accounts: ReviewAccount[]): GameLibrary {
   return {
     kind: 'accounts',
     sources: accounts.map((account) => account.source),
-    find: (selection, signal, onProgress) => findGames(accounts, selection, { signal, onProgress }),
+    // Games already fetched are kept: only what is missing is asked for (docs/game-store.md).
+    find: (selection, signal, onProgress) =>
+      findGames(accounts, selection, { signal, onProgress, store: gameStore }),
     findOne: (ref, signal) => findGame(accounts, ref, { signal }),
   }
 }
