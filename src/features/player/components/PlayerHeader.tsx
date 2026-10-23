@@ -8,7 +8,7 @@ import { SourceDot } from './SourceBadge'
 
 /**
  * Name, titles, avatar and country, gathered from whichever accounts were found; `nameAction`
- * right after the name, `actions` on the right. The name always leads to the profile of these
+ * right after the name and country, `actions` on the right. The name always leads to the profile of these
  * accounts (`profileLink`).
  */
 export function PlayerHeader({
@@ -41,27 +41,25 @@ export function PlayerHeader({
           <img src={avatarUrl} alt="" className="size-14 rounded-md bg-card object-cover" />
         )}
         <div>
-          <div className="flex items-center gap-1.5">
-            <h1 className="flex flex-wrap items-center gap-x-2.5">
-              {(sameTitle ? titles.slice(0, 1) : titles).map((account) => (
-                <span
-                  key={account.source}
-                  className="title-badge"
-                  title={
-                    sameTitle
-                      ? undefined
-                      : m.player_title_on({ platform: SOURCE_LABELS[account.source] })
-                  }
-                >
-                  {account.title}
-                </span>
-              ))}
-              <Link to="/player" search={profileLink} className="hover:text-primary">
-                {main?.username}
-              </Link>
-            </h1>
-            {nameAction}
-          </div>
+          <h1 className="flex flex-wrap items-center gap-x-2.5">
+            {(sameTitle ? titles.slice(0, 1) : titles).map((account) => (
+              <span
+                key={account.source}
+                className="title-badge"
+                title={
+                  sameTitle
+                    ? undefined
+                    : m.player_title_on({ platform: SOURCE_LABELS[account.source] })
+                }
+              >
+                {account.title}
+              </span>
+            ))}
+            <Link to="/player" search={profileLink} className="hover:text-primary">
+              {main?.username}
+            </Link>
+          </h1>
+
           <p className="flex flex-wrap items-center gap-x-3 text-sm text-muted-foreground">
             {country && <span>{country}</span>}
             {!sameName &&
@@ -74,6 +72,7 @@ export function PlayerHeader({
               ))}
           </p>
         </div>
+        {nameAction}
       </div>
       {actions}
     </div>

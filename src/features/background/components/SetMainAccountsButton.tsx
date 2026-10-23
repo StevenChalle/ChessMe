@@ -1,4 +1,4 @@
-import { UserPlus } from 'lucide-react'
+import { ArrowRight, UserPlus } from 'lucide-react'
 import { useId, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
@@ -15,43 +15,86 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { accountKey, deleteStoredAccounts } from '@/features/games/store'
 import { SourceLabel } from '@/features/player/components/SourceBadge'
 import type { ReviewAccount } from '@/features/review/fetch'
+import { formatNumber } from '@/lib/format'
+import type { ApiSource } from '@/lib/http'
 import { m } from '@/paraglide/messages'
 import {
   areMainAccounts,
+  mainAccounts,
   replacedAccounts,
   setMainProfile,
   useMainProfile,
   withMainAccounts,
+  type MainProfile,
 } from '../profile'
+
+const SOURCES: ApiSource[] = ['lichess', 'chesscom']
+
+/** One platform in the dialog: the main account before, and after. */
+type Change = { source: ApiSource; before?: string; after?: string }
+
+function changes(profile: MainProfile | undefined, accounts: ReviewAccount[]): Change[] {
+  const before = profile ? mainAccounts(profile) : []
+  return SOURCES.flatMap((source) => {
+    const old = before.find((account) => account.source === source)?.username
+    const next = accounts.find((account) => account.source === source)?.username
+    return old || next ? [{ source, before: old, after: next }] : []
+  })
+}
+
+const same = (a?: string, b?: string) => a?.toLowerCase() === b?.toLowerCase()
+
+/** A main account dropped: struck through, in the loss color. */
+function Dropped({ username }: { username: string }) {
+  return <s className="text-loss decoration-2">{username}</s>
+}
+
+function ChangeRow({ change: { source, before, after } }: { change: Change }) {
+  return (
+    <li className="flex flex-wrap items-center gap-x-2 gap-y-1 rounded-sm px-2 py-1.5 even:bg-muted/40">
+      <span className="w-24 shrink-0">
+        <SourceLabel source={source} />
+      </span>
+      {before && after && same(before, after) ? (
+        <>
+          <span className="text-text-strong">{after}</span>
+          <span className="text-xs text-muted-foreground">{m.set_main_unchanged()}</span>
+        </>
+      ) : (
+        <>
+          {before && <Dropped username={before} />}
+          {before && after && <ArrowRight aria-hidden className="size-4 text-muted-foreground" />}
+          {after && <span className="font-medium text-win">{after}</span>}
+          {!before && after && (
+            <span className="text-xs text-muted-foreground">{m.set_main_added()}</span>
+          )}
+        </>
+      )}
+    </li>
+  )
+}
 
 /**
  * After the player's name: makes the accounts shown the main ones (docs/background-analysis.md).
- * Disabled when they already are. Replacing main accounts asks first, and can delete their games.
+ * Disabled when they already are. Always confirmed: the dialog shows each platform's main account
+ * before and after (dropped ones struck through), and can delete the games of those dropped.
  */
 export function SetMainAccountsButton({ accounts }: { accounts: ReviewAccount[] }) {
   const profile = useMainProfile()
-  const [replacing, setReplacing] = useState<ReviewAccount[] | undefined>(undefined)
+  const [open, setOpen] = useState(false)
   const [deleteGames, setDeleteGames] = useState(false)
   const deleteId = useId()
   if (accounts.length === 0) return null
   const already = areMainAccounts(profile, accounts)
   const label = already ? m.set_main_accounts_already() : m.set_main_accounts()
-
-  const set = () => {
-    const replaced = replacedAccounts(profile, accounts)
-    if (replaced.length > 0) {
-      setDeleteGames(false)
-      setReplacing(replaced)
-    } else {
-      setMainProfile(withMainAccounts(profile, accounts))
-    }
-  }
+  const replaced = replacedAccounts(profile, accounts)
+  const replacing = replaced.length > 0
+  const next = withMainAccounts(profile, accounts)
 
   const confirm = async () => {
-    const replaced = replacing ?? []
-    setMainProfile(withMainAccounts(profile, accounts))
-    setReplacing(undefined)
-    if (deleteGames) {
+    setMainProfile(next)
+    setOpen(false)
+    if (replacing && deleteGames) {
       await deleteStoredAccounts(
         replaced.map(({ source, username }) => accountKey(source, username)),
       )
@@ -66,14 +109,16 @@ export function SetMainAccountsButton({ accounts }: { accounts: ReviewAccount[] 
             {/* A disabled button gets no pointer events: the tooltip hangs on its wrapper. */}
             <span className="inline-flex">
               <Button
-                variant="ghost"
-                size="icon-sm"
+                variant="outline"
                 aria-label={label}
                 disabled={already}
-                onClick={set}
-                className="text-muted-foreground hover:text-text-strong"
+                onClick={() => {
+                  setDeleteGames(false)
+                  setOpen(true)
+                }}
+                className="size-12 rounded-md text-muted-foreground hover:text-text-strong"
               >
-                <UserPlus />
+                <UserPlus className="size-6" />
               </Button>
             </span>
           </TooltipTrigger>
@@ -81,41 +126,43 @@ export function SetMainAccountsButton({ accounts }: { accounts: ReviewAccount[] 
         </Tooltip>
       </TooltipProvider>
 
-      <Dialog
-        open={replacing !== undefined}
-        onOpenChange={(open) => !open && setReplacing(undefined)}
-      >
+      <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>{m.set_main_confirm_title()}</DialogTitle>
-            <DialogDescription>{m.set_main_confirm_body()}</DialogDescription>
+            <DialogTitle>
+              {replacing ? m.set_main_confirm_title() : m.set_main_confirm_new_title()}
+            </DialogTitle>
+            <DialogDescription>
+              {replacing
+                ? m.set_main_confirm_body()
+                : m.set_main_confirm_new_body({ count: formatNumber(next.depth) })}
+            </DialogDescription>
           </DialogHeader>
-          <ul className="space-y-1 text-sm">
-            {replacing?.map(({ source, username }) => (
-              <li key={source} className="flex items-center gap-2">
-                <SourceLabel source={source} />
-                <span className="text-text-strong">{username}</span>
-              </li>
+          <ul className="space-y-0.5 text-sm">
+            {changes(profile, accounts).map((change) => (
+              <ChangeRow key={change.source} change={change} />
             ))}
           </ul>
-          <div className="flex items-center gap-2">
-            <Checkbox
-              id={deleteId}
-              checked={deleteGames}
-              onCheckedChange={(value) => setDeleteGames(value === true)}
-              className="border-border-strong"
-            />
-            <Label htmlFor={deleteId} className="font-normal">
-              {m.set_main_confirm_delete()}
-            </Label>
-          </div>
+          {replacing && (
+            <div className="flex items-center gap-2">
+              <Checkbox
+                id={deleteId}
+                checked={deleteGames}
+                onCheckedChange={(value) => setDeleteGames(value === true)}
+                className="border-border-strong"
+              />
+              <Label htmlFor={deleteId} className="font-normal">
+                {m.set_main_confirm_delete()}
+              </Label>
+            </div>
+          )}
           <DialogFooter>
-            <Button variant="outline" onClick={() => setReplacing(undefined)}>
+            <Button variant="outline" onClick={() => setOpen(false)}>
               {m.confirm_cancel()}
             </Button>
             <Button onClick={() => void confirm()}>
               <UserPlus data-icon="inline-start" />
-              {m.set_main_confirm_action()}
+              {replacing ? m.set_main_confirm_action() : m.set_main_confirm_set()}
             </Button>
           </DialogFooter>
         </DialogContent>
