@@ -44,7 +44,7 @@ src/
   features/player/    # profil croisé : summary.ts (normalisation), search.ts (paramètres ?lichess=&chesscom=), recentSearches.ts, hook, composants
   features/games/     # résumé commun d'une partie (normalize.ts) et table des parties (GamesTable)
   features/history/   # onglet Parties : feed.ts (fusion paginée Lichess + Chess.com), queries.ts
-  features/review/    # analyse : criteria.ts, selection.ts, fetch.ts (recherche), estimate.ts, errors.ts (erreur, coup valide), analyze.ts (deux passes), themes.ts (thèmes des erreurs), settings.ts, session de la page /analysis (session.tsx)
+  features/review/    # analyse : criteria.ts, selection.ts, fetch.ts (recherche), estimate.ts, errors.ts (erreur, coup valide), analyze.ts (deux passes, approfondissement), themes.ts (thèmes des erreurs), phases.ts, settings.ts, session des onglets d'analyse (session.tsx), graphique d'évaluation (components/EvalChart.tsx)
   features/training/  # rejouer ses erreurs : session.ts (reducer), order.ts (ordre de jeu, options), settings.ts (options mémorisées), coach.ts (Stockfish), moves.ts (FEN/UCI), evaluation.ts
   features/contact/   # formulaire de retours (FeedbackForm)
   lib/lichess/        # client HTTP, types, queryOptions de l'API Lichess

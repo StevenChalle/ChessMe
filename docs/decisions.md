@@ -538,7 +538,7 @@ Le filtre « longueur minimale » de l'analyse approfondie servait peu. Il est r
 
 Constat (en comparant avec Chess Rewind) : un nouveau visiteur ne voyait pas vite la valeur de l'outil, et l'usage régulier tient sans doute plus à de courtes analyses (1 à 5 parties) qu'à de grands regroupements. On ajoute donc des raccourcis jusqu'à l'entraînement.
 
-- **Accueil** : la promesse (« Your games are your best puzzles. ») et trois étapes (trouver son compte, analyser, rejouer ses erreurs) au-dessus du formulaire. Deux boutons : « Find profile » (principal) et « Review last game », qui saute la page profil. Les recherches récentes ont le même raccourci. Le champ ne prend le focus que sur ordinateur (pointeur fin) : sur téléphone, le clavier recouvrait la page.
+- **Accueil** : la promesse (« Your games are your best puzzles. ») et trois étapes (trouver son compte, analyser, rejouer ses erreurs) au-dessus du formulaire. Deux boutons : « Find profile » (principal) et « Analyze last game », qui saute la page profil. Les recherches récentes ont le même raccourci. Le champ ne prend le focus que sur ordinateur (pointeur fin) : sur téléphone, le clavier recouvrait la page.
 - **Analyser une partie précise** depuis l'onglet Parties : `/analysis/run?game=…`, comme `start=last`. La référence (`gameRef.ts`) est `lichess:<id>` (un appel à `/game/export/{id}`) ou `chesscom:<AAAA-MM>:<uuid>` : Chess.com ne sert les parties que par archive mensuelle, celle du mois de fin de partie en UTC.
 - **Après une analyse**, un encadré propose l'entraînement rapide (options par défaut, lancé tout de suite) ou l'onglet d'options.
 - Raccourcis du nombre de parties : 3 / 5 / 10 / 50 / 100.
@@ -560,7 +560,7 @@ La page `/analysis` doublait le profil (même en-tête, mêmes comptes) et oblig
 - Les onglets **Lichess** et **Chess.com** sont supprimés : l'aperçu garde l'essentiel (Elo actuels, bilans, parties par cadence) et les liens vers les deux sites.
 - La session d'analyse (`AnalysisSessionProvider`) est portée par la mise en page du profil : on peut consulter l'aperçu ou les parties pendant qu'une analyse tourne. Quitter le profil, ou passer à d'autres comptes, pendant une analyse ou un entraînement en cours demande confirmation.
 - Une revue rapide se demande par lien (`?start=last` ou `?game=…`), à l'arrivée comme depuis la page : la session la lance (en demandant avant de remplacer une analyse existante) puis retire la demande de l'adresse.
-- En-tête du profil : « Review last game » et « Advanced analysis » (qui ouvre l'onglet Analyse). Le bouton « New training » de l'ancienne page est retiré : l'encadré sous les résultats et les boutons « Train » suffisent.
+- En-tête du profil : « Analyze last game » et « Advanced analysis » (qui ouvre l'onglet Analyse). Le bouton « New training » de l'ancienne page est retiré : l'encadré sous les résultats et les boutons « Train » suffisent.
 - Les anciennes adresses `/analysis…` redirigent vers les onglets.
 
 ## 2026-10-23 : exercice « Évaluer la position »
@@ -573,3 +573,14 @@ Un second exercice d'entraînement, en option : dire comment se présente la pos
 - **Marge près des frontières** : les moteurs varient de quelques dixièmes d'une recherche à l'autre. À ±0,15 de ±0,3 et à ±0,3 de ±2,0, les deux réponses autour de la frontière comptent. Une marge de 0,3 partout aurait vidé « Égalité » (à 0,00, trois réponses auraient été justes). Le verdict montre l'évaluation du moteur à deux décimales (`assessment.ts`).
 - Avec les deux exercices : « Partie 1 : évaluation » puis « Partie 2 : trouver un coup valide », un seul bouton entre les deux. En partie 2, l'évaluation de la position est affichée d'emblée, puisque le joueur vient de la voir.
 - Le bilan ajoute « Positions bien évaluées : X / Y » ; avec l'évaluation seule, seulement cette ligne.
+
+## 2026-10-23 : graphique d'évaluation et analyse approfondie d'une partie
+
+Les résultats d'analyse doivent faire comprendre ce qui s'est passé dans une partie.
+
+- **Lignes dépliables** dans la table des résultats : une seule ouverte à la fois, avec un glissement ; elle ouvre un panneau pleine largeur (`GamesTable`, option `expandable`). Sur téléphone, ce panneau reprend aussi les colonnes masquées (date, plateforme, adversaire). Les rayures de la table passent alors en classes posées ligne à ligne, les lignes de panneau n'étant pas des entrées.
+- **Graphique d'évaluation** (`EvalChart`, SVG fait main plutôt qu'ECharts : léger, aux couleurs des tokens) dans le style de Lichess : avantage des Blancs en clair vers le haut, des Noirs en sombre vers le bas, courbe or, sur une échelle de chances de gain (un +8 n'écrase pas le reste). Erreurs du joueur en points rouges pleins, de l'adversaire en anneaux gris ; légende sous le graphique.
+- **Survol tolérant** : le coup le plus proche horizontalement répond, où que soit le pointeur. L'info-bulle donne le coup, l'évaluation, l'écart pour celui qui a joué, et l'échiquier après le coup ; un clic la fige, avec un lien vers l'analyse Lichess. Sur téléphone, un toucher fige le coup le plus proche (le doigt peut glisser) et le détail s'affiche sous le graphique.
+- **Phases** (`phases.ts`) selon la règle de Lichess (Divider de scalachess, sans son critère de « mixité ») : milieu de partie à 10 pièces ou moins hors rois et pions, ou une dernière rangée avec moins de 4 de ses pièces ; finale à 6 ou moins, comme le thème « Finale ».
+- L'analyse **garde l'évaluation de chaque position** (et si elle est fiable : passe approfondie, analyse Lichess ou partie finie) au lieu de ne garder que les erreurs, et repère aussi les erreurs de l'adversaire avec les mêmes règles (`judge`).
+- **Approfondir une partie** : les coups calmes n'ont eu qu'un examen rapide (100 000 nœuds) et une tactique ratée peut y passer inaperçue. Le bouton évalue toutes ces positions à 1 M de nœuds, avec tous les moteurs ; la courbe s'affine en direct et les erreurs de la partie sont rejugées (nombre, entraînements lancés ensuite). Fermer la partie arrête ; ce qui est calculé reste. « Approfondir toutes les parties », discret au-dessus de la table, les enchaîne. En mémoire seulement, lié à l'analyse en cours : une nouvelle analyse repart de zéro (à rediscuter).

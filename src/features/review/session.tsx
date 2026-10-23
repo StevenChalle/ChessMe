@@ -12,7 +12,13 @@ import {
   type TrainingSettings,
 } from '@/features/training/settings'
 import { m } from '@/paraglide/messages'
-import { analyzeGames, type Mistake } from './analyze'
+import {
+  analyzeGames,
+  deepenGame,
+  shallowPositions,
+  withDeepPosition,
+  type Mistake,
+} from './analyze'
 import { DEFAULT_CRITERIA } from './criteria'
 import { findGame, findGames, type FoundGames, type ReviewAccount } from './fetch'
 import { parseGameRef } from './gameRef'
@@ -27,6 +33,8 @@ import {
   SessionContext,
   type AnalysisState,
   type SearchState,
+  reviewedGameKey,
+  type Deepening,
   type Session,
   type TrainingTab,
 } from './sessionContext'
@@ -100,6 +108,11 @@ export function AnalysisSessionProvider({
   )
   const [trainings, setTrainings] = useState<TrainingTab[]>([])
   const [analysisId, setAnalysisId] = useState(0)
+  const [deepening, setDeepening] = useState<Deepening | undefined>(undefined)
+  const deepenJob = useRef<AbortController | undefined>(undefined)
+  // The deepening loop reads the latest games, not those of the render it started in.
+  const analysisRef = useRef(analysis)
+  analysisRef.current = analysis
   const searchJob = useRef<AbortController | undefined>(undefined)
   const analysisJob = useRef<AbortController | undefined>(undefined)
   const analysisCount = useRef(0)
@@ -107,12 +120,13 @@ export function AnalysisSessionProvider({
   const runCount = useRef(0)
   const router = useRouter()
 
-  useKeepAwake(analysis.status === 'running')
+  useKeepAwake(analysis.status === 'running' || deepening !== undefined)
 
-  /** Stops the latest search and analysis, whichever they are by then. */
+  /** Stops the latest search, analysis and deepening, whichever they are by then. */
   const stopAll = () => {
     searchJob.current?.abort()
     analysisJob.current?.abort()
+    deepenJob.current?.abort()
   }
 
   const restart = (job: React.RefObject<AbortController | undefined>) => {
@@ -129,6 +143,9 @@ export function AnalysisSessionProvider({
   const runAnalysis = useCallback(
     async (settings: ReviewSettings, getFound: (signal: AbortSignal) => Promise<FoundGames>) => {
       const signal = restart(analysisJob)
+      // A deepening worked on the games being replaced.
+      deepenJob.current?.abort()
+      setDeepening(undefined)
       analysisCount.current += 1
       setAnalysisId(analysisCount.current)
       setTrainings((tabs) => tabs.filter((tab) => tab.phase.kind === 'running'))
@@ -397,9 +414,60 @@ export function AnalysisSessionProvider({
   /** Stops the analysis under way and drops it: back to the filters, to change them. */
   const stopAnalysis = useCallback(() => {
     analysisJob.current?.abort()
+    deepenJob.current?.abort()
+    setDeepening(undefined)
     setAnalysis({ status: 'none' })
     void navigate({ to: '/player/analysis', search: usernames, resetScroll: false })
   }, [navigate, usernames])
+
+  const deepenGames = useCallback(async (gameKeys: string[], scope: Deepening['scope']) => {
+    const signal = restart(deepenJob)
+    for (const [position, gameKey] of gameKeys.entries()) {
+      const current = analysisRef.current
+      if (signal.aborted || current.status !== 'done') break
+      const game = current.outcome.games.find((item) => reviewedGameKey(item) === gameKey)
+      if (!game) continue
+      const total = shallowPositions(game).length
+      if (total === 0) continue
+      const gamesLeft = gameKeys.length - position - 1
+      setDeepening({ scope, gameKey, done: 0, total, gamesLeft })
+      const criteria = current.outcome.criteria
+      try {
+        await deepenGame(game, {
+          signal,
+          onPosition: (index, cp) => {
+            setAnalysis((state) =>
+              state.status === 'done'
+                ? {
+                    ...state,
+                    outcome: {
+                      ...state.outcome,
+                      games: state.outcome.games.map((item) =>
+                        reviewedGameKey(item) === gameKey
+                          ? withDeepPosition(item, index, cp, criteria)
+                          : item,
+                      ),
+                    },
+                  }
+                : state,
+            )
+            setDeepening((state) =>
+              state?.gameKey === gameKey ? { ...state, done: state.done + 1 } : state,
+            )
+          },
+        })
+      } catch (error) {
+        if (!signal.aborted) console.error('Deepening failed', error)
+        break
+      }
+    }
+    if (!signal.aborted) setDeepening(undefined)
+  }, [])
+
+  const stopDeepening = useCallback(() => {
+    deepenJob.current?.abort()
+    setDeepening(undefined)
+  }, [])
 
   /** Closing the tab on screen shows its neighbor, else the results (or the filters). */
   const closeTraining = useCallback(
@@ -465,6 +533,9 @@ export function AnalysisSessionProvider({
     setTrainingFinished,
     showResults,
     stopAnalysis,
+    deepening,
+    deepenGames: (keys, scope) => void deepenGames(keys, scope),
+    stopDeepening,
   }
 
   return (

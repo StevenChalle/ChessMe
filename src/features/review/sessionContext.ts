@@ -93,6 +93,32 @@ export type Session = {
   showResults: () => void
   /** Stops the analysis under way, drops it and shows the filters */
   stopAnalysis: () => void
+  /** The deepening under way, if any */
+  deepening: Deepening | undefined
+  /** Deepens these games of the analysis, one after the other (replaces any deepening) */
+  deepenGames: (gameKeys: string[], scope: Deepening['scope']) => void
+  /** Stops the deepening: what was found stays */
+  stopDeepening: () => void
+}
+
+/** A game's key in the results: its platform and id. */
+export function reviewedGameKey(game: { source: string; id: string }): string {
+  return `${game.source}-${game.id}`
+}
+
+/**
+ * Deepening the analysis of one game, or of every game not deep yet (one after the other). One at
+ * a time; the evaluations come into the analysis's games as they are found.
+ */
+export type Deepening = {
+  scope: 'game' | 'all'
+  /** The game being deepened */
+  gameKey: string
+  /** Its positions done so far, out of `total` */
+  done: number
+  total: number
+  /** Games still waiting after this one (scope "all") */
+  gamesLeft: number
 }
 
 export const SessionContext = createContext<Session | undefined>(undefined)

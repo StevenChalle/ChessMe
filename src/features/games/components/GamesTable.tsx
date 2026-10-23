@@ -1,5 +1,5 @@
 import type { Color } from 'chessops'
-import { useState, type MouseEvent, type ReactNode } from 'react'
+import { Fragment, useEffect, useState, type MouseEvent, type ReactNode } from 'react'
 import { ChevronDown, ExternalLink as ExternalLinkIcon } from 'lucide-react'
 import {
   Table,
@@ -52,6 +52,30 @@ export function SideSquare({ color, className }: { color: Color; className?: str
  */
 const HIDE = { date: 'hidden md:table-cell', opponent: 'hidden sm:table-cell' }
 
+/** More than the table ever has: a panel row spans them all. */
+const COLUMNS = 99
+
+/** Slides its content open or shut; the content only exists while open or sliding. */
+function Collapse({ open, children }: { open: boolean; children: ReactNode }) {
+  const [shown, setShown] = useState(open)
+  useEffect(() => {
+    if (open) setShown(true)
+  }, [open])
+  return (
+    <div
+      className={cn(
+        'grid transition-[grid-template-rows] duration-200 ease-out motion-reduce:transition-none',
+        open ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]',
+      )}
+      onTransitionEnd={(event) => {
+        if (event.target === event.currentTarget && !open) setShown(false)
+      }}
+    >
+      <div className="min-h-0 overflow-hidden">{(open || shown) && children}</div>
+    </div>
+  )
+}
+
 /** A column specific to one table (mistakes for the review). */
 export type ExtraColumn<G> = { header: string; cell: (game: G) => ReactNode }
 
@@ -63,11 +87,28 @@ export function GamesTable<G extends GameSummary>({
   games,
   extra,
   action,
+  expandable,
 }: {
   games: G[]
   extra?: ExtraColumn<G>
   action?: (game: G) => ReactNode
+  /**
+   * Rows that open onto a full-width panel, one at a time, with a slide (the narrow-screen
+   * details then go into that panel). `onToggle` is told when one opens or closes.
+   */
+  expandable?: {
+    render: (game: G) => ReactNode
+    onToggle?: (key: string, open: boolean) => void
+    /** The row open at first */
+    defaultOpen?: string
+  }
 }) {
+  const [openKey, setOpenKey] = useState<string | undefined>(expandable?.defaultOpen)
+  const toggleOpen = (key: string) => {
+    if (openKey !== undefined) expandable?.onToggle?.(openKey, false)
+    if (openKey !== key) expandable?.onToggle?.(key, true)
+    setOpenKey(openKey === key ? undefined : key)
+  }
   const [expanded, setExpanded] = useState<ReadonlySet<string>>(new Set())
   const toggle = (key: string) =>
     setExpanded((current) => {
@@ -79,11 +120,17 @@ export function GamesTable<G extends GameSummary>({
     <Table>
       <TableHeader>
         <TableRow>
+          {expandable && (
+            <TableHead className="w-6 px-1 sm:w-8 sm:px-2 sm:pr-0">
+              <span className="sr-only">{m.games_row_details()}</span>
+            </TableHead>
+          )}
           <TableHead className={HIDE.date}>{m.review_col_date()}</TableHead>
           <TableHead>
             <span className="max-sm:sr-only">{m.review_col_platform()}</span>
           </TableHead>
-          <TableHead>{m.review_col_time_control()}</TableHead>
+          {/* On a phone, on two lines: the narrowest column is then the content's */}
+          <TableHead className="max-sm:whitespace-normal">{m.review_col_time_control()}</TableHead>
           <TableHead className={HIDE.opponent}>{m.review_col_opponent()}</TableHead>
           <TableHead>{m.review_col_result()}</TableHead>
           {extra && <TableHead className="text-right">{extra.header}</TableHead>}
@@ -92,18 +139,48 @@ export function GamesTable<G extends GameSummary>({
           </TableHead>
         </TableRow>
       </TableHeader>
-      <TableBody>
-        {games.map((game) => {
+      <TableBody striped={!expandable}>
+        {games.map((game, index) => {
           const result = RESULTS[game.result]
           const key = `${game.source}-${game.id}`
-          const open = expanded.has(key)
-          // The whole row toggles the details where columns are hidden, except its links.
+          const panelOpen = openKey === key
+          // Inline details on narrow screens, unless the row opens onto a panel.
+          const open = !expandable && expanded.has(key)
+          // The whole row toggles its panel (or, where columns are hidden, its details), except
+          // its links and buttons.
           const onRowClick = (event: MouseEvent) => {
             if ((event.target as Element).closest('a, button')) return
-            if (window.matchMedia('(width < 48rem)').matches) toggle(key)
+            if (expandable) toggleOpen(key)
+            else if (window.matchMedia('(width < 48rem)').matches) toggle(key)
           }
-          return (
-            <TableRow key={key} onClick={onRowClick}>
+          const row = (
+            <TableRow
+              key={key}
+              onClick={onRowClick}
+              className={cn(
+                expandable && 'cursor-pointer',
+                // Striped by hand: the panels' rows are not entries.
+                expandable && index % 2 === 1 && 'bg-field',
+              )}
+            >
+              {expandable && (
+                <TableCell className="w-6 px-1 sm:w-8 sm:px-2 sm:pr-0">
+                  <button
+                    type="button"
+                    aria-expanded={panelOpen}
+                    aria-label={m.games_row_open()}
+                    onClick={() => toggleOpen(key)}
+                    className="align-middle text-muted-foreground hover:text-text-strong"
+                  >
+                    <ChevronDown
+                      className={cn(
+                        'size-4 transition-transform duration-200',
+                        panelOpen && 'rotate-180',
+                      )}
+                    />
+                  </button>
+                </TableCell>
+              )}
               <TableCell className={cn('num whitespace-nowrap text-muted-foreground', HIDE.date)}>
                 {formatDate(game.playedAt)}{' '}
                 <span className="ml-1 text-muted-foreground/70">{formatTime(game.playedAt)}</span>
@@ -117,7 +194,10 @@ export function GamesTable<G extends GameSummary>({
                   aria-expanded={open}
                   aria-label={m.games_row_details()}
                   onClick={() => toggle(key)}
-                  className="mr-1 align-middle text-muted-foreground md:hidden"
+                  className={cn(
+                    'mr-1 align-middle text-muted-foreground md:hidden',
+                    expandable && 'hidden',
+                  )}
                 >
                   <ChevronDown
                     className={cn('size-3.5 transition-transform', open && 'rotate-180')}
@@ -173,6 +253,21 @@ export function GamesTable<G extends GameSummary>({
                 </a>
               </TableCell>
             </TableRow>
+          )
+          if (!expandable) return row
+          return (
+            <Fragment key={key}>
+              {row}
+              <tr className="border-0">
+                <td colSpan={COLUMNS} className="p-0">
+                  <Collapse open={panelOpen}>
+                    <div className="border-b border-border px-3 py-4">
+                      {expandable.render(game)}
+                    </div>
+                  </Collapse>
+                </td>
+              </tr>
+            </Fragment>
           )
         })}
       </TableBody>

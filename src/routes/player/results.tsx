@@ -39,7 +39,12 @@ function ResultsTab() {
       ) : analysis.status === 'error' ? (
         <p className="text-loss">{m.review_failed()}</p>
       ) : (
-        <ReviewResults outcome={analysis.outcome} onTrain={trainGame} />
+        <ReviewResults
+          outcome={analysis.outcome}
+          onTrain={trainGame}
+          // The time above the feedback link
+          footer={<Stopwatch durationMs={analysis.durationMs} />}
+        />
       )}
       {analysis.status === 'running' && (
         <div className="flex flex-wrap items-center justify-between gap-3">
@@ -54,10 +59,11 @@ function ResultsTab() {
           </Button>
         </div>
       )}
-      <Stopwatch
-        clock={analysis.status === 'running' ? analysis.clock : undefined}
-        durationMs={analysis.status === 'running' ? undefined : analysis.durationMs}
-      />
+      {analysis.status === 'running' ? (
+        <Stopwatch clock={analysis.clock} />
+      ) : (
+        analysis.status === 'error' && <Stopwatch durationMs={analysis.durationMs} />
+      )}
     </div>
   )
 }

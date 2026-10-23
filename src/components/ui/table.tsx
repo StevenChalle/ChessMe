@@ -19,12 +19,18 @@ function TableHeader({ className, ...props }: React.ComponentProps<'thead'>) {
   return <thead data-slot="table-header" className={cn('[&_tr]:border-b', className)} {...props} />
 }
 
-function TableBody({ className, ...props }: React.ComponentProps<'tbody'>) {
+/** `striped`: even rows tinted; turn it off when some rows are not entries (expanded details). */
+function TableBody({
+  className,
+  striped = true,
+  ...props
+}: React.ComponentProps<'tbody'> & { striped?: boolean }) {
   return (
     <tbody
       data-slot="table-body"
       className={cn(
-        '[&_tr:last-child]:border-0 [&_tr:nth-child(even)]:bg-field [&_tr:nth-child(even):hover]:bg-raised',
+        '[&_tr:last-child]:border-0',
+        striped && '[&_tr:nth-child(even)]:bg-field [&_tr:nth-child(even):hover]:bg-raised',
         className,
       )}
       {...props}

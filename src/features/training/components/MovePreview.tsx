@@ -2,14 +2,14 @@ import type { Config } from '@lichess-org/chessground/config'
 import type { Key } from '@lichess-org/chessground/types'
 import type { Color } from 'chessops'
 import { HoverCard } from 'radix-ui'
-import { useMemo, type ReactNode } from 'react'
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { Board } from '@/components/board/Board'
 import { moveSquares, play, positionFromFen } from '../moves'
 
 /**
  * Hovering a move shows the position after it on a small board, as in Lichess's analysis: the
- * player's own board and pieces, the move highlighted. Mouse only (a hover card never opens on
- * touch): on a phone, the moves stay plain text.
+ * player's own board and pieces, the move highlighted. On a touch screen (where a hover card
+ * never opens by itself), a tap on the move shows it, and a tap anywhere else hides it.
  */
 export function MovePreview({
   fen,
@@ -24,9 +24,28 @@ export function MovePreview({
   /** The move as shown (its SAN): a single element */
   children: ReactNode
 }) {
+  const [open, setOpen] = useState(false)
+  const triggerRef = useRef<HTMLAnchorElement>(null)
+  // Opened by a tap: the next tap elsewhere closes it (a mouse leaving closes it by itself).
+  useEffect(() => {
+    if (!open) return
+    const onDown = (event: PointerEvent) => {
+      if (!triggerRef.current?.contains(event.target as Node)) setOpen(false)
+    }
+    document.addEventListener('pointerdown', onDown)
+    return () => document.removeEventListener('pointerdown', onDown)
+  }, [open])
   return (
-    <HoverCard.Root openDelay={80} closeDelay={0}>
-      <HoverCard.Trigger asChild>{children}</HoverCard.Trigger>
+    <HoverCard.Root open={open} onOpenChange={setOpen} openDelay={80} closeDelay={0}>
+      <HoverCard.Trigger
+        asChild
+        ref={triggerRef}
+        onPointerDown={(event) => {
+          if (event.pointerType !== 'mouse') setOpen((current) => !current)
+        }}
+      >
+        {children}
+      </HoverCard.Trigger>
       <HoverCard.Portal>
         <HoverCard.Content
           side="left"

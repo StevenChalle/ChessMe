@@ -36,7 +36,23 @@ export type Mistake = {
   clock?: { remaining: number; total: number }
 }
 
-export type ReviewedGame = ReviewGame & { mistakes: Mistake[] }
+/** A position of an analysed game, with its evaluation (White's side, centipawns). */
+export type AnalysedPosition = GamePosition & {
+  cp: number
+  /**
+   * Worth trusting: a deep search, Lichess's own analysis or a finished game. The others only had
+   * a quick look and can be deepened (deepenGame).
+   */
+  precise: boolean
+}
+
+export type ReviewedGame = ReviewGame & {
+  mistakes: Mistake[]
+  /** Every position, from the start: the evaluation curve */
+  positions: AnalysedPosition[]
+  /** The opponent's errors, by the same rules: index of the position before each one */
+  opponentErrors: number[]
+}
 
 export type ReviewOutcome = {
   /** Newest first */
@@ -54,6 +70,8 @@ type Work = {
   cps: (number | undefined)[]
   /** Positions the engine evaluated (as opposed to final positions or Lichess evaluations) */
   byEngine: Set<number>
+  /** Of those, the ones evaluated deeply */
+  deep: Set<number>
 }
 
 /** Positions of one game to evaluate in a pass. */
@@ -65,7 +83,7 @@ function prepare(game: ReviewGame): Work {
     // Lichess evaluations are those of the position after each move: shifted by one.
     (position, index) => position.finalCp ?? (index > 0 ? game.serverCps?.[index - 1] : undefined),
   )
-  return { game, positions, cps, byEngine: new Set() }
+  return { game, positions, cps, byEngine: new Set(), deep: new Set() }
 }
 
 /** Positions still without an evaluation. A game without moves needs none. */
@@ -89,29 +107,55 @@ function deepCheckPositions(work: Work, criteria: ReviewCriteria): number[] {
 }
 
 function finish(works: Work[], criteria: ReviewCriteria): ReviewedGame[] {
-  return works.map(({ game, positions, cps }) => {
-    const turns = positions.map((position) => position.turn)
-    const mistakes = playerMoves(cps as number[], turns, game.color)
-      .filter((move) => isError(move.beforeCp, move.afterCp, criteria.errorMinDrop))
-      .map(({ ply, beforeCp, afterCp }) => ({
-        id: `${game.source}-${game.id}-${ply}`,
-        ply,
-        game: {
-          source: game.source,
-          url: game.url,
-          playedAt: game.playedAt,
-          opponent: game.opponent,
-        },
-        color: game.color,
-        fen: positions[ply]!.fen,
-        lastMove: positions[ply]!.move?.uci,
-        played: positions[ply + 1]!.move!,
-        beforeCp,
-        afterCp,
-        clock: mistakeClock(game, ply),
-      }))
-    return { ...game, mistakes }
-  })
+  return works.map(({ game, positions, cps, byEngine, deep }) =>
+    judge(
+      game,
+      positions.map((position, index) => ({
+        ...position,
+        cp: cps[index] ?? 0,
+        precise: !byEngine.has(index) || deep.has(index),
+      })),
+      criteria,
+    ),
+  )
+}
+
+/** The errors of both players in a game whose positions are evaluated. */
+export function judge(
+  game: ReviewGame,
+  positions: AnalysedPosition[],
+  criteria: ReviewCriteria,
+): ReviewedGame {
+  const cps = positions.map((position) => position.cp)
+  const turns = positions.map((position) => position.turn)
+  const errors = (color: Color) =>
+    playerMoves(cps, turns, color).filter((move) =>
+      isError(move.beforeCp, move.afterCp, criteria.errorMinDrop),
+    )
+  const mistakes = errors(game.color).map(({ ply, beforeCp, afterCp }) => ({
+    id: `${game.source}-${game.id}-${ply}`,
+    ply,
+    game: {
+      source: game.source,
+      url: game.url,
+      playedAt: game.playedAt,
+      opponent: game.opponent,
+    },
+    color: game.color,
+    fen: positions[ply]!.fen,
+    lastMove: positions[ply]!.move?.uci,
+    played: positions[ply + 1]!.move!,
+    beforeCp,
+    afterCp,
+    clock: mistakeClock(game, ply),
+  }))
+  const opponent = game.color === 'white' ? 'black' : 'white'
+  return {
+    ...game,
+    mistakes,
+    positions,
+    opponentErrors: errors(opponent).map((move) => move.ply),
+  }
 }
 
 function mistakeClock(game: ReviewGame, ply: number): Mistake['clock'] {
@@ -178,6 +222,7 @@ export async function analyzeGames(
         for (const index of indexes) {
           work.cps[index] = await evaluate(engine, work.positions[index]!, nodes)
           work.byEngine.add(index)
+          if (pass === 'deep') work.deep.add(index)
           done++
           doneNodes += nodes
           active.time.markProgress()
@@ -197,4 +242,52 @@ export async function analyzeGames(
   }
 
   return finish(works, criteria)
+}
+
+/** Positions of a game that only had a quick look. */
+export function shallowPositions(game: ReviewedGame): number[] {
+  return game.positions.flatMap((position, index) => (position.precise ? [] : [index]))
+}
+
+/**
+ * Evaluates deeply every position of `game` that only had a quick look, several at a time, and
+ * reports each new evaluation as it comes (`onPosition`). Aborting the signal stops the engines:
+ * what was reported stays.
+ */
+export async function deepenGame(
+  game: ReviewedGame,
+  {
+    signal,
+    onPosition,
+    poolSize = defaultPoolSize(),
+  }: {
+    signal: AbortSignal
+    onPosition: (index: number, cp: number) => void
+    poolSize?: number
+  },
+): Promise<void> {
+  const indexes = shallowPositions(game)
+  if (indexes.length === 0) return
+  const pool = await EnginePool.start(Math.min(poolSize, indexes.length), signal)
+  try {
+    await pool.run(indexes, async (engine, index) => {
+      const cp = await evaluate(engine, game.positions[index]!, DEEP_NODES)
+      if (!signal.aborted) onPosition(index, cp)
+    })
+  } finally {
+    pool.terminate()
+  }
+}
+
+/** The game with one position deepened, its errors judged again. */
+export function withDeepPosition(
+  game: ReviewedGame,
+  index: number,
+  cp: number,
+  criteria: ReviewCriteria,
+): ReviewedGame {
+  const positions = game.positions.map((position, i) =>
+    i === index ? { ...position, cp, precise: true } : position,
+  )
+  return judge(game, positions, criteria)
 }
