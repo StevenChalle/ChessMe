@@ -1,3 +1,4 @@
+import type { LucideIcon } from 'lucide-react'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -10,6 +11,8 @@ import {
 } from '@/components/ui/alert-dialog'
 
 export type ConfirmOptions = {
+  /** Before the title, as in every modal */
+  icon: LucideIcon
   title: string
   description: string
   confirmLabel: string
@@ -32,7 +35,7 @@ export function ConfirmDialog({
     <AlertDialog open={open} onOpenChange={(next) => !next && onCancel()}>
       <AlertDialogContent>
         <AlertDialogHeader>
-          <AlertDialogTitle>{options.title}</AlertDialogTitle>
+          <AlertDialogTitle icon={options.icon}>{options.title}</AlertDialogTitle>
           <AlertDialogDescription>{options.description}</AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>

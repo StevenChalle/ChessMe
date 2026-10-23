@@ -76,7 +76,7 @@ export function ClearGamesDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>{m.settings_cache_games_confirm_title()}</DialogTitle>
+          <DialogTitle icon={Trash2}>{m.settings_cache_games_confirm_title()}</DialogTitle>
           <DialogDescription>{m.settings_cache_games_confirm_body()}</DialogDescription>
         </DialogHeader>
         {accounts && accounts.length > 0 && (

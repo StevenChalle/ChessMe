@@ -1,3 +1,4 @@
+import { Trash2 } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import type { ConfirmOptions } from '@/components/ConfirmDialog'
 import { Button } from '@/components/ui/button'
@@ -78,6 +79,7 @@ export function CacheSettings({
         onClear={() =>
           void clear(
             {
+              icon: Trash2,
               title: m.settings_cache_confirm_title(),
               description: m.settings_cache_confirm_body(),
               confirmLabel: m.settings_cache_confirm_action(),

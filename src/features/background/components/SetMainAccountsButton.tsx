@@ -1,4 +1,4 @@
-import { ArrowRight, UserCheck, UserPlus } from 'lucide-react'
+import { ArrowRight, UserCheck, UserPen, UserPlus } from 'lucide-react'
 import { useId, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
@@ -143,16 +143,20 @@ export function SetMainAccountsButton({ accounts }: { accounts: ReviewAccount[] 
       </TooltipProvider>
 
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="sm:max-w-md">
+        {/* Replacing needs no description: the rows say it all. */}
+        <DialogContent
+          className="sm:max-w-md"
+          {...(replacing && { 'aria-describedby': undefined })}
+        >
           <DialogHeader>
-            <DialogTitle>
+            <DialogTitle icon={replacing ? UserPen : UserPlus}>
               {replacing ? m.set_main_confirm_title() : m.set_main_confirm_new_title()}
             </DialogTitle>
-            <DialogDescription>
-              {replacing
-                ? m.set_main_confirm_body()
-                : m.set_main_confirm_new_body({ count: formatNumber(next.depth) })}
-            </DialogDescription>
+            {!replacing && (
+              <DialogDescription>
+                {m.set_main_confirm_new_body({ count: formatNumber(next.depth) })}
+              </DialogDescription>
+            )}
           </DialogHeader>
           <ul className="space-y-0.5 text-sm">
             {changes(profile, accounts).map((change) => (

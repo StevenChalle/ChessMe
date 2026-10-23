@@ -3,7 +3,7 @@ import { cn } from 'cn'
 import { Dialog as DialogPrimitive } from 'radix-ui'
 
 import { Button } from '@/components/ui/button'
-import { XIcon } from 'lucide-react'
+import { XIcon, type LucideIcon } from 'lucide-react'
 import { m } from '@/paraglide/messages'
 
 function Dialog({ ...props }: React.ComponentProps<typeof DialogPrimitive.Root>) {
@@ -104,13 +104,25 @@ function DialogFooter({
   )
 }
 
-function DialogTitle({ className, ...props }: React.ComponentProps<typeof DialogPrimitive.Title>) {
+/** The modal's title, after its icon (every modal of the app has one). */
+function DialogTitle({
+  className,
+  icon: Icon,
+  children,
+  ...props
+}: React.ComponentProps<typeof DialogPrimitive.Title> & { icon?: LucideIcon }) {
   return (
     <DialogPrimitive.Title
       data-slot="dialog-title"
-      className={cn('font-heading text-base leading-none font-medium', className)}
+      className={cn(
+        'flex items-center gap-2.5 font-heading text-lg leading-tight font-semibold',
+        className,
+      )}
       {...props}
-    />
+    >
+      {Icon && <Icon aria-hidden className="size-5 shrink-0 text-primary" />}
+      {children}
+    </DialogPrimitive.Title>
   )
 }
 

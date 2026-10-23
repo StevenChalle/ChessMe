@@ -1,3 +1,4 @@
+import { LogOut } from 'lucide-react'
 import { createFileRoute, Navigate, Outlet, useBlocker, useLocation } from '@tanstack/react-router'
 import { useMemo } from 'react'
 import { ConfirmDialog } from '@/components/ConfirmDialog'
@@ -206,6 +207,7 @@ function LeaveGuard({ usernames }: { usernames: ProfileSearch }) {
     <ConfirmDialog
       open={blocker.status === 'blocked'}
       options={{
+        icon: LogOut,
         title: m.confirm_leave_title(),
         description: m.confirm_leave_body(),
         confirmLabel: m.confirm_leave_action(),

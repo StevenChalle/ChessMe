@@ -19,6 +19,9 @@ Règles à respecter sur tout nouvel écran :
 - **Libellés** (titres de panneaux, en-têtes de colonnes, sections de formulaire) : `.label-etabli`, capitales espacées de 12 px.
 - **Boutons fantômes et raccourcis** (3 / 5 / 10 / 50 / 100, « Aujourd'hui »…) : neutres, en gris clair ; la sélection se marque par un fond `raised` et un contour, pas par l'or.
 - **Rayons** : 3 px pour les contrôles (`rounded-sm`), 4 px pour les panneaux (`rounded-lg`). Ombre (`shadow-pop`) sur les menus et dialogues seulement.
+- **Fenêtres (dialogues)** : toujours une icône or avant le titre, en 18 px demi-gras (`DialogTitle icon={…}`, `AlertDialogTitle icon={…}`, ou `icon` des options de `useConfirm`, obligatoire). Une description courte seulement si elle apporte quelque chose.
+- **Infobulles** (`ui/tooltip.tsx`) : l'aspect des popovers (fond `raised`, fine bordure, `shadow-pop`), sans flèche.
+- **Notifications** (`showToast`) : fond or et texte sombre, titre court, quelques éléments en dessous ; apparaissent en grandissant et s'effacent en rétrécissant.
 - Polices : **Noto Sans** et **Noto Sans Mono**, SIL OFL, hébergées avec l'app (`src/theme/fonts/`).
 - **L'échiquier ne suit pas le thème** (choix de l'utilisateur) : ses couleurs, ses pièces et ses réglages restent ceux de `components/board/` (brun et cburnett par défaut).
 

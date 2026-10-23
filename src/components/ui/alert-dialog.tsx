@@ -1,5 +1,6 @@
 import * as React from 'react'
 import { cn } from 'cn'
+import type { LucideIcon } from 'lucide-react'
 import { AlertDialog as AlertDialogPrimitive } from 'radix-ui'
 
 import { Button } from '@/components/ui/button'
@@ -96,19 +97,25 @@ function AlertDialogMedia({ className, ...props }: React.ComponentProps<'div'>) 
   )
 }
 
+/** The modal's title, after its icon (every modal of the app has one). */
 function AlertDialogTitle({
   className,
+  icon: Icon,
+  children,
   ...props
-}: React.ComponentProps<typeof AlertDialogPrimitive.Title>) {
+}: React.ComponentProps<typeof AlertDialogPrimitive.Title> & { icon?: LucideIcon }) {
   return (
     <AlertDialogPrimitive.Title
       data-slot="alert-dialog-title"
       className={cn(
-        'font-heading text-base font-medium sm:group-data-[size=default]/alert-dialog-content:group-has-data-[slot=alert-dialog-media]/alert-dialog-content:col-start-2',
+        'flex items-center gap-2.5 font-heading text-lg font-semibold sm:group-data-[size=default]/alert-dialog-content:group-has-data-[slot=alert-dialog-media]/alert-dialog-content:col-start-2',
         className,
       )}
       {...props}
-    />
+    >
+      {Icon && <Icon aria-hidden className="size-5 shrink-0 text-primary" />}
+      {children}
+    </AlertDialogPrimitive.Title>
   )
 }
 

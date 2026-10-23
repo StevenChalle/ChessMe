@@ -598,7 +598,6 @@
   "set_main_accounts": "Définir comme comptes principaux",
   "set_main_accounts_already": "Ce sont vos comptes principaux",
   "set_main_confirm_title": "Remplacer vos comptes principaux ?",
-  "set_main_confirm_body": "Les comptes barrés ne seront plus suivis : leurs nouvelles parties ne seront plus analysées automatiquement.",
   "set_main_confirm_delete": "Supprimer les parties des anciens comptes principaux",
   "set_main_confirm_action": "Remplacer",
   "set_main_confirm_new_title": "Définir vos comptes principaux ?",

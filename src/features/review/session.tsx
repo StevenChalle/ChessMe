@@ -1,4 +1,5 @@
 import { useNavigate, useRouter } from '@tanstack/react-router'
+import { CircleX, RefreshCw } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import type { ProfileSearch } from '@/features/player/search'
 import { useConfirm } from '@/hooks/useConfirm'
@@ -271,6 +272,7 @@ export function AnalysisSessionProvider({
   const confirmReplace = useCallback(async () => {
     if (analysis.status === 'none') return true
     return confirm({
+      icon: RefreshCw,
       title: m.confirm_replace_title(),
       description: m.confirm_replace_body(),
       confirmLabel: m.confirm_replace_action(),
@@ -508,6 +510,7 @@ export function AnalysisSessionProvider({
         tab.phase.kind === 'running' &&
         !tab.finished &&
         !(await confirm({
+          icon: CircleX,
           title: m.confirm_close_training_title(),
           description: m.confirm_close_training_body(),
           confirmLabel: m.confirm_close_training_action(),

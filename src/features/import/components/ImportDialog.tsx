@@ -1,3 +1,4 @@
+import { FileUp } from 'lucide-react'
 import type { Color } from 'chessops'
 import { useMemo, useState } from 'react'
 import { Button } from '@/components/ui/button'
@@ -101,7 +102,7 @@ export function ImportDialog({
     <Dialog open onOpenChange={(open) => !open && onCancel()}>
       <DialogContent className="max-h-[90dvh] grid-rows-[auto_minmax(0,1fr)_auto] sm:max-w-xl">
         <DialogHeader>
-          <DialogTitle>{m.import_title()}</DialogTitle>
+          <DialogTitle icon={FileUp}>{m.import_title()}</DialogTitle>
           <DialogDescription>
             {m.import_read({ games: formatGameCount(batch.games.length) })}
             {ignored.length > 0 &&
