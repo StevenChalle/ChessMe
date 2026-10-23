@@ -116,7 +116,7 @@ Chess.com ne sert que des mois entiers, toutes cadences confondues : la couvertu
 
 - Les parties sont publiques, mais elles sont maintenant stockées : à déclarer sur `/legal` (« les parties des comptes que vous avez cherchés, telles que Lichess et Chess.com les publient, pour ne pas les retélécharger »).
 - `clearLocalData()` supprime déjà toute la base.
-- Réglages : la section « Données enregistrées », avec une ligne pour les parties et une pour les analyses. Vider les parties ouvre une fenêtre qui liste les joueurs enregistrés, du plus de parties au moins (comme la liste des joueurs de l'import), pour garder ceux qu'on coche ; les comptes principaux sont cochés d'office.
+- Réglages : la section « Données enregistrées » (nombre de parties, vider en gardant les joueurs cochés) a été retirée le 2026-10-24 ; le détail reviendra au clic sur l'indicateur de synchronisation de l'en-tête. `storedAccounts`, `clearGameStore` et `deleteStoredAccounts` restent dans `store.ts` pour cela.
 - La règle de CLAUDE.md « Données distantes éphémères : TanStack Query, ne pas dupliquer » change : les parties des comptes passent dans Dexie, le reste des données distantes reste dans TanStack Query.
 
 ## Tests

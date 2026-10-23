@@ -1,5 +1,13 @@
-import { Settings } from 'lucide-react'
-import { useState, type ReactNode } from 'react'
+import {
+  ChessKnight,
+  Grid3x3,
+  Languages,
+  Palette,
+  Settings,
+  UserCheck,
+  type LucideIcon,
+} from 'lucide-react'
+import type { ReactNode } from 'react'
 import '@/components/board/boardStyles.css'
 import {
   BOARD_COLORS,
@@ -15,9 +23,6 @@ import {
 import { Button } from '@/components/ui/button'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { MainProfileSettings } from '@/features/background/components/MainProfileSettings'
-import { ClearGamesDialog } from '@/features/games/components/ClearGamesDialog'
-import { CacheSettings } from '@/features/review/components/CacheSettings'
-import { useConfirm } from '@/hooks/useConfirm'
 import { cn } from '@/lib/utils'
 import { m } from '@/paraglide/messages'
 import { getLocale, locales, setLocale, type Locale } from '@/paraglide/runtime'
@@ -48,12 +53,24 @@ const PRESET_LABELS: Record<keyof typeof BOARD_PRESETS, string> = {
 
 const SELECTED = 'ring-2 ring-primary'
 
-function Group({ title, children }: { title: string; children: ReactNode }) {
+/** A section of the menu: an icon and a label, separated from the next by a line. */
+function Group({
+  icon: Icon,
+  title,
+  children,
+}: {
+  icon: LucideIcon
+  title: string
+  children: ReactNode
+}) {
   return (
-    <div className="space-y-2">
-      <p className="label-etabli">{title}</p>
+    <section className="space-y-2.5 py-3.5 first:pt-0 last:pb-0">
+      <p className="label-etabli flex items-center gap-1.5">
+        <Icon aria-hidden className="size-3.5" />
+        {title}
+      </p>
       {children}
-    </div>
+    </section>
   )
 }
 
@@ -70,14 +87,12 @@ const sameStyle = (a: BoardStyle, b: BoardStyle) => a.board === b.board && a.pie
 
 /**
  * The gear at the top right: language, how boards look (a whole style in one click, or colors
- * and pieces one by one) and the saved analyses. The look is remembered (boardStyle.ts); changing
+ * and pieces one by one) and the main accounts. The look is remembered (boardStyle.ts); changing
  * the language reloads the page (Paraglide's model).
  */
 export function SettingsMenu() {
   const style = useBoardStyle()
   const currentLocale = getLocale()
-  const { confirm, dialog } = useConfirm()
-  const [clearingGames, setClearingGames] = useState(false)
 
   return (
     <>
@@ -93,8 +108,11 @@ export function SettingsMenu() {
             <Settings />
           </Button>
         </PopoverTrigger>
-        <PopoverContent align="end" className="max-h-[85dvh] w-72 space-y-4 overflow-y-auto">
-          <Group title={m.settings_language()}>
+        <PopoverContent
+          align="end"
+          className="max-h-[85dvh] w-72 gap-0 divide-y divide-border-strong/35 overflow-y-auto"
+        >
+          <Group icon={Languages} title={m.settings_language()}>
             <div className="grid grid-cols-2 gap-2">
               {locales.map((locale) => (
                 <button
@@ -114,7 +132,7 @@ export function SettingsMenu() {
             </div>
           </Group>
 
-          <Group title={m.settings_style()}>
+          <Group icon={Palette} title={m.settings_style()}>
             <div className="grid grid-cols-2 gap-2">
               {(Object.keys(BOARD_PRESETS) as (keyof typeof BOARD_PRESETS)[]).map((preset) => {
                 const presetStyle = BOARD_PRESETS[preset]
@@ -145,7 +163,7 @@ export function SettingsMenu() {
             </div>
           </Group>
 
-          <Group title={m.settings_board()}>
+          <Group icon={Grid3x3} title={m.settings_board()}>
             <div className="flex gap-2">
               {BOARD_COLORS.map((board) => (
                 <button
@@ -163,7 +181,7 @@ export function SettingsMenu() {
             </div>
           </Group>
 
-          <Group title={m.settings_pieces()}>
+          <Group icon={ChessKnight} title={m.settings_pieces()}>
             <div className="flex gap-2">
               {PIECE_SETS.map((pieces) => (
                 <button
@@ -184,17 +202,11 @@ export function SettingsMenu() {
             </div>
           </Group>
 
-          <Group title={m.settings_main()}>
+          <Group icon={UserCheck} title={m.settings_main()}>
             <MainProfileSettings />
-          </Group>
-
-          <Group title={m.settings_cache()}>
-            <CacheSettings confirm={confirm} onClearGames={() => setClearingGames(true)} />
           </Group>
         </PopoverContent>
       </Popover>
-      {dialog}
-      <ClearGamesDialog open={clearingGames} onOpenChange={setClearingGames} />
     </>
   )
 }

@@ -658,3 +658,11 @@ Une notification en bas de l'écran confirme ce qui vient d'être fait ailleurs 
 
 - Écrit à la main (`lib/toast.ts`, `components/Toaster.tsx`, une cinquantaine de lignes) plutôt que Sonner : pas de dépendance pour un besoin si simple. Grande, sur fond doré et texte sombre (couleurs du bouton principal), un titre court puis les comptes (« Lichess : X - Chess.com : Y » côte à côte sur grand écran, un par ligne sur téléphone, jamais coupés au milieu d'un nom ; tailles réduites sur téléphone). Apparaît en grandissant (90 % → 100 %, 300 ms, décélération douce) et s'efface en rétrécissant (150 ms) ; immobile si le système demande moins d'animations. Au-dessus de la barre de gestes des téléphones. Annoncée aux lecteurs d'écran (`aria-live`), disparaît après 4 s ou d'un clic.
 - Les infobulles partagées (`ui/tooltip.tsx`) prennent aussi l'aspect des popovers au lieu d'un encadré clair inversé.
+
+## 2026-10-24 : réglages allégés
+
+Le menu des réglages devenait long et dense. Il reste plat (sans cartes), avec des sections plus lisibles : une icône devant chaque titre et un trait discret entre elles.
+
+- **Comptes principaux** réduits à l'essentiel : les comptes en lecture seule (pastille de la plateforme et pseudo), un curseur « Dernières parties synchronisées », la case « Analyse approfondie » avec une infobulle. Tout s'applique aussitôt : plus de champs, ni de boutons « Synchroniser » et « Retirer ». Les comptes se définissent depuis un profil.
+- **Données enregistrées** retirée : le détail (parties, analyses, vider) reviendra au clic sur l'indicateur de synchronisation.
+- Retirer ses comptes principaux n'est plus possible depuis les réglages ; à reprendre avec le détail de l'indicateur si besoin.
