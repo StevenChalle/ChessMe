@@ -1,4 +1,4 @@
-import type { Category } from '@/features/player/summary'
+import type { GameCategory } from '@/features/games/normalize'
 import { archiveUrl, fetchArchiveGames, fetchArchives } from '@/lib/chesscom/client'
 import type { ChessComGame } from '@/lib/chesscom/types'
 import type { ApiSource } from '@/lib/http'
@@ -38,12 +38,14 @@ const API_FETCHERS: GameFetchers = {
   chessComMonth: fetchArchiveGames,
 }
 
-const LICHESS_PERFS: Record<Category, string[]> = {
+const LICHESS_PERFS: Record<GameCategory, string[]> = {
   bullet: ['ultraBullet', 'bullet'],
   blitz: ['blitz'],
   rapid: ['rapid'],
   classical: ['classical'],
   daily: ['correspondence'],
+  // Only imported games have no time control
+  unknown: [],
 }
 
 const DAY = 86_400_000
@@ -195,7 +197,10 @@ export async function findGame(
     fetchers = SINGLE_GAME_FETCHERS,
   }: { signal?: AbortSignal; fetchers?: SingleGameFetchers } = {},
 ): Promise<FoundGames> {
-  const account = accounts.find((item) => item.source === ref.source)
+  // Imported games are not fetched (see library.ts).
+  if (ref.source === 'import') return { games: [], failures: [] }
+  const source = ref.source
+  const account = accounts.find((item) => item.source === source)
   if (!account) return { games: [], failures: [] }
   try {
     let game: ReviewGame | undefined
@@ -213,6 +218,6 @@ export async function findGame(
     return { games: game ? [game] : [], failures: [] }
   } catch (error) {
     signal?.throwIfAborted()
-    return { games: [], failures: [{ source: ref.source, error: error as Error }] }
+    return { games: [], failures: [{ source, error: error as Error }] }
   }
 }

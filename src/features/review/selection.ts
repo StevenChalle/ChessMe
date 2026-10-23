@@ -1,7 +1,11 @@
 import type { Color } from 'chessops'
-import type { GameResult, GameSummary } from '@/features/games/normalize'
-import { CATEGORIES, type Category } from '@/features/player/summary'
-import type { ApiSource } from '@/lib/http'
+import {
+  GAME_CATEGORIES,
+  type GameCategory,
+  type GameResult,
+  type GameSource,
+  type GameSummary,
+} from '@/features/games/normalize'
 
 /**
  * Which games the advanced review analyses. Platforms, time controls and dates are also sent to
@@ -30,10 +34,10 @@ export type RatingKind = 'rated' | 'casual'
 export type OpponentRatingFilter = { enabled: boolean; min: number; max: number }
 
 export type GameSelection = {
-  sources: ApiSource[]
+  sources: GameSource[]
   ratings: RatingKind[]
   scope: GameScope
-  categories: Category[]
+  categories: GameCategory[]
   colors: Color[]
   results: GameResult[]
   opponentRating: OpponentRatingFilter
@@ -52,12 +56,13 @@ export const LARGE_REVIEW = 100
 export const RATING_FLOOR = 0
 export const RATING_CEILING = 4000
 
-export function defaultSelection(sources: ApiSource[]): GameSelection {
+export function defaultSelection(sources: GameSource[]): GameSelection {
   return {
     sources,
     ratings: [...ALL_RATINGS],
     scope: { kind: 'latest', count: 10 },
-    categories: [...CATEGORIES],
+    // "Unknown" too: only imported games have it, and they must not be left out by default.
+    categories: [...GAME_CATEGORIES],
     colors: [...ALL_COLORS],
     results: [...ALL_RESULTS],
     opponentRating: { enabled: false, min: RATING_FLOOR, max: RATING_CEILING },

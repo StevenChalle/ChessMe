@@ -10,7 +10,7 @@ function mistake(game: string, ply: number, afterCp = -300): Mistake {
   return {
     id: `${game}-${ply}`,
     ply,
-    game: { url: game },
+    game: { source: 'lichess', id: game, url: game },
     beforeCp: 100,
     afterCp,
   } as Mistake

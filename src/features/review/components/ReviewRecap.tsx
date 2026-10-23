@@ -3,17 +3,16 @@ import type { ReactNode } from 'react'
 import { Button } from '@/components/ui/button'
 import { SourceLabel } from '@/features/player/components/SourceBadge'
 import { categoryLabel, sourceErrorMessage } from '@/features/player/sources'
-import { CATEGORIES } from '@/features/player/summary'
 import { detectDevice } from '@/lib/device'
 import { formatEstimate, formatGameCount, formatNumber } from '@/lib/format'
-import type { ApiSource } from '@/lib/http'
+import { GAME_CATEGORIES, type GameSource } from '@/features/games/normalize'
 import { m } from '@/paraglide/messages'
 import type { ReviewCriteria } from '../criteria'
 import { desktopSpeedup, deviceProfile, estimateSeconds } from '../estimate'
 import type { FoundGames } from '../fetch'
 import { LARGE_REVIEW } from '../selection'
 
-const SOURCES: ApiSource[] = ['lichess', 'chesscom']
+const SOURCES: GameSource[] = ['lichess', 'chesscom', 'import']
 
 /** What the search found (shown under the filters), how long the analysis should take, and the button to launch it (top right). */
 export function ReviewRecap({
@@ -85,7 +84,7 @@ function FoundRecap({
   })).filter(({ count }) => count > 0)
   // Their evaluations are reused: already left out of the estimate.
   const serverAnalysed = games.filter((game) => game.serverCps !== undefined).length
-  const byCategory = CATEGORIES.map((category) => ({
+  const byCategory = GAME_CATEGORIES.map((category) => ({
     category,
     count: games.filter((game) => game.category === category).length,
   })).filter(({ count }) => count > 0)

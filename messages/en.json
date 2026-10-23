@@ -6,8 +6,8 @@
   "home_title": "Your games are your best puzzles.",
   "home_intro": "Let's find your mistakes, and let's fix them.",
   "home_steps_label": "How it works",
-  "home_step_find": "Find your account",
-  "home_step_find_body": "Lichess, Chess.com or both, no sign-up needed.",
+  "home_step_find": "Feed your game history",
+  "home_step_find_body": "Search your Lichess or Chess.com account, or upload your games (PGN).",
   "home_step_analyze": "Analyze your games",
   "home_step_analyze_body": "Launch a quick analysis of your games or a custom one with many options.",
   "home_step_train": "Perfect your own play",
@@ -52,6 +52,8 @@
   "category_blitz": "Blitz",
   "category_rapid": "Rapid",
   "category_classical": "Classical",
+  "category_unknown": "Unknown",
+  "source_import": "Imported",
   "category_daily": "Correspondence",
   "result_wins": "Wins",
   "result_draws": "Draws",
@@ -455,5 +457,72 @@
   "contact_failed": "Oops, the message couldn't be sent, maybe a connection issue? Don't worry, your text is still here: you can try again, or write to",
   "contact_unavailable": "Sorry, the form isn't ready yet! Your text is still here; in the meantime, you can write to",
   "contact_mail_alternative": "Prefer e-mail? Write to me at",
-  "legal_privacy_thirdparty_form": "Contact form: if you use it, your message (and your e-mail and the technical details, if you give them) is sent to Web3Forms (web3forms.com), which forwards it to me by e-mail. Nothing is sent otherwise."
+  "legal_privacy_thirdparty_form": "Contact form: if you use it, your message (and your e-mail and the technical details, if you give them) is sent to Web3Forms (web3forms.com), which forwards it to me by e-mail. Nothing is sent otherwise.",
+  "import_title": "Import your games",
+  "import_read": "{games} read",
+  "import_ignored": "left out: {details}",
+  "import_ignored_unreadable": [
+    {
+      "declarations": ["input count", "input formatted", "local countPlural = count: plural"],
+      "selectors": ["countPlural"],
+      "match": {
+        "countPlural=one": "{formatted} unreadable",
+        "countPlural=other": "{formatted} unreadable"
+      }
+    }
+  ],
+  "import_ignored_variant": [
+    {
+      "declarations": ["input count", "input formatted", "local countPlural = count: plural"],
+      "selectors": ["countPlural"],
+      "match": {
+        "countPlural=one": "{formatted} variant",
+        "countPlural=other": "{formatted} variants"
+      }
+    }
+  ],
+  "import_ignored_unfinished": [
+    {
+      "declarations": ["input count", "input formatted", "local countPlural = count: plural"],
+      "selectors": ["countPlural"],
+      "match": {
+        "countPlural=one": "{formatted} unfinished",
+        "countPlural=other": "{formatted} unfinished"
+      }
+    }
+  ],
+  "import_ignored_duplicate": [
+    {
+      "declarations": ["input count", "input formatted", "local countPlural = count: plural"],
+      "selectors": ["countPlural"],
+      "match": {
+        "countPlural=one": "{formatted} duplicate",
+        "countPlural=other": "{formatted} duplicates"
+      }
+    }
+  ],
+  "import_missing_title": "Missing in some games",
+  "import_missing_date": "{games} without date: the period filters leave them out.",
+  "import_missing_time_control": "{games} without time control: shown as \"Unknown\".",
+  "import_missing_ratings": "{games} without ratings: the opponent rating filter leaves them out.",
+  "import_who": "Which one is you?",
+  "import_who_hint": "Check every name you played under: your mistakes are found on your side only.",
+  "import_unmatched": "Games without your name: {games}",
+  "import_unmatched_hint": "Pick your side in those you want, the others are left out.",
+  "import_side_white": "White",
+  "import_side_black": "Black",
+  "import_side_ignore": "Leave out",
+  "import_submit": "Import {games}",
+  "import_drop": "Drop a PGN file here",
+  "import_choose": "Choose a file",
+  "import_paste": "Or paste a PGN",
+  "import_paste_placeholder": "[Event \"…\"] 1. e4 e5 2. Nf3…",
+  "import_paste_submit": "Import",
+  "import_none": "No game found in this PGN.",
+  "import_too_big": "This file is too large (20 MB at most).",
+  "home_or": "or",
+  "import_section": "Import your games",
+  "import_page_title": "Imported games",
+  "import_header_games": "{games} imported",
+  "search_section": "Find your account"
 }

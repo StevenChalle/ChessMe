@@ -6,8 +6,8 @@
   "home_title": "Tes parties sont tes meilleurs puzzles.",
   "home_intro": "Trouvons tes erreurs, et corrigeons-les.",
   "home_steps_label": "Comment ça marche",
-  "home_step_find": "Trouve ton compte",
-  "home_step_find_body": "Lichess, Chess.com ou les deux, sans inscription.",
+  "home_step_find": "Alimente ton historique de parties",
+  "home_step_find_body": "Cherche ton compte Lichess ou Chess.com, ou importe tes parties (PGN).",
   "home_step_analyze": "Analyse tes parties",
   "home_step_analyze_body": "Lance une analyse rapide de tes parties, ou personnalisée avec de nombreuses options.",
   "home_step_train": "Perfectionne ton propre jeu",
@@ -52,6 +52,8 @@
   "category_blitz": "Blitz",
   "category_rapid": "Rapide",
   "category_classical": "Classique",
+  "category_unknown": "Inconnue",
+  "source_import": "Importée",
   "category_daily": "Correspondance",
   "result_wins": "Victoires",
   "result_draws": "Nulles",
@@ -455,5 +457,72 @@
   "contact_failed": "Oups, le message n'a pas pu partir, peut-être un souci de connexion ? Pas d'inquiétude, votre texte est toujours là : vous pouvez réessayer, ou écrire à",
   "contact_unavailable": "Désolé, le formulaire n'est pas encore prêt ! Votre texte est toujours là ; en attendant, vous pouvez écrire à",
   "contact_mail_alternative": "Vous préférez l'e-mail ? Écrivez-moi à",
-  "legal_privacy_thirdparty_form": "Formulaire de contact : si vous l'utilisez, votre message (et votre e-mail et les infos techniques, si vous les donnez) est transmis à Web3Forms (web3forms.com), qui me le fait suivre par e-mail. Rien n'est envoyé sinon."
+  "legal_privacy_thirdparty_form": "Formulaire de contact : si vous l'utilisez, votre message (et votre e-mail et les infos techniques, si vous les donnez) est transmis à Web3Forms (web3forms.com), qui me le fait suivre par e-mail. Rien n'est envoyé sinon.",
+  "import_title": "Importe tes parties",
+  "import_read": "{games} lues",
+  "import_ignored": "écartées : {details}",
+  "import_ignored_unreadable": [
+    {
+      "declarations": ["input count", "input formatted", "local countPlural = count: plural"],
+      "selectors": ["countPlural"],
+      "match": {
+        "countPlural=one": "{formatted} illisible",
+        "countPlural=other": "{formatted} illisibles"
+      }
+    }
+  ],
+  "import_ignored_variant": [
+    {
+      "declarations": ["input count", "input formatted", "local countPlural = count: plural"],
+      "selectors": ["countPlural"],
+      "match": {
+        "countPlural=one": "{formatted} variante",
+        "countPlural=other": "{formatted} variantes"
+      }
+    }
+  ],
+  "import_ignored_unfinished": [
+    {
+      "declarations": ["input count", "input formatted", "local countPlural = count: plural"],
+      "selectors": ["countPlural"],
+      "match": {
+        "countPlural=one": "{formatted} inachevée",
+        "countPlural=other": "{formatted} inachevées"
+      }
+    }
+  ],
+  "import_ignored_duplicate": [
+    {
+      "declarations": ["input count", "input formatted", "local countPlural = count: plural"],
+      "selectors": ["countPlural"],
+      "match": {
+        "countPlural=one": "{formatted} en double",
+        "countPlural=other": "{formatted} en double"
+      }
+    }
+  ],
+  "import_missing_title": "Absent de certaines parties",
+  "import_missing_date": "{games} sans date : les filtres de période les écartent.",
+  "import_missing_time_control": "{games} sans cadence : affichées comme « Inconnue ».",
+  "import_missing_ratings": "{games} sans Elo : le filtre d'Elo de l'adversaire les écarte.",
+  "import_who": "Lequel est toi ?",
+  "import_who_hint": "Coche chaque nom sous lequel tu as joué : tes erreurs ne sont cherchées que de ton côté.",
+  "import_unmatched": "Parties sans ton nom : {games}",
+  "import_unmatched_hint": "Choisis ta couleur dans celles qui t'intéressent, les autres sont écartées.",
+  "import_side_white": "Blancs",
+  "import_side_black": "Noirs",
+  "import_side_ignore": "Écarter",
+  "import_submit": "Importer {games}",
+  "import_drop": "Dépose un fichier PGN ici",
+  "import_choose": "Choisir un fichier",
+  "import_paste": "Ou colle un PGN",
+  "import_paste_placeholder": "[Event \"…\"] 1. e4 e5 2. Cf3…",
+  "import_paste_submit": "Importer",
+  "import_none": "Aucune partie trouvée dans ce PGN.",
+  "import_too_big": "Ce fichier est trop gros (20 Mo au plus).",
+  "home_or": "ou",
+  "import_section": "Importe tes parties",
+  "import_page_title": "Parties importées",
+  "import_header_games": "{games} importées",
+  "search_section": "Trouve ton compte"
 }

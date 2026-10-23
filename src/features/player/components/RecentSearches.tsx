@@ -4,18 +4,16 @@ import { Button } from '@/components/ui/button'
 import type { ApiSource } from '@/lib/http'
 import { cn } from '@/lib/utils'
 import { m } from '@/paraglide/messages'
-import { useRecentSearches } from '../recentSearches'
+import { MAX_STORED, useRecentSearches } from '../recentSearches'
 import type { PlayerUsernames } from '../search'
 import { SourceDot } from './SourceBadge'
-
-const RECENT_LIMIT = 3
 
 /**
  * Last profile searches, one click to reopen them or to review their last game. Hidden until there
  * is at least one.
  */
 export function RecentSearches({ className }: { className?: string }) {
-  const { searches, remove } = useRecentSearches(RECENT_LIMIT)
+  const { searches, remove } = useRecentSearches(MAX_STORED)
   if (searches.length === 0) return null
 
   return (
@@ -24,7 +22,9 @@ export function RecentSearches({ className }: { className?: string }) {
         <History className="size-3.5" />
         {m.recent_searches()}
       </h2>
-      <ul className="space-y-0.5 p-1">
+      {/* Every search kept, three in sight: the older ones are a scroll away, with a thin dark
+          scrollbar and no track. */}
+      <ul className="max-h-[7.25rem] [scrollbar-width:thin] [scrollbar-color:var(--cyc-raised)_transparent] space-y-0.5 overflow-y-auto overscroll-contain p-1 [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-raised [&::-webkit-scrollbar-track]:bg-transparent">
         {searches
           .map(({ lichess, chesscom }) => ({ lichess, chesscom }))
           .map((usernames) => (

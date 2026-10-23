@@ -1,4 +1,4 @@
-import { createFileRoute, Outlet, useBlocker, useLocation } from '@tanstack/react-router'
+import { createFileRoute, Navigate, Outlet, useBlocker, useLocation } from '@tanstack/react-router'
 import { useMemo } from 'react'
 import { ConfirmDialog } from '@/components/ConfirmDialog'
 import { PlayerHeader } from '@/features/player/components/PlayerHeader'
@@ -6,7 +6,7 @@ import { PlayerTabs } from '@/features/player/components/PlayerTabs'
 import { useRememberSearch } from '@/features/player/recentSearches'
 import {
   hasAnyUsername,
-  type PlayerUsernames,
+  type ProfileSearch,
   usernamesLabel,
   validatePlayerSearch,
 } from '@/features/player/search'
@@ -14,6 +14,9 @@ import { usePlayerAccounts } from '@/features/player/usePlayerAccounts'
 import { reviewableAccounts } from '@/features/review/accounts'
 import { ReviewButtons } from '@/features/review/components/ReviewButtons'
 import { parseGameRef } from '@/features/review/gameRef'
+import { accountsLibrary, importLibrary } from '@/features/review/library'
+import { ImportHeader } from '@/features/import/components/ImportHeader'
+import { useImportedGames } from '@/features/import/store'
 import { AnalysisSessionProvider } from '@/features/review/session'
 import { useAnalysisSession } from '@/features/review/sessionContext'
 import { TrainingView } from '@/features/training/components/TrainingView'
@@ -23,7 +26,7 @@ import { formatOrList } from '@/lib/format'
 import { lichessUserQueryOptions } from '@/lib/lichess/queries'
 import { m } from '@/paraglide/messages'
 
-type PlayerSearch = PlayerUsernames & {
+type PlayerSearch = ProfileSearch & {
   /** "last": review the last game right away */
   start?: 'last'
   /** A game to review on its own right away (see gameRef.ts) */
@@ -33,10 +36,13 @@ type PlayerSearch = PlayerUsernames & {
 /**
  * /player?lichess=<name>&chesscom=<name>: either or both, names may differ. The profile and the
  * analysis of these accounts, in tabs: overview, games, analysis, its results, trainings.
+ * /player?import=true: the same for the games imported last (no overview), never mixed with an
+ * account's.
  */
 export const Route = createFileRoute('/player')({
   validateSearch: (search: Record<string, unknown>): PlayerSearch => ({
     ...validatePlayerSearch(search),
+    ...(search.import === true || search.import === 'true' ? { import: true as const } : {}),
     ...(search.start === 'last' ? { start: 'last' as const } : {}),
     ...(parseGameRef(search.game) ? { game: search.game as string } : {}),
   }),
@@ -52,11 +58,50 @@ export const Route = createFileRoute('/player')({
 })
 
 function PlayerLayout() {
+  const search = Route.useSearch()
+  return search.import ? (
+    <ImportLayout start={search.start} game={search.game} />
+  ) : (
+    <AccountsLayout />
+  )
+}
+
+/** Imported games: the same tabs, but no overview and no account. */
+function ImportLayout({ start, game }: { start?: 'last'; game?: string }) {
+  const imported = useImportedGames()
+  const library = useMemo(() => imported && importLibrary(imported.games), [imported])
+  usePageMeta({ title: m.import_page_title(), noindex: true })
+  // Nothing is kept: after a reload, back to the home page to import again.
+  if (!imported || !library) return <Navigate to="/" replace />
+  const search = { import: true } as const
+  return (
+    <AnalysisSessionProvider
+      key={imported.id}
+      accounts={[]}
+      library={library}
+      gameTotal={imported.games.length}
+      usernames={search}
+      start={start}
+      game={game}
+    >
+      <div className="space-y-6">
+        <ImportHeader imported={imported} actions={<ReviewButtons usernames={search} />} />
+        <PlayerTabs usernames={search} canAnalyse />
+        <Trainings />
+        <Outlet />
+      </div>
+      <LeaveGuard usernames={search} />
+    </AnalysisSessionProvider>
+  )
+}
+
+function AccountsLayout() {
   const { lichess, chesscom, start, game } = Route.useSearch()
   const usernames = useMemo(() => ({ lichess, chesscom }), [lichess, chesscom])
   const { linked, accounts, noAccount } = usePlayerAccounts(usernames)
   usePageMeta({ title: usernamesLabel(usernames) || undefined, noindex: true })
   const reviewable = useMemo(() => reviewableAccounts(accounts), [accounts])
+  const library = useMemo(() => accountsLibrary(reviewable.accounts), [reviewable.accounts])
 
   useRememberSearch(accounts)
 
@@ -74,6 +119,7 @@ function PlayerLayout() {
     <AnalysisSessionProvider
       key={`${lichess ?? ''}|${chesscom ?? ''}`}
       accounts={reviewable.accounts}
+      library={library}
       gameTotal={reviewable.gameTotal}
       usernames={usernames}
       start={start}
@@ -128,7 +174,7 @@ function Trainings() {
  * Nothing is saved yet: leaving the page during an analysis or an unfinished training asks first,
  * other accounts included. Switching tabs is never blocked.
  */
-function LeaveGuard({ usernames }: { usernames: PlayerUsernames }) {
+function LeaveGuard({ usernames }: { usernames: ProfileSearch }) {
   const { analysis, trainings } = useAnalysisSession()
   const busy =
     analysis.status === 'running' ||
@@ -137,8 +183,12 @@ function LeaveGuard({ usernames }: { usernames: PlayerUsernames }) {
     shouldBlockFn: ({ next }) => {
       if (!busy) return false
       if (!next.pathname.startsWith('/player')) return true
-      const search = next.search as PlayerUsernames
-      return search.lichess !== usernames.lichess || search.chesscom !== usernames.chesscom
+      const search = next.search as ProfileSearch
+      return (
+        search.lichess !== usernames.lichess ||
+        search.chesscom !== usernames.chesscom ||
+        Boolean(search.import) !== Boolean(usernames.import)
+      )
     },
     enableBeforeUnload: () => busy,
     withResolver: true,

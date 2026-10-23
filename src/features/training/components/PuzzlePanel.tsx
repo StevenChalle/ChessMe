@@ -168,7 +168,9 @@ function DeeperLinks({ puzzle }: { puzzle: Mistake }) {
       <ExternalLink href={lichessAnalysisUrl(puzzle.fen, puzzle.color)}>
         {m.training_analyse_lichess()}
       </ExternalLink>
-      <ExternalLink href={puzzle.game.url}>{m.training_view_game()}</ExternalLink>
+      {puzzle.game.url && (
+        <ExternalLink href={puzzle.game.url}>{m.training_view_game()}</ExternalLink>
+      )}
     </p>
   )
 }

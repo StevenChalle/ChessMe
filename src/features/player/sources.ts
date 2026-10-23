@@ -1,22 +1,30 @@
+import type { GameCategory, GameSource } from '@/features/games/normalize'
 import { ApiError, type ApiSource } from '@/lib/http'
 import { m } from '@/paraglide/messages'
-import { SOURCE_LABELS, type Category } from './summary'
+import { SOURCE_LABELS } from './summary'
 
-const CATEGORY_LABELS: Record<Category, () => string> = {
+const CATEGORY_LABELS: Record<GameCategory, () => string> = {
   bullet: m.category_bullet,
   blitz: m.category_blitz,
   rapid: m.category_rapid,
   classical: m.category_classical,
   daily: m.category_daily,
+  unknown: m.category_unknown,
 }
 
-/** Tailwind background class carrying each platform's color (dots, stacked bars). */
-export const SOURCE_COLOR_CLASS: Record<ApiSource, string> = {
+/** Tailwind background class carrying each origin's color (dots, stacked bars). */
+export const SOURCE_COLOR_CLASS: Record<GameSource, string> = {
   lichess: 'bg-lichess',
   chesscom: 'bg-chesscom',
+  import: 'bg-muted-foreground',
 }
 
-export function categoryLabel(category: Category): string {
+/** "Lichess", "Chess.com" (brand names), or "Imported" (translated). */
+export function sourceLabel(source: GameSource): string {
+  return source === 'import' ? m.source_import() : SOURCE_LABELS[source]
+}
+
+export function categoryLabel(category: GameCategory): string {
   return CATEGORY_LABELS[category]()
 }
 

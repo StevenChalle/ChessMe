@@ -22,7 +22,7 @@ export type Mistake = {
   id: string
   /** Half-move number of the position before the error, in the game: its order among the others */
   ply: number
-  game: Pick<ReviewGame, 'source' | 'url' | 'playedAt' | 'opponent'>
+  game: Pick<ReviewGame, 'source' | 'id' | 'url' | 'playedAt' | 'opponent'>
   color: Color
   /** Position before the error */
   fen: string
@@ -137,6 +137,7 @@ export function judge(
     ply,
     game: {
       source: game.source,
+      id: game.id,
       url: game.url,
       playedAt: game.playedAt,
       opponent: game.opponent,

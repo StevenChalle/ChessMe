@@ -12,8 +12,9 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group'
 import type { GameResult } from '@/features/games/normalize'
 import { SourceDot } from '@/features/player/components/SourceBadge'
-import { categoryLabel } from '@/features/player/sources'
-import { CATEGORIES, SOURCE_LABELS, type Category } from '@/features/player/summary'
+import { categoryLabel, sourceLabel } from '@/features/player/sources'
+import { GAME_CATEGORIES, type GameCategory, type GameSource } from '@/features/games/normalize'
+import { CATEGORIES, SOURCE_LABELS } from '@/features/player/summary'
 import { formatDate, formatNumber } from '@/lib/format'
 import type { ApiSource } from '@/lib/http'
 import { cn } from '@/lib/utils'
@@ -107,18 +108,20 @@ function scopeSummary(scope: GameScope): string {
 }
 
 /** What the games filters leave out, or "all games". */
-function gamesSummary(selection: GameSelection, accounts: ReviewAccount[]): string {
+function gamesSummary(
+  selection: GameSelection,
+  sources: GameSource[],
+  categories: GameCategory[],
+): string {
   const parts: string[] = []
+  // Only what the form shows: hidden values (the "unknown" time control of an account) do not count.
   const some = <T,>(chosen: T[], all: readonly T[], label: (item: T) => string) => {
-    if (chosen.length < all.length) parts.push(chosen.map(label).join(', '))
+    const shown = chosen.filter((item) => all.includes(item))
+    if (shown.length < all.length) parts.push(shown.map(label).join(', '))
   }
-  some(
-    selection.sources,
-    accounts.map((account) => account.source),
-    (source) => SOURCE_LABELS[source],
-  )
+  some(selection.sources, sources, sourceLabel)
   some(selection.ratings, ALL_RATINGS, (rating) => RATING_LABELS[rating]())
-  some(selection.categories, CATEGORIES, categoryLabel)
+  some(selection.categories, categories, categoryLabel)
   some(selection.colors, ALL_COLORS, (color) => COLOR_LABELS[color]())
   some(selection.results, ALL_RESULTS, (result) => RESULT_LABELS[result]())
   const ratingFilter = activeRatingFilter(selection)
@@ -139,12 +142,15 @@ function gamesSummary(selection: GameSelection, accounts: ReviewAccount[]): stri
  */
 export function ReviewSetup({
   accounts,
+  sources,
   gameTotal,
   value: { selection, criteria },
   onChange,
   reference,
 }: {
   accounts: ReviewAccount[]
+  /** The games' origins: the accounts', or imported games (no platform, rated or not to pick) */
+  sources: GameSource[]
   /** Games played on all the accounts, from the profiles (an indication) */
   gameTotal: number
   value: ReviewSettings
@@ -162,7 +168,10 @@ export function ReviewSetup({
 
   const { scope } = selection
   const valid = isSelectionValid(selection)
-  const defaults = defaultSelection(accounts.map((account) => account.source))
+  const defaults = defaultSelection(sources)
+  const imported = sources.includes('import')
+  // "Unknown" only exists for imported games.
+  const categories = imported ? GAME_CATEGORIES : CATEGORIES
   // Both ways of choosing games stay visible: the inactive one keeps its last values, dimmed,
   // and using it makes it the active one.
   const [lastLatest, setLastLatest] = useState(scope.kind === 'latest' ? scope.count : 10)
@@ -319,7 +328,7 @@ export function ReviewSetup({
         <Expandable
           value="games"
           title={m.setup_games()}
-          summary={gamesSummary(selection, accounts)}
+          summary={gamesSummary(selection, sources, categories)}
           defaults={{
             disabled: sameFilters(selection, defaults),
             onClick: () => update({ ...defaults, scope }),
@@ -330,46 +339,59 @@ export function ReviewSetup({
           )}
         >
           <div className="grid gap-6 md:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)_minmax(0,1.6fr)]">
-            <Section title={m.setup_platforms()}>
-              <ToggleGroup
-                type="multiple"
-                value={selection.sources}
-                onValueChange={(value) => update({ sources: value as ApiSource[] })}
-                className="flex-wrap"
-              >
-                {accounts.map(({ source, username }) => (
-                  <ToggleGroupItem key={source} value={source} size="sm" className={CHIP_CLASS}>
-                    <SourceDot source={source} />
-                    {SOURCE_LABELS[source]}
-                    <span className="text-muted-foreground">{username}</span>
-                  </ToggleGroupItem>
-                ))}
-              </ToggleGroup>
-            </Section>
+            {!imported && (
+              <Section title={m.setup_platforms()}>
+                <ToggleGroup
+                  type="multiple"
+                  value={selection.sources}
+                  onValueChange={(value) => update({ sources: value as ApiSource[] })}
+                  className="flex-wrap"
+                >
+                  {accounts.map(({ source, username }) => (
+                    <ToggleGroupItem key={source} value={source} size="sm" className={CHIP_CLASS}>
+                      <SourceDot source={source} />
+                      {SOURCE_LABELS[source]}
+                      <span className="text-muted-foreground">{username}</span>
+                    </ToggleGroupItem>
+                  ))}
+                </ToggleGroup>
+              </Section>
+            )}
 
-            <Section title={m.setup_ratings()}>
-              <ToggleGroup
-                type="multiple"
-                value={selection.ratings}
-                onValueChange={(value) => update({ ratings: value as RatingKind[] })}
-                className="flex-wrap"
-              >
-                {ALL_RATINGS.map((rating) => (
-                  <ToggleGroupItem key={rating} value={rating} size="sm" className={CHIP_CLASS}>
-                    {RATING_LABELS[rating]()}
-                  </ToggleGroupItem>
-                ))}
-              </ToggleGroup>
-            </Section>
+            {/* A PGN rarely says whether a game was rated */}
+            {!imported && (
+              <Section title={m.setup_ratings()}>
+                <ToggleGroup
+                  type="multiple"
+                  value={selection.ratings}
+                  onValueChange={(value) => update({ ratings: value as RatingKind[] })}
+                  className="flex-wrap"
+                >
+                  {ALL_RATINGS.map((rating) => (
+                    <ToggleGroupItem key={rating} value={rating} size="sm" className={CHIP_CLASS}>
+                      {RATING_LABELS[rating]()}
+                    </ToggleGroupItem>
+                  ))}
+                </ToggleGroup>
+              </Section>
+            )}
 
             <Section title={m.setup_time_controls()}>
               <ToggleGroup
                 type="multiple"
                 value={selection.categories}
-                onValueChange={(value) => update({ categories: value as Category[] })}
+                // The hidden categories stay as they are.
+                onValueChange={(value) =>
+                  update({
+                    categories: [
+                      ...(value as GameCategory[]),
+                      ...selection.categories.filter((item) => !categories.includes(item)),
+                    ],
+                  })
+                }
                 className="flex-wrap"
               >
-                {CATEGORIES.map((category) => (
+                {categories.map((category) => (
                   <ToggleGroupItem key={category} value={category} size="sm" className={CHIP_CLASS}>
                     {categoryLabel(category)}
                   </ToggleGroupItem>

@@ -1,5 +1,5 @@
 import type { Color } from 'chessops'
-import { Fragment, useEffect, useState, type MouseEvent, type ReactNode } from 'react'
+import { Fragment, useState, type MouseEvent, type ReactNode } from 'react'
 import { ChevronDown, ExternalLink as ExternalLinkIcon } from 'lucide-react'
 import {
   Table,
@@ -10,8 +10,7 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import { SourceLabel } from '@/features/player/components/SourceBadge'
-import { categoryLabel } from '@/features/player/sources'
-import { SOURCE_LABELS } from '@/features/player/summary'
+import { categoryLabel, sourceLabel } from '@/features/player/sources'
 import { formatDate, formatTime } from '@/lib/format'
 import { cn } from '@/lib/utils'
 import { m } from '@/paraglide/messages'
@@ -58,9 +57,8 @@ const COLUMNS = 99
 /** Slides its content open or shut; the content only exists while open or sliding. */
 function Collapse({ open, children }: { open: boolean; children: ReactNode }) {
   const [shown, setShown] = useState(open)
-  useEffect(() => {
-    if (open) setShown(true)
-  }, [open])
+  // Opening mounts the content right away (state adjusted during render, not in an effect).
+  if (open && !shown) setShown(true)
   return (
     <div
       className={cn(
@@ -182,8 +180,17 @@ export function GamesTable<G extends GameSummary>({
                 </TableCell>
               )}
               <TableCell className={cn('num whitespace-nowrap text-muted-foreground', HIDE.date)}>
-                {formatDate(game.playedAt)}{' '}
-                <span className="ml-1 text-muted-foreground/70">{formatTime(game.playedAt)}</span>
+                {/* An imported game may have no date */}
+                {game.undated ? (
+                  '—'
+                ) : (
+                  <>
+                    {formatDate(game.playedAt)}{' '}
+                    <span className="ml-1 text-muted-foreground/70">
+                      {formatTime(game.playedAt)}
+                    </span>
+                  </>
+                )}
               </TableCell>
               <TableCell>
                 <SourceLabel source={game.source} compact />
@@ -212,9 +219,11 @@ export function GamesTable<G extends GameSummary>({
                 )}
                 {open && (
                   <span className="mt-1 block space-y-0.5 md:hidden">
-                    <span className="num block whitespace-nowrap text-muted-foreground">
-                      {formatDate(game.playedAt)} {formatTime(game.playedAt)}
-                    </span>
+                    {!game.undated && (
+                      <span className="num block whitespace-nowrap text-muted-foreground">
+                        {formatDate(game.playedAt)} {formatTime(game.playedAt)}
+                      </span>
+                    )}
                     <span className="block sm:hidden">
                       <SourceLabel source={game.source} />
                     </span>
@@ -241,16 +250,19 @@ export function GamesTable<G extends GameSummary>({
               {extra && <TableCell className="text-right">{extra.cell(game)}</TableCell>}
               <TableCell className="text-right whitespace-nowrap">
                 {action?.(game)}
-                <a
-                  href={game.url}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="ml-2 inline-block align-middle text-muted-foreground hover:text-primary"
-                  title={m.view_on({ platform: SOURCE_LABELS[game.source] })}
-                  aria-label={m.view_on({ platform: SOURCE_LABELS[game.source] })}
-                >
-                  <ExternalLinkIcon className="size-4" />
-                </a>
+                {/* Imported games may have no page to link to */}
+                {game.url && (
+                  <a
+                    href={game.url}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="ml-2 inline-block align-middle text-muted-foreground hover:text-primary"
+                    title={m.view_on({ platform: sourceLabel(game.source) })}
+                    aria-label={m.view_on({ platform: sourceLabel(game.source) })}
+                  >
+                    <ExternalLinkIcon className="size-4" />
+                  </a>
+                )}
               </TableCell>
             </TableRow>
           )

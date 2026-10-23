@@ -12,7 +12,7 @@ export type RecentSearch = PlayerUsernames & {
 }
 
 const STORAGE_KEY = 'craftyourchess:recent-searches'
-const MAX_STORED = 10
+export const MAX_STORED = 10
 
 function sameSearch(a: PlayerUsernames, b: PlayerUsernames): boolean {
   const norm = (value: string | undefined) => value?.toLowerCase() ?? ''

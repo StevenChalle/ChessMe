@@ -2,6 +2,7 @@ import { createFileRoute } from '@tanstack/react-router'
 import { Board } from '@/components/board/Board'
 import { AccountSearchForm } from '@/features/player/components/AccountSearchForm'
 import { RecentSearches } from '@/features/player/components/RecentSearches'
+import { ImportBox } from '@/features/import/components/ImportBox'
 import { usePageMeta } from '@/hooks/usePageMeta'
 import { m } from '@/paraglide/messages'
 
@@ -56,8 +57,25 @@ function HomePage() {
               </li>
             ))}
           </ol>
-          <AccountSearchForm autoFocus={hasFinePointer()} className="max-w-sm" />
-          <RecentSearches className="max-w-sm" />
+          {/* Two ways in: an account, or imported games (never both) */}
+          <div className="grid gap-6 md:grid-cols-2 md:gap-5">
+            <section className="min-w-0 space-y-2" aria-label={m.search_section()}>
+              <h2 className="label-etabli text-muted-foreground">{m.search_section()}</h2>
+              <div className="space-y-6">
+                <AccountSearchForm autoFocus={hasFinePointer()} />
+                <RecentSearches />
+              </div>
+            </section>
+            <p className="flex items-center gap-3 text-xs text-muted-foreground uppercase md:hidden">
+              <span className="h-px flex-1 bg-border" />
+              {m.home_or()}
+              <span className="h-px flex-1 bg-border" />
+            </p>
+            <section className="min-w-0 space-y-2" aria-label={m.import_section()}>
+              <h2 className="label-etabli text-muted-foreground">{m.import_section()}</h2>
+              <ImportBox />
+            </section>
+          </div>
         </section>
         <Board config={BOARD_CONFIG} className="rounded-md shadow-xl" />
       </div>

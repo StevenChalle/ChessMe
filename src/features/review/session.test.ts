@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { freeNumber } from './session'
+import { freeNumber } from './sessionContext'
 
 describe('freeNumber', () => {
   it('gives the smallest number no open training has', () => {

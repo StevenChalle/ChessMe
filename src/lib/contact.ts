@@ -11,7 +11,7 @@ const ENDPOINT = 'https://api.web3forms.com/submit'
 const ACCESS_KEY: string | undefined = import.meta.env.VITE_WEB3FORMS_KEY
 
 export type FeedbackKind = 'idea' | 'feeling' | 'bug' | 'other'
-export const FEEDBACK_KINDS: FeedbackKind[] = ['idea', 'feeling', 'bug', 'other']
+export const FEEDBACK_KINDS: FeedbackKind[] = ['feeling', 'idea', 'bug', 'other']
 
 export type Feedback = {
   kind: FeedbackKind

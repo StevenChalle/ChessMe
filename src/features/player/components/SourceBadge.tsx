@@ -1,9 +1,8 @@
-import type { ApiSource } from '@/lib/http'
+import type { GameSource } from '@/features/games/normalize'
 import { cn } from '@/lib/utils'
-import { SOURCE_COLOR_CLASS } from '../sources'
-import { SOURCE_LABELS } from '../summary'
+import { SOURCE_COLOR_CLASS, sourceLabel } from '../sources'
 
-export function SourceDot({ source, className }: { source: ApiSource; className?: string }) {
+export function SourceDot({ source, className }: { source: GameSource; className?: string }) {
   return (
     <span
       aria-hidden
@@ -17,11 +16,11 @@ export function SourceDot({ source, className }: { source: ApiSource; className?
 }
 
 /** `compact`: the dot alone on phones, the name kept for screen readers. */
-export function SourceLabel({ source, compact }: { source: ApiSource; compact?: boolean }) {
+export function SourceLabel({ source, compact }: { source: GameSource; compact?: boolean }) {
   return (
     <span className="inline-flex items-center gap-1.5">
       <SourceDot source={source} />
-      <span className={cn(compact && 'max-sm:sr-only')}>{SOURCE_LABELS[source]}</span>
+      <span className={cn(compact && 'max-sm:sr-only')}>{sourceLabel(source)}</span>
     </span>
   )
 }

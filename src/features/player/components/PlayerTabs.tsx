@@ -5,7 +5,7 @@ import { useAnalysisSession } from '@/features/review/sessionContext'
 import { trainingTitle } from '@/features/training/title'
 import { cn } from '@/lib/utils'
 import { m } from '@/paraglide/messages'
-import type { PlayerUsernames } from '../search'
+import type { ProfileSearch } from '../search'
 
 // TanStack Router sets data-status="active" on the current link.
 // Icons stay discreet: small and dimmed, in the tab's color.
@@ -23,7 +23,7 @@ export function PlayerTabs({
   usernames,
   canAnalyse,
 }: {
-  usernames: PlayerUsernames
+  usernames: ProfileSearch
   /** Some account has games to analyse (closed ones do not) */
   canAnalyse: boolean
 }) {
@@ -106,17 +106,20 @@ export function PlayerTabs({
       className="flex [scrollbar-width:none] gap-6 overflow-x-auto border-b"
       aria-label={m.tabs_label()}
     >
-      <Link
-        resetScroll={false}
-        to="/player"
-        data-path="/player"
-        search={usernames}
-        activeOptions={{ exact: true }}
-        className={TAB_CLASS}
-      >
-        <LayoutGrid aria-hidden />
-        {m.tab_overview()}
-      </Link>
+      {/* Imported games have no profile to show */}
+      {!usernames.import && (
+        <Link
+          resetScroll={false}
+          to="/player"
+          data-path="/player"
+          search={usernames}
+          activeOptions={{ exact: true }}
+          className={TAB_CLASS}
+        >
+          <LayoutGrid aria-hidden />
+          {m.tab_overview()}
+        </Link>
+      )}
       <Link
         resetScroll={false}
         to="/player/history"

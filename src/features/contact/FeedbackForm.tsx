@@ -31,7 +31,7 @@ type Status = 'editing' | 'sending' | 'sent' | 'failed' | 'unavailable'
  * the e-mail address instead.
  */
 export function FeedbackForm() {
-  const [kind, setKind] = useState<FeedbackKind>('idea')
+  const [kind, setKind] = useState<FeedbackKind>('feeling')
   const [message, setMessage] = useState('')
   const [email, setEmail] = useState('')
   const [withContext, setWithContext] = useState(false)

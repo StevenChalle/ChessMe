@@ -3,20 +3,12 @@ import { Button } from '@/components/ui/button'
 import { Progress } from '@/components/ui/progress'
 import { SideSquare } from '@/features/games/components/GamesTable'
 import { SourceLabel } from '@/features/player/components/SourceBadge'
-import { detectDevice } from '@/lib/device'
-import { defaultPoolSize } from '@/lib/engine/pool'
 import { formatDate, formatDuration, formatNumber, formatTime } from '@/lib/format'
 import { m } from '@/paraglide/messages'
-import { DEEP_NODES, shallowPositions, type ReviewedGame } from '../analyze'
-import { ENGINE_SPEED } from '../estimate'
+import { shallowPositions, type ReviewedGame } from '../analyze'
+import { deepenSeconds } from '../estimate'
 import { reviewedGameKey, useAnalysisSession } from '../sessionContext'
 import { EvalChart } from './EvalChart'
-
-/** Rough time to deepen these positions on this device, several engines at once. */
-export function deepenSeconds(positions: number): number {
-  const engines = Math.max(1, Math.min(defaultPoolSize(), positions))
-  return (positions * DEEP_NODES) / (ENGINE_SPEED[detectDevice()] * engines)
-}
 
 /**
  * An analysed game, opened in the results: the columns hidden on a phone, the evaluation chart,
@@ -26,9 +18,11 @@ export function GamePanel({ game }: { game: ReviewedGame }) {
   return (
     <div className="space-y-3">
       <p className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm md:hidden">
-        <span className="num text-muted-foreground">
-          {formatDate(game.playedAt)} {formatTime(game.playedAt)}
-        </span>
+        {!game.undated && (
+          <span className="num text-muted-foreground">
+            {formatDate(game.playedAt)} {formatTime(game.playedAt)}
+          </span>
+        )}
         <SourceLabel source={game.source} />
         <span className="inline-flex items-center gap-2">
           <SideSquare color={game.color} />

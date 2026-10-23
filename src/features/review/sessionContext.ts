@@ -2,6 +2,7 @@ import type { ActiveTime } from '@/lib/activeTime'
 import { createContext, useContext } from 'react'
 import type { Mistake, ReviewOutcome } from './analyze'
 import type { FoundGames, ReviewAccount } from './fetch'
+import type { GameLibrary } from './library'
 import type { ReviewProgress } from './progress'
 import type { GameSelection } from './selection'
 import type { ReviewSettings } from './settings'
@@ -60,6 +61,8 @@ export type TrainingTab = {
 
 export type Session = {
   accounts: ReviewAccount[]
+  /** Where the games come from: the accounts, or imported games */
+  library: GameLibrary
   /** Games played on all the accounts, an indication */
   gameTotal: number
   /** The filters and options being edited */
@@ -99,6 +102,14 @@ export type Session = {
   deepenGames: (gameKeys: string[], scope: Deepening['scope']) => void
   /** Stops the deepening: what was found stays */
   stopDeepening: () => void
+}
+
+/** The smallest number no open training tab has: closed tabs free theirs. */
+export function freeNumber(trainings: Pick<TrainingTab, 'number'>[]): number {
+  const used = new Set(trainings.map((tab) => tab.number))
+  let number = 1
+  while (used.has(number)) number += 1
+  return number
 }
 
 /** A game's key in the results: its platform and id. */

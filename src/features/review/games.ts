@@ -37,7 +37,7 @@ export function clockBefore(clock: GameClock, ply: number): number | undefined {
   return ply < 2 ? clock.initial : clock.remaining[ply - 2]
 }
 
-function gameClock(
+export function gameClock(
   initial: number,
   increment: number,
   remaining: (number | undefined)[],

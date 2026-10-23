@@ -10,7 +10,7 @@ import { assess, EQUAL_MAX_CP, WINNING_MIN_CP, type Assessment } from '../assess
 import { formatEvalPrecise } from '../evaluation'
 import { assessmentVerdict, type TrainingAction, type TrainingState } from '../session'
 
-export const ASSESSMENT_LABELS: Record<Assessment, () => string> = {
+const ASSESSMENT_LABELS: Record<Assessment, () => string> = {
   'white-winning': m.assess_white_winning,
   'black-winning': m.assess_black_winning,
   'white-better': m.assess_white_better,

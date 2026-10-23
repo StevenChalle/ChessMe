@@ -21,6 +21,7 @@ describe('gameRef', () => {
       year: 2026,
       month: 3,
     })
+    expect(parseGameRef('import:k3x9q')).toEqual({ source: 'import', id: 'k3x9q' })
     expect(parseGameRef('lichess:../api')).toBeUndefined()
     expect(parseGameRef('chesscom:2026-13:x')).toBeUndefined()
     expect(parseGameRef(42)).toBeUndefined()

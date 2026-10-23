@@ -1,5 +1,5 @@
 import { defaultPoolSize } from '@/lib/engine/pool'
-import type { DeviceKind } from '@/lib/device'
+import { detectDevice, type DeviceKind } from '@/lib/device'
 import { DEEP_NODES, QUICK_NODES } from './analyze'
 import { deepCheckMinDrop, type ReviewCriteria } from './criteria'
 import type { ReviewGame } from './games'
@@ -107,4 +107,10 @@ export function desktopSpeedup(
   if (desktop === 0) return undefined
   const ratio = here / desktop
   return ratio >= 1.5 ? Math.round(ratio) : undefined
+}
+
+/** Rough time to deepen these positions on this device, several engines at once. */
+export function deepenSeconds(positions: number): number {
+  const engines = Math.max(1, Math.min(defaultPoolSize(), positions))
+  return (positions * DEEP_NODES) / (ENGINE_SPEED[detectDevice()] * engines)
 }

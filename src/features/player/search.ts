@@ -4,6 +4,12 @@ import type { ApiSource } from '@/lib/http'
 export type PlayerUsernames = Partial<Record<ApiSource, string>>
 
 /**
+ * What the profile page's address says: the accounts, or `import` for the games imported last
+ * (never both). Kept when switching tabs.
+ */
+export type ProfileSearch = PlayerUsernames & { import?: true }
+
+/**
  * TanStack Router JSON-parses search values, so a numeric username like "1234" arrives as a number.
  */
 export function cleanUsername(value: unknown): string | undefined {

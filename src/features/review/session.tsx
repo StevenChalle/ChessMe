@@ -1,6 +1,6 @@
 import { useNavigate, useRouter } from '@tanstack/react-router'
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
-import type { PlayerUsernames } from '@/features/player/search'
+import type { ProfileSearch } from '@/features/player/search'
 import { useConfirm } from '@/hooks/useConfirm'
 import { useKeepAwake } from '@/hooks/useKeepAwake'
 import { ActiveTime, trackActiveTime } from '@/lib/activeTime'
@@ -20,7 +20,8 @@ import {
   type Mistake,
 } from './analyze'
 import { DEFAULT_CRITERIA } from './criteria'
-import { findGame, findGames, type FoundGames, type ReviewAccount } from './fetch'
+import type { FoundGames, ReviewAccount } from './fetch'
+import type { GameLibrary } from './library'
 import { parseGameRef } from './gameRef'
 import { defaultSelection } from './selection'
 import {
@@ -33,6 +34,7 @@ import {
   SessionContext,
   type AnalysisState,
   type SearchState,
+  freeNumber,
   reviewedGameKey,
   type Deepening,
   type Session,
@@ -40,22 +42,14 @@ import {
 } from './sessionContext'
 
 /** The quick review: the last game (or the one picked in the history), default rules. */
-function quickSettings(accounts: ReviewAccount[]): ReviewSettings {
+function quickSettings(library: GameLibrary): ReviewSettings {
   return {
     selection: {
-      ...defaultSelection(accounts.map((account) => account.source)),
+      ...defaultSelection(library.sources),
       scope: { kind: 'latest', count: 1 },
     },
     criteria: DEFAULT_CRITERIA,
   }
-}
-
-/** The smallest number no open training tab has: closed tabs free theirs. */
-export function freeNumber(trainings: Pick<TrainingTab, 'number'>[]): number {
-  const used = new Set(trainings.map((tab) => tab.number))
-  let number = 1
-  while (used.has(number)) number += 1
-  return number
 }
 
 /**
@@ -67,17 +61,21 @@ export function freeNumber(trainings: Pick<TrainingTab, 'number'>[]): number {
  */
 export function AnalysisSessionProvider({
   accounts,
+  library,
   gameTotal,
   usernames,
   start,
   game,
   children,
 }: {
+  /** The accounts searched (none for imported games): the filters' platforms */
   accounts: ReviewAccount[]
+  /** Where the games come from: the accounts, or imported games */
+  library: GameLibrary
   /** Games played on all the accounts, an indication */
   gameTotal: number
   /** The accounts in the URL, kept when switching tabs */
-  usernames: PlayerUsernames
+  usernames: ProfileSearch
   start?: 'last'
   /** A game reference (gameRef.ts), as in the URL */
   game?: string
@@ -85,14 +83,19 @@ export function AnalysisSessionProvider({
 }) {
   const navigate = useNavigate()
   const { confirm, dialog } = useConfirm()
-  const sources = useMemo(() => accounts.map((account) => account.source), [accounts])
+  const sources = library.sources
   // The quick review is "running" from the first render, so the analysis tab never thinks there
   // is nothing to show (children's effects run before ours).
   const gameRef = useMemo(() => parseGameRef(game), [game])
   const quick = start === 'last' ? 'last' : gameRef ? game : undefined
-  const [initialQuick] = useState(() => (quick ? quickSettings(accounts) : undefined))
+  const [initialQuick] = useState(() => (quick ? quickSettings(library) : undefined))
   const [draft, setDraftState] = useState<ReviewSettings>(
-    () => initialQuick ?? loadReviewSettings(sources),
+    // Imported games start from all of them: the filters saved are the accounts' ones.
+    () =>
+      initialQuick ??
+      (library.kind === 'import'
+        ? { selection: defaultSelection(sources), criteria: DEFAULT_CRITERIA }
+        : loadReviewSettings(accounts.map((account) => account.source))),
   )
   const [search, setSearch] = useState<SearchState>({ status: 'idle' })
   const [analysis, setAnalysis] = useState<AnalysisState>(() =>
@@ -205,11 +208,9 @@ export function AnalysisSessionProvider({
       // On arrival, the analysis shown as running is this one: nothing to replace.
       const arriving = analysis.status === 'running' && analysis.settings === initialQuick
       if (arriving || (await confirmReplace())) {
-        const settings = quickSettings(accounts)
+        const settings = quickSettings(library)
         void runAnalysis(settings, (signal) =>
-          ref
-            ? findGame(accounts, ref, { signal })
-            : findGames(accounts, settings.selection, { signal }),
+          ref ? library.findOne(ref, signal) : library.find(settings.selection, signal),
         )
       }
       void navigate({ to: '/player/results', search: usernames, replace: true })
@@ -242,7 +243,7 @@ export function AnalysisSessionProvider({
     const { selection } = draft
     const signal = restart(searchJob)
     setSearch({ status: 'finding' })
-    findGames(accounts, selection, { signal }).then(
+    library.find(selection, signal).then(
       (found) => {
         if (!signal.aborted) setSearch({ status: 'found', found, selection })
       },
@@ -250,7 +251,7 @@ export function AnalysisSessionProvider({
         if (!signal.aborted) setSearch({ status: 'error', error })
       },
     )
-  }, [accounts, draft])
+  }, [library, draft])
 
   /** Starting a new analysis replaces the current one, and the training built on it. */
   const confirmReplace = useCallback(async () => {
@@ -274,10 +275,10 @@ export function AnalysisSessionProvider({
     const { found, selection } = search
     const settings = { selection, criteria: draft.criteria }
     // Remembered for next time: the settings of the last analysis launched from the filters.
-    saveReviewSettings(settings)
+    if (library.kind === 'accounts') saveReviewSettings(settings)
     void runAnalysis(settings, async () => found)
     goTo('/player/results')
-  }, [search, draft.criteria, confirmReplace, runAnalysis, goTo])
+  }, [search, draft.criteria, confirmReplace, runAnalysis, goTo, library.kind])
 
   const showTraining = useCallback(
     (number: number) =>
@@ -318,7 +319,7 @@ export function AnalysisSessionProvider({
       setTrainings((tabs) => [...tabs, tab])
       showTraining(tab.number)
     },
-    [analysis, analysisId, trainings.length, showTraining],
+    [analysis, analysisId, trainings, showTraining],
   )
 
   const newTraining = useCallback(() => {
@@ -514,6 +515,7 @@ export function AnalysisSessionProvider({
 
   const value: Session = {
     accounts,
+    library,
     gameTotal,
     draft,
     setDraft,

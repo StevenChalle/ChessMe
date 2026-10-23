@@ -16,8 +16,8 @@ const SEARCH_DELAY_MS = 400
 
 /** Closed accounts have no games to analyse. */
 function AnalysisTab() {
-  const { accounts } = useAnalysisSession()
-  if (accounts.length === 0) {
+  const { accounts, library } = useAnalysisSession()
+  if (library.kind === 'accounts' && accounts.length === 0) {
     return <p className="text-muted-foreground">{m.analysis_unavailable()}</p>
   }
   return <FiltersTab />
@@ -28,8 +28,18 @@ function AnalysisTab() {
  * with the button launching the analysis.
  */
 function FiltersTab() {
-  const { accounts, gameTotal, draft, setDraft, search, analysis, analysisSettings, find, launch } =
-    useAnalysisSession()
+  const {
+    accounts,
+    library,
+    gameTotal,
+    draft,
+    setDraft,
+    search,
+    analysis,
+    analysisSettings,
+    find,
+    launch,
+  } = useAnalysisSession()
 
   // While the analysis fetches its games, wait: one Lichess request at a time.
   const analysisFetching = analysis.status === 'running' && analysis.progress.phase === 'fetching'
@@ -66,6 +76,7 @@ function FiltersTab() {
     <div className="space-y-6" onKeyDown={onKeyDown}>
       <ReviewSetup
         accounts={accounts}
+        sources={library.sources}
         gameTotal={gameTotal}
         value={draft}
         onChange={setDraft}

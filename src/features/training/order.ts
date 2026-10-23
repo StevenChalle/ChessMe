@@ -55,9 +55,11 @@ export function mistakesByGame(mistakes: Mistake[], filter: MistakeFilter): Mist
   const games = new Map<string, Mistake[]>()
   for (const mistake of mistakes) {
     if (!keepsMistake(mistake, filter)) continue
-    const game = games.get(mistake.game.url)
+    // By game: its origin and id (imported games may have no link).
+    const key = `${mistake.game.source}-${mistake.game.id}`
+    const game = games.get(key)
     if (game) game.push(mistake)
-    else games.set(mistake.game.url, [mistake])
+    else games.set(key, [mistake])
   }
   return [...games.values()].map((game) => game.toSorted((a, b) => a.ply - b.ply))
 }

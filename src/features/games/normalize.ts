@@ -13,17 +13,32 @@ import { CATEGORIES, type Category } from '@/features/player/summary'
 
 export type GameResult = 'win' | 'draw' | 'loss'
 
+/** Where a game comes from: a platform's account, or a PGN imported by the player. */
+export type GameSource = ApiSource | 'import'
+
+/** A time control category; imported games may not say theirs. */
+export type GameCategory = Category | 'unknown'
+
+/** Every category a game can have, the unknown one last. */
+export const GAME_CATEGORIES: GameCategory[] = [...CATEGORIES, 'unknown']
+
 export type TimeControl =
   /** Seconds */
-  { kind: 'clock'; initial: number; increment: number } | { kind: 'daily'; days: number }
+  | { kind: 'clock'; initial: number; increment: number }
+  | { kind: 'daily'; days: number }
+  /** An imported game without it */
+  | { kind: 'unknown' }
 
 export type GameSummary = {
-  source: ApiSource
+  source: GameSource
   id: string
-  url: string
-  /** When the game ended */
+  /** The game on its platform; imported games may have none */
+  url?: string
+  /** When the game ended. Undated imported games get one in 1970, in the file's order. */
   playedAt: Date
-  category: Category
+  /** An imported game without date: `playedAt` only orders it */
+  undated?: boolean
+  category: GameCategory
   timeControl: TimeControl
   rated: boolean
   /** Undefined for standard chess; otherwise the platform's variant key (chess960, crazyhouse…) */
@@ -172,6 +187,7 @@ const MINUTE_FRACTIONS: Record<number, string> = { 15: '¼', 30: '½', 45: '¾' 
 
 /** "3+2", "½+0", "1.5+1", "3 d" */
 export function timeControlLabel(timeControl: TimeControl): string {
+  if (timeControl.kind === 'unknown') return ''
   if (timeControl.kind === 'daily') return m.time_control_days({ days: timeControl.days })
   const { initial, increment } = timeControl
   const minutes = MINUTE_FRACTIONS[initial] ?? formatNumber(initial / 60)

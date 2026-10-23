@@ -5,7 +5,7 @@ import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { GamesTable } from '@/features/games/components/GamesTable'
 import type { GameSummary } from '@/features/games/normalize'
-import type { PlayerUsernames } from '@/features/player/search'
+import type { PlayerUsernames, ProfileSearch } from '@/features/player/search'
 import { sourceErrorMessage } from '@/features/player/sources'
 import { gameRef } from '@/features/review/gameRef'
 import { formatNumber } from '@/lib/format'
@@ -15,7 +15,7 @@ import { HISTORY_PAGE_SIZE, type HistoryAccount } from '../feed'
 import { historyKeys, historyQueryOptions } from '../queries'
 
 /** Straight to the analysis of this game alone, then its training. */
-function AnalyzeLink({ game, usernames }: { game: GameSummary; usernames: PlayerUsernames }) {
+export function AnalyzeLink({ game, usernames }: { game: GameSummary; usernames: ProfileSearch }) {
   return (
     <Button size="xs" asChild>
       <Link

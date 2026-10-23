@@ -66,9 +66,10 @@ export function EvalChart({ game }: { game: ReviewedGame }) {
   // The tooltip's width, to know whether it fits left of the move.
   const tipRef = useRef<HTMLDivElement>(null)
   const [tipWidth, setTipWidth] = useState(TIP_WIDTH)
+  const active = pinned ?? hovered
   useLayoutEffect(() => {
     if (tipRef.current?.offsetWidth) setTipWidth(tipRef.current.offsetWidth)
-  })
+  }, [active])
 
   useEffect(() => {
     const element = wrapRef.current
@@ -104,7 +105,6 @@ export function EvalChart({ game }: { game: ReviewedGame }) {
     const ratio = (event.clientX - box.left - PAD_X) / Math.max(box.width - 2 * PAD_X, 1)
     return Math.min(Math.max(Math.round(ratio * (count - 1)), 1), count - 1)
   }
-  const active = pinned ?? hovered
   if (count < 2) return null
 
   const points = (plies: number[]) => plies.map((ply) => ply + 1).filter((index) => index < count)
