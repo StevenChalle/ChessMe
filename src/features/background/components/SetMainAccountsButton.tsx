@@ -112,9 +112,9 @@ export function SetMainAccountsButton({ accounts }: { accounts: ReviewAccount[] 
                 role="img"
                 aria-label={label}
                 tabIndex={0}
-                className="inline-flex size-12 items-center justify-center rounded-md text-win outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                className="inline-flex size-14 items-center justify-center rounded-md text-win outline-none focus-visible:ring-2 focus-visible:ring-primary"
               >
-                <UserCheck className="size-8" />
+                <UserCheck className="size-12" />
               </span>
             ) : (
               <Button
@@ -124,9 +124,9 @@ export function SetMainAccountsButton({ accounts }: { accounts: ReviewAccount[] 
                   setDeleteGames(false)
                   setOpen(true)
                 }}
-                className="size-12 rounded-md text-muted-foreground hover:text-primary"
+                className="size-14 rounded-md text-muted-foreground hover:text-primary"
               >
-                <UserPlus className="size-8" />
+                <UserPlus className="size-12" />
               </Button>
             )}
           </TooltipTrigger>
