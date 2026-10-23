@@ -6,6 +6,7 @@ import {
   toCp,
   VALID_MAX_DROP,
 } from '@/features/review/errors'
+import { beginActivity } from '@/lib/activity'
 import { Stockfish } from '@/lib/engine/stockfish'
 import type { EngineScore } from '@/lib/engine/uci'
 import { play, positionFromFen, sameMove } from './moves'
@@ -65,6 +66,8 @@ export class Coach {
   private generation = 0
   /** Valid-move threshold (see isValidMove): the review's criteria */
   private readonly validMaxDrop: number
+  /** Ends the activity the engine is (lib/activity.ts): it pauses the background analysis */
+  private endActivity: (() => void) | undefined
 
   constructor(validMaxDrop = VALID_MAX_DROP) {
     this.validMaxDrop = validMaxDrop
@@ -135,6 +138,8 @@ export class Coach {
       () => {},
     )
     this.engine = undefined
+    this.endActivity?.()
+    this.endActivity = undefined
     this.references.clear()
     this.moveEvaluations.clear()
     this.queue = Promise.resolve()
@@ -178,6 +183,8 @@ export class Coach {
   private start(): Promise<Stockfish> {
     if (this.terminated) return Promise.reject(new Error('Coach terminated'))
     if (!this.engine) {
+      // From its start to terminate(): the player answers at any moment, so the engine must be free.
+      this.endActivity ??= beginActivity()
       const engine: Promise<Stockfish> = Stockfish.start().then((started) => {
         // Terminated while starting: do not leave a worker behind.
         if (this.engine !== engine) started.terminate()

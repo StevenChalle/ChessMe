@@ -63,6 +63,14 @@ const API_FETCHERS: GameFetchers = {
   chessComMonth: fetchArchiveGames,
 }
 
+/** The background analysis's downloads: not the player's, so they never pause it (lib/activity.ts). */
+export const BACKGROUND_FETCHERS: GameFetchers = {
+  lichessExport: (username, options, signal, onGame) =>
+    exportStandardGames(username, options, signal, onGame, true),
+  chessComArchives: (username, signal) => fetchArchives(username, signal, true),
+  chessComMonth: (url, signal) => fetchArchiveGames(url, signal, true),
+}
+
 const LICHESS_PERFS: Record<GameCategory, string[]> = {
   bullet: ['ultraBullet', 'bullet'],
   blitz: ['blitz'],

@@ -1,3 +1,4 @@
+import { withActivity } from '@/lib/activity'
 import { fetchJson } from '@/lib/http'
 import type { ChessComGame, ChessComPlayer, ChessComProfile, ChessComStats } from './types'
 
@@ -25,12 +26,21 @@ export async function fetchPlayer(username: string, signal?: AbortSignal): Promi
   return { profile, stats }
 }
 
+/**
+ * A download of games: an activity of the player (lib/activity.ts), which pauses the background
+ * analysis, unless it is the background analysis's own.
+ */
+const gamesRequest = <T>(background: boolean, task: () => Promise<T>) =>
+  background ? task() : withActivity(task)
+
 /** Monthly archive URLs, oldest first. */
-export async function fetchArchives(username: string, signal?: AbortSignal): Promise<string[]> {
-  const { archives } = await fetchJson<{ archives: string[] }>(
-    'chesscom',
-    `${playerUrl(username)}/games/archives`,
-    signal,
+export async function fetchArchives(
+  username: string,
+  signal?: AbortSignal,
+  background = false,
+): Promise<string[]> {
+  const { archives } = await gamesRequest(background, () =>
+    fetchJson<{ archives: string[] }>('chesscom', `${playerUrl(username)}/games/archives`, signal),
   )
   return archives
 }
@@ -44,7 +54,10 @@ export function archiveUrl(username: string, year: number, month: number): strin
 export async function fetchArchiveGames(
   archiveUrl: string,
   signal?: AbortSignal,
+  background = false,
 ): Promise<ChessComGame[]> {
-  const { games } = await fetchJson<{ games: ChessComGame[] }>('chesscom', archiveUrl, signal)
+  const { games } = await gamesRequest(background, () =>
+    fetchJson<{ games: ChessComGame[] }>('chesscom', archiveUrl, signal),
+  )
   return games
 }

@@ -1,3 +1,4 @@
+import { withActivity } from '@/lib/activity'
 import { fetchJson, fetchOk } from '@/lib/http'
 import type { LichessGame, LichessUser } from './types'
 
@@ -10,8 +11,22 @@ export function fetchUser(username: string, signal?: AbortSignal): Promise<Liche
 /** Standard chess only: variants are left out of the export by listing these perfs. */
 const STANDARD_PERFS = 'ultraBullet,bullet,blitz,rapid,classical,correspondence'
 
-/** Streams a game export (NDJSON) with the given query parameters, newest first. */
-async function exportGames(
+/**
+ * Streams a game export (NDJSON) with the given query parameters, newest first. An activity of
+ * the player (lib/activity.ts), which pauses the background analysis, unless it is its own.
+ */
+function exportGames(
+  username: string,
+  params: Record<string, string>,
+  signal?: AbortSignal,
+  onGame?: (game: LichessGame) => void,
+  background = false,
+): Promise<LichessGame[]> {
+  const task = () => streamExport(username, params, signal, onGame)
+  return background ? task() : withActivity(task)
+}
+
+async function streamExport(
   username: string,
   params: Record<string, string>,
   signal?: AbortSignal,
@@ -65,24 +80,27 @@ export function exportParams(options: GameExportOptions): Record<string, string>
 /**
  * Standard games matching `options`, newest first. A single streamed request: never run
  * several Lichess exports at once. `onGame` reports each game as it arrives (about 20 per second).
+ * `background`: the background analysis's own export, which any other one interrupts.
  */
 export function exportStandardGames(
   username: string,
   options: GameExportOptions,
   signal?: AbortSignal,
   onGame?: (game: LichessGame) => void,
+  background = false,
 ): Promise<LichessGame[]> {
-  return exportGames(username, exportParams(options), signal, onGame)
+  return exportGames(username, exportParams(options), signal, onGame, background)
 }
 
 /**
  * One game, with moves, Lichess evaluations and clocks; undefined if it does not exist. Exported by
  * id list: from a browser, /game/export/{id} answers 401 in JSON (see docs/apis.md).
  */
-export async function exportGame(
-  id: string,
-  signal?: AbortSignal,
-): Promise<LichessGame | undefined> {
+export function exportGame(id: string, signal?: AbortSignal): Promise<LichessGame | undefined> {
+  return withActivity(() => exportOneGame(id, signal))
+}
+
+async function exportOneGame(id: string, signal?: AbortSignal): Promise<LichessGame | undefined> {
   const query = new URLSearchParams({ evals: 'true', clocks: 'true' })
   const response = await fetchOk('lichess', `${BASE_URL}/api/games/export/_ids?${query}`, {
     method: 'POST',

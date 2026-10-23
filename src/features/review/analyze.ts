@@ -31,7 +31,7 @@ export const DEEP_NODES = 1_000_000
  */
 export const ANALYSIS_VERSION = 1
 
-const RECIPE: AnalysisRecipe = {
+export const RECIPE: AnalysisRecipe = {
   version: ANALYSIS_VERSION,
   engine: ENGINE_ID,
   quickNodes: QUICK_NODES,

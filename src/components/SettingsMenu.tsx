@@ -14,6 +14,7 @@ import {
 } from '@/components/board/boardStyle'
 import { Button } from '@/components/ui/button'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
+import { MainProfileSettings } from '@/features/background/components/MainProfileSettings'
 import { CacheSettings } from '@/features/review/components/CacheSettings'
 import { useConfirm } from '@/hooks/useConfirm'
 import { cn } from '@/lib/utils'
@@ -90,7 +91,7 @@ export function SettingsMenu() {
             <Settings />
           </Button>
         </PopoverTrigger>
-        <PopoverContent align="end" className="w-72 space-y-4">
+        <PopoverContent align="end" className="max-h-[85dvh] w-72 space-y-4 overflow-y-auto">
           <Group title={m.settings_language()}>
             <div className="grid grid-cols-2 gap-2">
               {locales.map((locale) => (
@@ -179,6 +180,10 @@ export function SettingsMenu() {
                 </button>
               ))}
             </div>
+          </Group>
+
+          <Group title={m.settings_main()}>
+            <MainProfileSettings />
           </Group>
 
           <Group title={m.settings_cache()}>

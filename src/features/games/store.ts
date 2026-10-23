@@ -1,4 +1,5 @@
 import Dexie from 'dexie'
+import { getMainProfile, mainAccounts } from '@/features/background/profile'
 import { database, type AccountSync, type AppDatabase, type StoredGame } from '@/lib/db'
 import type { ChessComGame } from '@/lib/chesscom/types'
 import type { ApiSource } from '@/lib/http'
@@ -117,22 +118,31 @@ async function deleteAccount(db: AppDatabase, account: string): Promise<number> 
 }
 
 /**
- * Removes whole accounts, the least recently searched first, but never `keep`: down to 90 % of
- * `max`, or at least one account with `force` (the disk is full).
+ * Removes whole accounts, the least recently searched first, but never those of `keep`: down to
+ * 90 % of `max`, or at least one account with `force` (the disk is full).
  */
-async function evict(db: AppDatabase, keep: string, max: number, force = false): Promise<void> {
+async function evict(db: AppDatabase, keep: string[], max: number, force = false): Promise<void> {
   let total = await db.accountGames.count()
   if (!force && total <= max) return
   const target = force ? total - 1 : Math.floor(max * 0.9)
   for (const { account } of await db.accountSync.orderBy('usedAt').toArray()) {
     if (total <= target) return
-    if (account !== keep) total -= await deleteAccount(db, account)
+    if (!keep.includes(account)) total -= await deleteAccount(db, account)
   }
 }
 
 export function createGameStore(
   getDatabase: () => AppDatabase,
-  { now = Date.now, maxGames = MAX_STORED_GAMES }: { now?: () => number; maxGames?: number } = {},
+  {
+    now = Date.now,
+    maxGames = MAX_STORED_GAMES,
+    kept = () => [],
+  }: {
+    now?: () => number
+    maxGames?: number
+    /** Accounts never evicted: the player's main ones */
+    kept?: () => string[]
+  } = {},
 ): GameStore {
   /** Every failure becomes a GameStoreError, so that callers tell it from the platforms' errors. */
   const guard = async <T>(task: (db: AppDatabase) => Promise<T>): Promise<T> => {
@@ -155,7 +165,7 @@ export function createGameStore(
           await db.accountGames.bulkPut(games)
         } catch (error) {
           if (!isQuotaError(error)) throw error
-          await evict(db, games[0]!.account, maxGames, true)
+          await evict(db, [games[0]!.account, ...kept()], maxGames, true)
           await db.accountGames.bulkPut(games)
         }
       }),
@@ -199,13 +209,20 @@ export function createGameStore(
           const sync = (await db.accountSync.get(account)) ?? emptySync(account)
           await db.accountSync.put({ ...sync, usedAt: now() })
         })
-        await evict(db, account, maxGames)
+        await evict(db, [account, ...kept()], maxGames)
       }),
   }
 }
 
-/** The browser's store, used by the analysis search. */
-export const gameStore = createGameStore(database)
+/** The browser's store, used by the analysis search. The main accounts are never evicted. */
+export const gameStore = createGameStore(database, {
+  kept: () => {
+    const profile = getMainProfile()
+    return profile
+      ? mainAccounts(profile).map(({ source, username }) => accountKey(source, username))
+      : []
+  },
+})
 
 /** What the store holds, for the settings. Undefined when IndexedDB is unavailable. */
 export async function gameStoreStats(): Promise<{ accounts: number; games: number } | undefined> {

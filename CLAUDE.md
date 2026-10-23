@@ -9,6 +9,7 @@ Application web (PWA installable) pour explorer les stats et les parties d'un jo
 - Feuille de route : [docs/roadmap.md](docs/roadmap.md)
 - Cache des analyses dans le navigateur (conception et règles) : [docs/analysis-cache.md](docs/analysis-cache.md)
 - Parties des comptes dans le navigateur, synchro incrémentale : [docs/game-store.md](docs/game-store.md)
+- Analyse de fond des comptes principaux : [docs/background-analysis.md](docs/background-analysis.md)
 - Checklists en cours, à supprimer une fois terminées : [docs/domain-craftyourchess.md](docs/domain-craftyourchess.md) (finitions du domaine), [docs/staging.md](docs/staging.md) (environnement de staging, reporté), [docs/logo-prompt.md](docs/logo-prompt.md) (prompt logo pour ChatGPT et Gemini), [docs/identity-brief.md](docs/identity-brief.md) (identité visuelle avec Claude Design)
 
 ## Commandes
@@ -49,6 +50,7 @@ src/
   features/review/    # analyse : criteria.ts, selection.ts, fetch.ts (recherche), estimate.ts, errors.ts (erreur, coup valide), analyze.ts (deux passes, approfondissement), cache.ts (évaluations gardées par position dans IndexedDB), library.ts (parties des comptes ou importées), themes.ts (thèmes des erreurs), phases.ts, settings.ts, session des onglets d'analyse (session.tsx), graphique d'évaluation (components/EvalChart.tsx)
   features/training/  # rejouer ses erreurs : session.ts (reducer), order.ts (ordre de jeu, options), settings.ts (options mémorisées), coach.ts (Stockfish), moves.ts (FEN/UCI), evaluation.ts
   features/import/    # import de parties PGN : pgn.ts (lecture, joueur, côté), store.ts (lot en mémoire), fenêtre d'import et onglet Parties d'un import
+  features/background/ # analyse de fond des comptes principaux : profile.ts (comptes, nombre de parties), runner.ts (boucle), indicateur de l'en-tête, réglages
   features/contact/   # formulaire de retours (FeedbackForm)
   lib/lichess/        # client HTTP, types, queryOptions de l'API Lichess
   lib/chesscom/       # idem pour l'API Chess.com
@@ -57,6 +59,7 @@ src/
   lib/format.ts       # formats (nombres, dates, pays…) dans la langue courante
   lib/contact.ts      # envoi des retours via Web3Forms (clé VITE_WEB3FORMS_KEY)
   lib/db.ts           # base Dexie `craftyourchess` (parties des comptes, cache des analyses)
+  lib/activity.ts     # activités du joueur (Stockfish, téléchargements de parties) : le travail de fond leur cède la place
   lib/localData.ts    # clearLocalData() (localStorage et base IndexedDB) et migration des anciennes clés chessme:*
   lib/project.ts      # lien du code source, hébergeur, adresse de contact
   lib/                # utilitaires transverses
@@ -92,6 +95,7 @@ L'interface existe en **anglais (langue de base) et en français**. Langue initi
 ## Règles à respecter
 
 - **API Lichess : une seule requête à la fois**. Sur un 429, attendre 60 s. Ne jamais paralléliser les exports de parties.
+- **Stockfish et téléchargements de parties du joueur** : tout nouvel usage passe par `lib/activity.ts` (`withActivity` / `beginActivity`), pour que l'analyse de fond lui cède la place. Les clients `lib/lichess` et `lib/chesscom` le font déjà pour les parties.
 - Licence : **GPL-3.0** (fichier `LICENSE`), imposée par chessground, chessops et Stockfish. Le lien « Code source » du pied de page doit rester visible (`lib/project.ts`), et toute nouvelle dépendance doit être compatible avec la GPL.
 - **Vie privée** : tout nouveau stockage local (clé `localStorage` préfixée `craftyourchess:`, base IndexedDB) ou tout nouveau service tiers appelé doit être **déclaré sur la page `/legal`**, et le stockage doit être **effacé par `clearLocalData()`** (`lib/localData.ts`).
 - Stockfish multi-thread exige les en-têtes COOP/COEP : à configurer à la fois dans Vite et chez l'hébergeur le jour où on l'ajoute (voir docs/decisions.md).

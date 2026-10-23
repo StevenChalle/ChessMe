@@ -244,6 +244,29 @@ export function cacheWriter(cache: EvaluationCache, delayMs = 1000) {
   }
 }
 
+/**
+ * The games (movesHash) analysed with this recipe or a later one by the same engine: the background
+ * analysis skips them. Empty when IndexedDB is unavailable (everything looks to do: the positions
+ * are still found in the cache, if it works).
+ */
+export async function analysedGames(
+  hashes: string[],
+  recipe: AnalysisRecipe,
+): Promise<Set<string>> {
+  try {
+    const rows = await database().games.bulkGet(hashes)
+    return new Set(
+      rows.flatMap((row) =>
+        row && row.analysis.engine === recipe.engine && row.analysis.version >= recipe.version
+          ? [row.hash]
+          : [],
+      ),
+    )
+  } catch {
+    return new Set()
+  }
+}
+
 /** What the cache holds, for the settings. Undefined when IndexedDB is unavailable. */
 export async function analysisCacheStats(): Promise<
   { games: number; positions: number } | undefined

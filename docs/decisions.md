@@ -625,3 +625,15 @@ Avec le cache d'analyses, réanalyser des parties déjà vues est instantané c�
 - Écartés : un import complet obligatoire (trop long) ; une couverture unique toutes cadences confondues (une recherche de blitz téléchargerait tout le bullet) ; des périodes aussi par couleur et classée/amicale (trop de périodes pour un gain d'au plus deux fois moins de parties) ; stocker les parties normalisées (la normalisation dépend du pseudo et évolue).
 - Mesuré dans le navigateur : 500 parties Lichess déjà vues retrouvées en 0,6 s (deux requêtes : 3 h des cadences en direct, 60 jours de correspondance), au lieu d'environ 20 s.
 - Repli : si le magasin échoue, la recherche repart sans lui, comme avant. Pas encore de file unique pour toutes les requêtes Lichess de l'app ; l'onglet Parties télécharge encore ses pages lui-même.
+
+## 2026-10-23 : analyse de fond des comptes principaux
+
+Le joueur peut choisir ses comptes principaux (Lichess, Chess.com) dans les réglages : l'app récupère et analyse alors elle-même ses N dernières parties, sur n'importe quelle page. Conception : [background-analysis.md](background-analysis.md). Implémenté le même jour.
+
+- **N dernières parties toutes plateformes confondues**, au choix 50, 200, 500 ou 1000 ; 500 par défaut sur ordinateur, 50 sur téléphone, avec l'estimation du calcul affichée. Toute une carrière (environ 80 h de calcul pour 10 000 parties) n'a pas de sens par défaut.
+- **Choisir ses comptes vaut consentement** ; un indicateur dans l'en-tête montre l'avancement, avec pause.
+- **Le joueur passe toujours avant** : analyse, approfondissement, entraînement (tant que son moteur existe) ou recherche de parties mettent le fond en pause ; il abandonne aussitôt et repart après, sans rien perdre grâce au cache et au magasin.
+- **Onglet caché** : on continue sur ordinateur (le téléphone gèle l'onglet de toute façon). **Plusieurs onglets** : un seul fait le travail (Web Locks).
+- Une partie plus ancienne cherchée à la main est gardée, jamais suivie automatiquement. Les comptes principaux ne sont jamais évincés du magasin.
+- Écartés : analyser toute la carrière ; N par plateforme (un vieux compte abandonné ferait analyser de vieilles parties) ; partager les moteurs pendant un entraînement (plus complexe pour un gain faible).
+- Vérifié dans le navigateur : pause pendant un entraînement et reprise environ 4 s après sa fermeture ; un seul onglet travaille ; une activité dans un autre onglet met le fond en pause en moins de 2 s.

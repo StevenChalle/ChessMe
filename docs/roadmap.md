@@ -29,7 +29,9 @@
 - [ ] Courbe Elo (ECharts)
 - [x] Cache des évaluations dans le navigateur (Dexie) : une analyse relancée ou interrompue ne repart pas de zéro
 - [x] Parties des comptes gardées dans le navigateur, synchro incrémentale ([game-store.md](game-store.md)) pour la recherche de l'analyse
+- [x] Analyse de fond des comptes principaux ([background-analysis.md](background-analysis.md))
 - [ ] Onglet Parties : lire le magasin des parties au lieu de paginer l'API
+- [ ] Montrer le résultat de l'analyse de fond sur son propre profil (dernières parties déjà analysées, puis évolution)
 - [ ] Liste des parties filtrable, et visionneuse de partie (chessground + chessops)
 - [ ] Étendre l'effacement des données locales (page `/legal`) aux parties importées
 
@@ -40,6 +42,6 @@
 - Analyse des parties : détailler les erreurs (positions, meilleur coup)
 - Entraînement : mémoriser les résultats, revoir en priorité les positions ratées, sélecteur de promotion
 - Import des parties Chess.com (archives mensuelles)
-- Mémoriser les comptes liés (profil « moi »), à distinguer des recherches récentes
+- Mémoriser les comptes liés (profil « moi ») : fait avec les comptes principaux des réglages ; reste à s'en servir ailleurs (accueil, raccourcis)
 - Backend, si comptes ou synchro entre appareils
 - Environnement de staging sur `staging.craftyourchess.com`, déployé depuis `develop` : second service dans `render.yaml`, CI aussi sur `develop`, en-tête `noindex`, nom de PWA distinct, pas de clé Web3Forms

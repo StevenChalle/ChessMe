@@ -4,6 +4,7 @@ import type { ProfileSearch } from '@/features/player/search'
 import { useConfirm } from '@/hooks/useConfirm'
 import { useKeepAwake } from '@/hooks/useKeepAwake'
 import { ActiveTime, trackActiveTime } from '@/lib/activeTime'
+import { beginActivity, withActivity } from '@/lib/activity'
 import { trainingPuzzles } from '@/features/training/order'
 import {
   DEFAULT_TRAINING_SETTINGS,
@@ -161,15 +162,17 @@ export function AnalysisSessionProvider({
         const games =
           found.games.length === 0
             ? []
-            : await analyzeGames(found.games, settings.criteria, {
-                signal,
-                onProgress: (progress) => {
-                  clock.markProgress()
-                  if (!signal.aborted) {
-                    setAnalysis({ status: 'running', progress, settings, clock })
-                  }
-                },
-              })
+            : await withActivity(() =>
+                analyzeGames(found.games, settings.criteria, {
+                  signal,
+                  onProgress: (progress) => {
+                    clock.markProgress()
+                    if (!signal.aborted) {
+                      setAnalysis({ status: 'running', progress, settings, clock })
+                    }
+                  },
+                }),
+              )
         if (!signal.aborted) {
           setAnalysis({
             status: 'done',
@@ -427,6 +430,9 @@ export function AnalysisSessionProvider({
 
   const deepenGames = useCallback(async (gameKeys: string[], scope: Deepening['scope']) => {
     const signal = restart(deepenJob)
+    // Stockfish is the player's until the deepening ends: the background analysis waits.
+    const endActivity = beginActivity()
+    signal.addEventListener('abort', endActivity, { once: true })
     for (const [position, gameKey] of gameKeys.entries()) {
       const current = analysisRef.current
       if (signal.aborted || current.status !== 'done') break
@@ -466,6 +472,7 @@ export function AnalysisSessionProvider({
         break
       }
     }
+    endActivity()
     if (!signal.aborted) setDeepening(undefined)
   }, [])
 
