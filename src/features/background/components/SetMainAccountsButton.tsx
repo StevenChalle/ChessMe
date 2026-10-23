@@ -35,9 +35,10 @@ type Change = { source: ApiSource; before?: string; after?: string }
 
 function changes(profile: MainProfile | undefined, accounts: ReviewAccount[]): Change[] {
   const before = profile ? mainAccounts(profile) : []
+  const after = mainAccounts(withMainAccounts(profile, accounts))
   return SOURCES.flatMap((source) => {
     const old = before.find((account) => account.source === source)?.username
-    const next = accounts.find((account) => account.source === source)?.username
+    const next = after.find((account) => account.source === source)?.username
     return old || next ? [{ source, before: old, after: next }] : []
   })
 }

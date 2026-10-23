@@ -111,34 +111,45 @@ function accountKeys(accounts: ReviewAccount[]): string[] {
   return accounts.map(({ source, username }) => `${source}:${username.toLowerCase()}`)
 }
 
-/** These accounts are exactly the main ones. */
+/**
+ * Each account shown is already the main one of its platform. The accounts shown only ever
+ * concern their own platforms: a Lichess profile never touches the Chess.com main account.
+ */
 export function areMainAccounts(
   profile: MainProfile | undefined,
   accounts: ReviewAccount[],
 ): boolean {
   if (!profile) return false
   const main = accountKeys(mainAccounts(profile))
-  const shown = accountKeys(accounts)
-  return main.length === shown.length && shown.every((key) => main.includes(key))
+  return accounts.length > 0 && accountKeys(accounts).every((key) => main.includes(key))
 }
 
-/** The main accounts of `profile` that making `accounts` the main ones would drop. */
+/** The main accounts that making `accounts` the main ones would replace: same platform, another name. */
 export function replacedAccounts(
   profile: MainProfile | undefined,
   accounts: ReviewAccount[],
 ): ReviewAccount[] {
   if (!profile) return []
-  const kept = accountKeys(accounts)
-  return mainAccounts(profile).filter((account) => !kept.includes(accountKeys([account])[0]!))
+  const shown = accountKeys(accounts)
+  return mainAccounts(profile).filter(
+    (account) =>
+      accounts.some((item) => item.source === account.source) &&
+      !shown.includes(accountKeys([account])[0]!),
+  )
 }
 
-/** `accounts` as the main ones, keeping the profile's other choices. */
+/**
+ * `accounts` as the main ones of their platforms; the other platform's main account and the
+ * profile's other choices stay.
+ */
 export function withMainAccounts(
   profile: MainProfile | undefined,
   accounts: ReviewAccount[],
 ): MainProfile {
-  const lichess = accounts.find((account) => account.source === 'lichess')?.username
-  const chesscom = accounts.find((account) => account.source === 'chesscom')?.username
+  const shown = (source: ReviewAccount['source']) =>
+    accounts.find((account) => account.source === source)?.username
+  const lichess = shown('lichess') ?? profile?.lichess
+  const chesscom = shown('chesscom') ?? profile?.chesscom
   return {
     ...(lichess && { lichess }),
     ...(chesscom && { chesscom }),

@@ -62,28 +62,32 @@ describe('making accounts the main ones', () => {
   const lichess = (username: string) => ({ source: 'lichess' as const, username })
   const chesscom = (username: string) => ({ source: 'chesscom' as const, username })
 
-  it('knows when the accounts shown are exactly the main ones, whatever the case', () => {
+  it('knows when each account shown is already the main one of its platform', () => {
     expect(areMainAccounts(main, [lichess('alice'), chesscom('ALICE_CC')])).toBe(true)
-    expect(areMainAccounts(main, [lichess('alice')])).toBe(false)
+    expect(areMainAccounts(main, [lichess('alice')])).toBe(true)
+    expect(areMainAccounts(main, [lichess('bob')])).toBe(false)
     expect(areMainAccounts(undefined, [lichess('alice')])).toBe(false)
   })
 
-  it('lists the main accounts that would be dropped', () => {
+  it('only replaces the main account of the platforms shown', () => {
     expect(replacedAccounts(main, [lichess('alice'), chesscom('alice_cc')])).toEqual([])
-    expect(replacedAccounts(main, [lichess('bob')])).toEqual([
-      lichess('Alice'),
+    expect(replacedAccounts(main, [lichess('bob')])).toEqual([lichess('Alice')])
+    expect(replacedAccounts(main, [chesscom('bob'), lichess('ALICE')])).toEqual([
       chesscom('alice_cc'),
     ])
-    expect(replacedAccounts(main, [lichess('ALICE')])).toEqual([chesscom('alice_cc')])
     expect(replacedAccounts(undefined, [lichess('bob')])).toEqual([])
   })
 
-  it('keeps the other choices of the profile', () => {
-    expect(withMainAccounts(main, [chesscom('bob')])).toEqual({
-      chesscom: 'bob',
+  it("keeps the other platform's main account and the profile's choices", () => {
+    expect(withMainAccounts(main, [lichess('bob')])).toEqual({
+      lichess: 'bob',
+      chesscom: 'alice_cc',
       depth: 200,
       deep: false,
     })
+    expect(
+      withMainAccounts({ lichess: 'Alice', depth: 50, deep: true }, [chesscom('bob')]),
+    ).toEqual({ lichess: 'Alice', chesscom: 'bob', depth: 50, deep: true })
     expect(withMainAccounts(undefined, [lichess('bob')])).toEqual({
       lichess: 'bob',
       depth: defaultDepth(),
