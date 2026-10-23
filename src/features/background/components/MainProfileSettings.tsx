@@ -17,7 +17,7 @@ import { m } from '@/paraglide/messages'
 import { useBackground } from '../backgroundContext'
 import {
   defaultDepth,
-  DEPTHS,
+  depthsFor,
   mainAccounts,
   setMainProfile,
   useMainProfile,
@@ -174,7 +174,7 @@ export function MainProfileSettings() {
       <fieldset className="space-y-1.5">
         <legend className="sr-only">{m.settings_main_depth()}</legend>
         <div className="grid grid-cols-2 gap-2">
-          {DEPTHS.map((item) => (
+          {depthsFor().map((item) => (
             <button
               key={item}
               type="button"

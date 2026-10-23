@@ -639,3 +639,11 @@ Le joueur peut choisir ses comptes principaux (Lichess, Chess.com) dans les rég
 - Vérifié dans le navigateur : pause pendant un entraînement et reprise environ 4 s après sa fermeture ; un seul onglet travaille ; une activité dans un autre onglet met le fond en pause en moins de 2 s.
 - **Correctif le jour même** : un onglet caché, gelé par Chrome, gardait le verrou et bloquait tous les autres onglets (« en cours dans un autre onglet », sans avancement). Désormais l'onglet qui travaille donne signe de vie avec son avancement, et un onglet affiché reprend le travail d'un onglet caché ou muet depuis 15 s. Le démarrage des moteurs s'interrompt aussi sans attendre.
 - **Ajouts** : option « Analyse approfondie » (cochée par défaut), chaque position à 1 M de nœuds une fois toutes les parties analysées ; bouton « Synchroniser » ; vider les parties enregistrées laisse garder les joueurs cochés (comptes principaux cochés d'office).
+
+## 2026-10-23 : plafonds de stockage par appareil, recyclage
+
+Le but : ne jamais sentir de limite, mais recycler doucement le plus ancien quand il le faut, que les données viennent de l'analyse de fond ou des analyses du joueur.
+
+- **Plafonds** (`lib/storageLimits.ts`), comptés en entrées : ordinateur 100 000 parties, 2 millions de positions, 50 000 parties analysées (≈ 800 Mo en tout) ; téléphone 15 000 parties, 300 000 positions, 8 000 parties analysées (≈ 120 Mo).
+- **Recyclage** jusqu'à 90 % du plafond : positions et parties analysées les moins récemment utilisées ; pour les parties, d'abord les comptes les moins récemment cherchés (jamais les comptes principaux), puis les parties les plus anciennes, comptes principaux compris, en raccourcissant leurs périodes connues pour qu'elles restent justes.
+- **Choix sur téléphone** : 10, 25, 50 ou 150 dernières parties suivies, 50 par défaut (50, 200, 500 ou 1000 sur ordinateur, 500 par défaut).

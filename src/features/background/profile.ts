@@ -8,8 +8,16 @@ import { detectDevice, type DeviceKind } from '@/lib/device'
  * page, cleared by clearLocalData(). Without accounts, nothing runs.
  */
 
-export const DEPTHS = [50, 200, 500, 1000] as const
-export type Depth = (typeof DEPTHS)[number]
+/** The latest games the player can choose to follow: a phone does far less engine work. */
+export const DEPTHS: Record<DeviceKind, readonly number[]> = {
+  desktop: [50, 200, 500, 1000],
+  mobile: [10, 25, 50, 150],
+}
+export type Depth = number
+
+export function depthsFor(device: DeviceKind = detectDevice()): readonly number[] {
+  return DEPTHS[device]
+}
 
 export type MainProfile = {
   lichess?: string
@@ -42,7 +50,7 @@ export function parseMainProfile(raw: string | null): MainProfile | undefined {
     const lichess = username(data.lichess)
     const chesscom = username(data.chesscom)
     if (!lichess && !chesscom) return undefined
-    const depth = DEPTHS.find((item) => item === data.depth) ?? defaultDepth()
+    const depth = depthsFor().find((item) => item === data.depth) ?? defaultDepth()
     return {
       ...(lichess && { lichess }),
       ...(chesscom && { chesscom }),

@@ -88,6 +88,10 @@ export class AppDatabase extends Dexie {
       accountGames: '[account+id], [account+playedAt]',
       accountSync: 'account, usedAt',
     })
+    // The oldest games of all accounts, to recycle them once the limit is reached.
+    this.version(3).stores({
+      accountGames: '[account+id], [account+playedAt], playedAt',
+    })
   }
 }
 

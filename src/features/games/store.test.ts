@@ -46,8 +46,12 @@ beforeEach(async () => {
 
 afterEach(() => db.close())
 
-const store = (maxGames?: number) =>
-  createGameStore(() => db, { now: () => time, ...(maxGames !== undefined && { maxGames }) })
+const store = (maxGames?: number, kept: string[] = []) =>
+  createGameStore(() => db, {
+    now: () => time,
+    kept: () => kept,
+    ...(maxGames !== undefined && { maxGames }),
+  })
 
 describe('toStoredGame', () => {
   it("keeps the game with its summary from the account's side", () => {
@@ -108,6 +112,44 @@ describe('createGameStore', () => {
     expect(await db.accountGames.where('account').equals('lichess:alice').count()).toBe(0)
     expect(await db.accountGames.count()).toBe(3)
     expect(await db.accountSync.get('lichess:alice')).toBeUndefined()
+  })
+
+  it('recycles the oldest games of the main accounts once the limit is reached', async () => {
+    const games = store(4, ['lichess:alice'])
+    await games.put([1, 2, 3, 4, 5, 6].map((day) => stored(`a${day}`, day)))
+    await games.addLichessPeriods('lichess:alice', { blitz: { from: 0, to: 10 * DAY } })
+    await games.touch('lichess:alice')
+    // Down to 90 % of 4: the three oldest go, the newest stay.
+    const left = await db.accountGames.toArray()
+    expect(left.map((game) => game.id).toSorted()).toEqual(['a4', 'a5', 'a6'])
+    // The period no longer claims the games removed.
+    expect((await games.loadSync('lichess:alice')).lichess?.blitz).toEqual([
+      { from: 3 * DAY + 1, to: 10 * DAY },
+    ])
+  })
+
+  it('forgets the Chess.com months whose games were recycled', async () => {
+    const games = store(2, ['chesscom:alice'])
+    const month = (uuid: string, day: number) =>
+      toStoredGame('chesscom', 'alice', {
+        url: `https://www.chess.com/game/live/${uuid}`,
+        uuid,
+        time_control: '180',
+        time_class: 'blitz',
+        rules: 'chess',
+        rated: true,
+        end_time: Date.UTC(2026, 0, day) / 1000,
+        white: { username: 'alice', rating: 1500, result: 'win' },
+        black: { username: 'bob', rating: 1500, result: 'resigned' },
+        pgn: '1. e4 e5 1-0',
+      })!
+    await games.put([month('j1', 5), month('j2', 6), { ...month('f1', 40), id: 'f1' }])
+    await games.markMonth('chesscom:alice', '2026/01', Date.UTC(2026, 2, 1))
+    await games.markMonth('chesscom:alice', '2026/02', Date.UTC(2026, 2, 1))
+    await games.touch('chesscom:alice')
+    expect(Object.keys((await games.loadSync('chesscom:alice')).chesscomMonths ?? {})).toEqual([
+      '2026/02',
+    ])
   })
 
   it('reports its failures as GameStoreError', async () => {

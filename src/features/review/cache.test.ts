@@ -5,7 +5,6 @@ import Dexie from 'dexie'
 import {
   cacheWriter,
   createCache,
-  MAX_POSITIONS,
   movesHash,
   positionKey,
   type CacheEntry,
@@ -129,7 +128,12 @@ describe('createCache', () => {
     expect(await db.games.where('refs').equals('import:i1').count()).toBe(1)
   })
 
-  it('removes the least recently used positions above the limit', async () => {
+  it('makes room for the new positions above the limit, the least recently used first', async () => {
+    const limited = createCache(
+      () => db,
+      () => time,
+      { positions: 8, analysedGames: 100, storedGames: 100 },
+    )
     const rows = Array.from({ length: 10 }, (_, index) => ({
       key: `p${index}`,
       engine: ENGINE_ID,
@@ -139,14 +143,10 @@ describe('createCache', () => {
       usedAt: index,
     }))
     await db.positions.bulkPut(rows)
-    const count = vi.spyOn(db.positions, 'count').mockResolvedValueOnce(MAX_POSITIONS + 2)
-    const bulkDelete = vi.spyOn(db.positions, 'bulkDelete')
-    await cache.saveGames([game('g1', ['e4'])], RECIPE)
-    expect(count).toHaveBeenCalled()
-    // Down to 90 % of the limit: the oldest go first.
-    const deleted = bulkDelete.mock.calls[0]![0] as [string, string][]
-    expect(deleted).toHaveLength(Math.min(MAX_POSITIONS * 0.1 + 2, 10))
-    expect(deleted[0]).toEqual(['p0', ENGINE_ID])
+    // A new evaluation comes in: down to 90 % of the limit, the oldest go.
+    await limited.store([entry('new', 100_000)])
+    const kept = (await db.positions.toArray()).map((row) => row.key).toSorted()
+    expect(kept).toEqual(['new', 'p4', 'p5', 'p6', 'p7', 'p8', 'p9'])
   })
 
   it('never throws when IndexedDB fails', async () => {

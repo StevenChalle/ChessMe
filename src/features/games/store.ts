@@ -4,6 +4,7 @@ import { database, type AccountSync, type AppDatabase, type StoredGame } from '@
 import type { ChessComGame } from '@/lib/chesscom/types'
 import type { ApiSource } from '@/lib/http'
 import type { LichessGame } from '@/lib/lichess/types'
+import { storageLimits } from '@/lib/storageLimits'
 import {
   isStandardGame,
   summarizeChessComGame,
@@ -22,9 +23,6 @@ import { mergePeriods, type Period } from './periods'
 
 /** Change it with the rules of summarizeLichessGame / summarizeChessComGame: summaries are made again. */
 export const SUMMARY_VERSION = 1
-
-/** About 450 MB (3 KB a game). Above, whole accounts go, the least recently searched first. */
-export const MAX_STORED_GAMES = 150_000
 
 export class GameStoreError extends Error {
   constructor(cause: unknown) {
@@ -117,25 +115,82 @@ async function deleteAccount(db: AppDatabase, account: string): Promise<number> 
   return count
 }
 
+/** First day of a Chess.com month ('2026/10'), UTC. */
+const monthStart = (month: string) => {
+  const [year, number] = month.split('/').map(Number)
+  return Date.UTC(year!, number! - 1, 1)
+}
+
 /**
- * Removes whole accounts, the least recently searched first, but never those of `keep`: down to
- * 90 % of `max`, or at least one account with `force` (the disk is full).
+ * Deletes the `count` oldest games of all accounts, and shortens what is known of each account
+ * accordingly: its Lichess periods start after the latest game removed, its Chess.com months
+ * touched are forgotten (asked for again if ever needed).
+ */
+async function deleteOldest(db: AppDatabase, count: number): Promise<void> {
+  const oldest = await db.accountGames.orderBy('playedAt').limit(count).toArray()
+  const removed = new Map<string, { createdAt: number; playedAt: number }>()
+  for (const game of oldest) {
+    const latest = removed.get(game.account)
+    removed.set(game.account, {
+      createdAt: Math.max(latest?.createdAt ?? -Infinity, game.createdAt ?? game.playedAt),
+      playedAt: Math.max(latest?.playedAt ?? -Infinity, game.playedAt),
+    })
+  }
+  await db.transaction('rw', db.accountGames, db.accountSync, async () => {
+    await db.accountGames.bulkDelete(
+      oldest.map((game): [string, string] => [game.account, game.id]),
+    )
+    for (const [account, { createdAt, playedAt }] of removed) {
+      const sync = await db.accountSync.get(account)
+      if (!sync) continue
+      const lichess =
+        sync.lichess &&
+        Object.fromEntries(
+          Object.entries(sync.lichess).map(([perf, periods]) => [
+            perf,
+            periods.flatMap((period) =>
+              period.to <= createdAt
+                ? []
+                : [{ from: Math.max(period.from, createdAt + 1), to: period.to }],
+            ),
+          ]),
+        )
+      const chesscomMonths =
+        sync.chesscomMonths &&
+        Object.fromEntries(
+          Object.entries(sync.chesscomMonths).filter(([month]) => monthStart(month) > playedAt),
+        )
+      await db.accountSync.put({
+        ...sync,
+        ...(lichess && { lichess }),
+        ...(chesscomMonths && { chesscomMonths }),
+      })
+    }
+  })
+}
+
+/**
+ * Makes room above `max` games, down to 90 % of it (or a tenth less with `force`: the disk is
+ * full): first whole accounts, the least recently searched first, but never those of `keep` (the
+ * main accounts, the one searched now); then the oldest games of the accounts left. The newest
+ * games always come in: older ones are recycled.
  */
 async function evict(db: AppDatabase, keep: string[], max: number, force = false): Promise<void> {
   let total = await db.accountGames.count()
   if (!force && total <= max) return
-  const target = force ? total - 1 : Math.floor(max * 0.9)
+  const target = force ? Math.floor(total * 0.9) : Math.floor(max * 0.9)
   for (const { account } of await db.accountSync.orderBy('usedAt').toArray()) {
     if (total <= target) return
     if (!keep.includes(account)) total -= await deleteAccount(db, account)
   }
+  if (total > target) await deleteOldest(db, total - target)
 }
 
 export function createGameStore(
   getDatabase: () => AppDatabase,
   {
     now = Date.now,
-    maxGames = MAX_STORED_GAMES,
+    maxGames = storageLimits().storedGames,
     kept = () => [],
   }: {
     now?: () => number

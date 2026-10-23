@@ -2,6 +2,7 @@ import type { Table } from 'dexie'
 import { database, type AppDatabase, type CachedGame, type CachedPosition } from '@/lib/db'
 import { ENGINE_ID } from '@/lib/engine/stockfish'
 import type { EngineScore } from '@/lib/engine/uci'
+import { storageLimits, type StorageLimits } from '@/lib/storageLimits'
 import { gameRef } from './gameRef'
 import type { ReviewGame } from './games'
 
@@ -34,9 +35,8 @@ export type EvaluationCache = {
   saveGames: (games: ReviewGame[], recipe: AnalysisRecipe) => Promise<void>
 }
 
-/** About 500 MB: tens of thousands of games, more than most players ever play. */
-export const MAX_POSITIONS = 2_000_000
-export const MAX_GAMES = 50_000
+/** Writes check the limits at most this often (an analysis or a deepening writes every second). */
+const TRIM_EVERY_MS = 60_000
 
 /** Reading a position refreshes its date at most once a day, so reads rarely write. */
 const REFRESH_MS = 24 * 60 * 60 * 1000
@@ -86,9 +86,10 @@ async function trimTable<Row, Key>(table: Table<Row, Key>, max: number, force: b
   await table.bulkDelete(keys)
 }
 
-async function trim(db: AppDatabase, force = false): Promise<void> {
-  await trimTable(db.positions, MAX_POSITIONS, force)
-  await trimTable(db.games, MAX_GAMES, force)
+/** Above the limits, the least recently used evaluations and games make room for the new ones. */
+async function trim(db: AppDatabase, limits: StorageLimits, force = false): Promise<void> {
+  await trimTable(db.positions, limits.positions, force)
+  await trimTable(db.games, limits.analysedGames, force)
 }
 
 /** Asks the browser not to delete the cache when space runs low (granted or not, silently). */
@@ -101,9 +102,11 @@ async function requestPersistence(): Promise<void> {
 export function createCache(
   getDatabase: () => AppDatabase,
   now: () => number = Date.now,
+  limits: StorageLimits = storageLimits(),
 ): EvaluationCache {
   let warned = false
   let persistenceAsked = false
+  let trimmedAt = -Infinity
   const warn = (error: unknown) => {
     if (warned) return
     warned = true
@@ -167,8 +170,12 @@ export function createCache(
           await writePositions(db, [...deepest.values()])
         } catch (error) {
           if (!isQuotaError(error)) throw error
-          await trim(db, true)
+          await trim(db, limits, true)
           await writePositions(db, [...deepest.values()])
+        }
+        if (now() - trimmedAt >= TRIM_EVERY_MS) {
+          trimmedAt = now()
+          await trim(db, limits)
         }
         if (!persistenceAsked) {
           persistenceAsked = true
@@ -205,7 +212,7 @@ export function createCache(
           })
           await db.games.bulkPut([...rows.values()])
         })
-        await trim(db)
+        await trim(db, limits)
       } catch (error) {
         warn(error)
       }

@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import {
   defaultDepth,
+  depthsFor,
   getMainProfile,
   mainAccounts,
   parseMainProfile,
@@ -29,6 +30,13 @@ describe('defaultDepth', () => {
   it('is 500 on a computer, 50 on a phone', () => {
     expect(defaultDepth('desktop')).toBe(500)
     expect(defaultDepth('mobile')).toBe(50)
+  })
+
+  it('is one of the choices of each kind of device', () => {
+    expect(depthsFor('desktop')).toEqual([50, 200, 500, 1000])
+    expect(depthsFor('mobile')).toEqual([10, 25, 50, 150])
+    expect(depthsFor('desktop')).toContain(defaultDepth('desktop'))
+    expect(depthsFor('mobile')).toContain(defaultDepth('mobile'))
   })
 })
 
