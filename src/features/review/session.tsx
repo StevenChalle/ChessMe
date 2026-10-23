@@ -67,6 +67,7 @@ export function AnalysisSessionProvider({
   usernames,
   start,
   game,
+  train,
   children,
 }: {
   /** The accounts searched (none for imported games): the filters' platforms */
@@ -80,6 +81,8 @@ export function AnalysisSessionProvider({
   start?: 'last'
   /** A game reference (gameRef.ts), as in the URL */
   game?: string
+  /** With `game`: open the training of its mistakes as soon as it is analysed */
+  train?: boolean
   children: ReactNode
 }) {
   const navigate = useNavigate()
@@ -120,6 +123,8 @@ export function AnalysisSessionProvider({
   const searchJob = useRef<AbortController | undefined>(undefined)
   const analysisJob = useRef<AbortController | undefined>(undefined)
   const analysisCount = useRef(0)
+  /** The analysis (analysisId) whose mistakes to train on as soon as it is done */
+  const trainOn = useRef<number | undefined>(undefined)
   /** Training restarts, to remount the board each time */
   const runCount = useRef(0)
   const router = useRouter()
@@ -211,6 +216,8 @@ export function AnalysisSessionProvider({
       // On arrival, the analysis shown as running is this one: nothing to replace.
       const arriving = analysis.status === 'running' && analysis.settings === initialQuick
       if (arriving || (await confirmReplace())) {
+        // runAnalysis gives the analysis the next number.
+        if (train && ref) trainOn.current = analysisCount.current + 1
         const settings = quickSettings(library)
         void runAnalysis(settings, (signal) =>
           ref ? library.findOne(ref, signal) : library.find(settings.selection, signal),
@@ -341,6 +348,15 @@ export function AnalysisSessionProvider({
     (mistakes: Mistake[]) => openTraining(mistakes, true),
     [openTraining],
   )
+
+  // A game opened to train on: its training as soon as its analysis (from the cache, at once) is
+  // done; the results stay if it has no mistakes.
+  useEffect(() => {
+    if (analysis.status !== 'done' || trainOn.current !== analysisId) return
+    trainOn.current = undefined
+    const mistakes = analysis.outcome.games.flatMap((item) => item.mistakes)
+    if (mistakes.length > 0) trainGame(mistakes)
+  }, [analysis, analysisId, trainGame])
 
   const updateTraining = useCallback(
     (number: number, change: (tab: TrainingTab) => TrainingTab) =>

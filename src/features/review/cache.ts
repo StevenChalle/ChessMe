@@ -274,6 +274,26 @@ export async function analysedGames(
   }
 }
 
+/**
+ * Among these game references (gameRef), those analysed with this recipe or a later one by the
+ * same engine: the games tables offer to train on them rather than to analyse them.
+ */
+export async function analysedRefs(refs: string[], recipe: AnalysisRecipe): Promise<Set<string>> {
+  if (refs.length === 0) return new Set()
+  try {
+    const rows = await database().games.where('refs').anyOf(refs).toArray()
+    return new Set(
+      rows
+        .filter(
+          (row) => row.analysis.engine === recipe.engine && row.analysis.version >= recipe.version,
+        )
+        .flatMap((row) => row.refs.filter((ref) => refs.includes(ref))),
+    )
+  } catch {
+    return new Set()
+  }
+}
+
 /** What the cache holds, for the settings. Undefined when IndexedDB is unavailable. */
 export async function analysisCacheStats(): Promise<
   { games: number; positions: number } | undefined

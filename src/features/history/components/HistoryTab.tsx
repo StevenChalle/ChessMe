@@ -1,6 +1,6 @@
 import { useInfiniteQuery, useQueryClient } from '@tanstack/react-query'
 import { Link } from '@tanstack/react-router'
-import { ChevronLeft, ChevronRight, Microscope, RefreshCw } from 'lucide-react'
+import { ChevronLeft, ChevronRight, Microscope, RefreshCw, Swords } from 'lucide-react'
 import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { GamesTable } from '@/features/games/components/GamesTable'
@@ -8,14 +8,40 @@ import type { GameSummary } from '@/features/games/normalize'
 import type { PlayerUsernames, ProfileSearch } from '@/features/player/search'
 import { sourceErrorMessage } from '@/features/player/sources'
 import { gameRef } from '@/features/review/gameRef'
+import { useAnalysedRefs } from '@/features/review/useAnalysedRefs'
 import { formatNumber } from '@/lib/format'
 import { cn } from '@/lib/utils'
 import { m } from '@/paraglide/messages'
 import { HISTORY_PAGE_SIZE, type HistoryAccount } from '../feed'
 import { historyKeys, historyQueryOptions } from '../queries'
 
-/** Straight to the analysis of this game alone, then its training. */
-export function AnalyzeLink({ game, usernames }: { game: GameSummary; usernames: ProfileSearch }) {
+/**
+ * Straight to the analysis of this game alone, then its training. Already analysed: straight to
+ * the training (the analysis comes back from the cache at once).
+ */
+export function AnalyzeLink({
+  game,
+  usernames,
+  analysed = false,
+}: {
+  game: GameSummary
+  usernames: ProfileSearch
+  analysed?: boolean
+}) {
+  if (analysed) {
+    return (
+      <Button size="xs" asChild>
+        <Link
+          to="/player/results"
+          search={{ ...usernames, game: gameRef(game), train: true }}
+          title={m.replay_game()}
+        >
+          <Swords data-icon="inline-start" />
+          <span className="max-sm:sr-only">{m.replay_game_short()}</span>
+        </Link>
+      </Button>
+    )
+  }
   return (
     <Button size="xs" asChild>
       <Link
@@ -46,6 +72,7 @@ export function HistoryTab({
   const [pageIndex, setPageIndex] = useState(0)
   const pages = query.data?.pages ?? []
   const page = pages[pageIndex]
+  const analysed = useAnalysedRefs(page?.games ?? [])
   const failures = pages.at(-1)?.state.failures ?? []
   const canGoNext = pageIndex + 1 < pages.length || query.hasNextPage
 
@@ -119,7 +146,13 @@ export function HistoryTab({
         <div className="panel-etabli px-2">
           <GamesTable
             games={page.games}
-            action={(game) => <AnalyzeLink game={game} usernames={usernames} />}
+            action={(game) => (
+              <AnalyzeLink
+                game={game}
+                usernames={usernames}
+                analysed={analysed.has(gameRef(game))}
+              />
+            )}
           />
         </div>
       )}

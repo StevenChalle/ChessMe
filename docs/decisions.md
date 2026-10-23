@@ -647,3 +647,7 @@ Le but : ne jamais sentir de limite, mais recycler doucement le plus ancien quan
 - **Plafonds** (`lib/storageLimits.ts`), comptés en entrées : ordinateur 100 000 parties, 2 millions de positions, 50 000 parties analysées (≈ 800 Mo en tout) ; téléphone 15 000 parties, 300 000 positions, 8 000 parties analysées (≈ 120 Mo).
 - **Recyclage** jusqu'à 90 % du plafond : positions et parties analysées les moins récemment utilisées ; pour les parties, d'abord les comptes les moins récemment cherchés (jamais les comptes principaux), puis les parties les plus anciennes, comptes principaux compris, en raccourcissant leurs périodes connues pour qu'elles restent justes.
 - **Choix sur téléphone** : 10, 25, 50 ou 150 dernières parties suivies, 50 par défaut (50, 200, 500 ou 1000 sur ordinateur, 500 par défaut).
+
+## 2026-10-23 : « Entraîner » pour les parties déjà analysées
+
+Dans l'onglet Parties (comptes et import), une partie déjà analysée (entrée du cache d'analyses avec la version et le moteur actuels, retrouvée par sa référence `gameRef`) affiche « Entraîner » au lieu d'« Analyser ». Le lien (`?game=…&train=true`) relance l'analyse de la partie, instantanée grâce au cache, puis ouvre directement son entraînement. Sans erreur, on reste sur les résultats. La liste se met à jour au fil de l'analyse de fond.

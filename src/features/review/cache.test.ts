@@ -3,6 +3,7 @@ import { AppDatabase, DB_NAME } from '@/lib/db'
 import { ENGINE_ID } from '@/lib/engine/stockfish'
 import Dexie from 'dexie'
 import {
+  analysedRefs,
   cacheWriter,
   createCache,
   movesHash,
@@ -178,5 +179,21 @@ describe('cacheWriter', () => {
     await vi.advanceTimersByTimeAsync(2000)
     expect(store).toHaveBeenCalledTimes(2)
     vi.useRealTimers()
+  })
+})
+
+describe('analysedRefs', () => {
+  it('finds the games analysed with the current recipe, by their reference', async () => {
+    db.close()
+    const { database } = await import('@/lib/db')
+    const app = database()
+    const appCache = createCache(() => app)
+    await appCache.saveGames([game('g1', ['e4']), game('i1', ['d4'], 'import')], RECIPE)
+    await appCache.saveGames([game('old', ['c4'])], { ...RECIPE, version: 0 })
+    expect(
+      await analysedRefs(['lichess:g1', 'import:i1', 'lichess:old', 'lichess:none'], RECIPE),
+    ).toEqual(new Set(['lichess:g1', 'import:i1']))
+    expect(await analysedRefs([], RECIPE)).toEqual(new Set())
+    db = new AppDatabase()
   })
 })

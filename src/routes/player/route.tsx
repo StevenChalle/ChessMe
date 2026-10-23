@@ -31,6 +31,8 @@ type PlayerSearch = ProfileSearch & {
   start?: 'last'
   /** A game to review on its own right away (see gameRef.ts) */
   game?: string
+  /** With `game`: then straight to the training of its mistakes (an analysed game) */
+  train?: true
 }
 
 /**
@@ -45,6 +47,9 @@ export const Route = createFileRoute('/player')({
     ...(search.import === true || search.import === 'true' ? { import: true as const } : {}),
     ...(search.start === 'last' ? { start: 'last' as const } : {}),
     ...(parseGameRef(search.game) ? { game: search.game as string } : {}),
+    ...(parseGameRef(search.game) && (search.train === true || search.train === 'true')
+      ? { train: true as const }
+      : {}),
   }),
   loaderDeps: ({ search }) => ({ lichess: search.lichess, chesscom: search.chesscom }),
   // prefetchQuery never throws: each source handles its own failure in the UI.
@@ -60,14 +65,14 @@ export const Route = createFileRoute('/player')({
 function PlayerLayout() {
   const search = Route.useSearch()
   return search.import ? (
-    <ImportLayout start={search.start} game={search.game} />
+    <ImportLayout start={search.start} game={search.game} train={search.train} />
   ) : (
     <AccountsLayout />
   )
 }
 
 /** Imported games: the same tabs, but no overview and no account. */
-function ImportLayout({ start, game }: { start?: 'last'; game?: string }) {
+function ImportLayout({ start, game, train }: { start?: 'last'; game?: string; train?: true }) {
   const imported = useImportedGames()
   const library = useMemo(() => imported && importLibrary(imported.games), [imported])
   usePageMeta({ title: m.import_page_title(), noindex: true })
@@ -83,6 +88,7 @@ function ImportLayout({ start, game }: { start?: 'last'; game?: string }) {
       usernames={search}
       start={start}
       game={game}
+      train={train}
     >
       <div className="space-y-6">
         <ImportHeader imported={imported} actions={<ReviewButtons usernames={search} />} />
@@ -96,7 +102,7 @@ function ImportLayout({ start, game }: { start?: 'last'; game?: string }) {
 }
 
 function AccountsLayout() {
-  const { lichess, chesscom, start, game } = Route.useSearch()
+  const { lichess, chesscom, start, game, train } = Route.useSearch()
   const usernames = useMemo(() => ({ lichess, chesscom }), [lichess, chesscom])
   const { linked, accounts, noAccount } = usePlayerAccounts(usernames)
   usePageMeta({ title: usernamesLabel(usernames) || undefined, noindex: true })
@@ -124,6 +130,7 @@ function AccountsLayout() {
       usernames={usernames}
       start={start}
       game={game}
+      train={train}
     >
       <div className="space-y-6">
         <PlayerHeader
