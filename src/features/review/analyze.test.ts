@@ -4,7 +4,14 @@ import { AppDatabase, DB_NAME } from '@/lib/db'
 import { EnginePool } from '@/lib/engine/pool'
 import type { Stockfish } from '@/lib/engine/stockfish'
 import type { EngineScore } from '@/lib/engine/uci'
-import { analyzeGames, DEEP_NODES, deepenGame, QUICK_NODES } from './analyze'
+import {
+  analyzeGames,
+  DEEP_NODES,
+  deepenGame,
+  deepenPositions,
+  gamesToDeepen,
+  QUICK_NODES,
+} from './analyze'
 import { createCache, positionKey, type EvaluationCache } from './cache'
 import { DEFAULT_CRITERIA } from './criteria'
 import type { ReviewGame } from './games'
@@ -158,5 +165,25 @@ describe('deepenGame with the cache', () => {
     const [again] = await analyze([game('g1', ['e4', 'e5', 'Nf3'])])
     expect(searches).toEqual([])
     expect(again!.positions.every((position) => position.precise)).toBe(true)
+  })
+})
+
+describe('deepenPositions', () => {
+  it('evaluates deeply every position not deep yet, once, and keeps them', async () => {
+    await analyze([game('g1', ['e4', 'e5', 'Nf3']), game('g2', ['e4', 'e5', 'Nc3'])])
+    const games = [game('g1', ['e4', 'e5', 'Nf3']), game('g2', ['e4', 'e5', 'Nc3'])]
+    expect((await gamesToDeepen(games, cache)).size).toBe(2)
+    searches = []
+    const shares: number[] = []
+    await deepenPositions(games, {
+      signal: new AbortController().signal,
+      onProgress: (share) => shares.push(share),
+      cache,
+    })
+    // Five distinct positions: the shared opening only once.
+    expect(searches).toHaveLength(5)
+    expect(searches.every((search) => search.nodes === DEEP_NODES)).toBe(true)
+    expect(shares.at(-1)).toBe(1)
+    expect((await gamesToDeepen(games, cache)).size).toBe(0)
   })
 })

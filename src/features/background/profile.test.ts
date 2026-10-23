@@ -13,7 +13,9 @@ describe('parseMainProfile', () => {
       lichess: 'alice',
       chesscom: 'bob',
       depth: 200,
+      deep: true,
     })
+    expect(parseMainProfile('{"lichess":"alice","depth":50,"deep":false}')?.deep).toBe(false)
   })
 
   it('needs an account, and falls back to the default depth', () => {
@@ -34,8 +36,8 @@ describe('setMainProfile', () => {
   beforeEach(() => localStorage.clear())
 
   it('saves the profile and forgets it', () => {
-    setMainProfile({ chesscom: 'bob', depth: 1000 })
-    expect(getMainProfile()).toEqual({ chesscom: 'bob', depth: 1000 })
+    setMainProfile({ chesscom: 'bob', depth: 1000, deep: false })
+    expect(getMainProfile()).toEqual({ chesscom: 'bob', depth: 1000, deep: false })
     expect(localStorage.getItem('craftyourchess:main-profile')).toContain('bob')
     expect(mainAccounts(getMainProfile()!)).toEqual([{ source: 'chesscom', username: 'bob' }])
     setMainProfile(undefined)

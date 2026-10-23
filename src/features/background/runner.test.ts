@@ -18,7 +18,7 @@ import {
   type TabChannel,
 } from './runner'
 
-const profile: MainProfile = { lichess: 'alice', depth: 50 }
+const profile: MainProfile = { lichess: 'alice', depth: 50, deep: false }
 
 const game = (id: string) =>
   ({ source: 'lichess', id, sanMoves: ['e4', id], playedAt: new Date(0) }) as unknown as ReviewGame
@@ -54,6 +54,8 @@ function deps(overrides: Partial<BackgroundDeps> = {}): BackgroundDeps {
         })
       }),
     criteria: () => DEFAULT_CRITERIA,
+    toDeepen: async () => new Set(),
+    deepen: async () => {},
     isPlayerActive: async () => active,
     isActiveHere: () => active,
     onActivityChange: (listener) => {
@@ -182,10 +184,36 @@ describe('runCycle', () => {
     ).toEqual(['syncing:', 'analysing:3', 'analysing:8', 'analysing:12'])
   })
 
+  it('then evaluates every position deeply, once all the games are analysed', async () => {
+    const order: string[] = []
+    const states: BackgroundState[] = []
+    const cycle = runCycle(
+      { ...profile, deep: true },
+      deps({
+        analyze: async (batch) => {
+          order.push(`analyse ${batch.length}`)
+        },
+        // Only the last five games still need it.
+        toDeepen: async (all) => new Set(all.slice(7).map((g) => movesHash(g.sanMoves))),
+        deepen: async (batch, _signal, onProgress) => {
+          onProgress(0.5)
+          order.push(`deepen ${batch.map((g) => g.id).join(',')}`)
+        },
+      }),
+      new AbortController().signal,
+      (state) => states.push(state),
+    )
+    await vi.runAllTimersAsync()
+    await cycle
+    expect(order).toEqual(['analyse 5', 'analyse 4', 'deepen m7,m8', 'deepen m9,m10', 'deepen m11'])
+    expect(states.at(-1)).toEqual({ phase: 'deepening', done: 12, total: 12 })
+    expect(states).toContainEqual({ phase: 'deepening', done: 7, total: 12, current: 1 })
+  })
+
   it('asks for the latest games of every main account, all platforms together', async () => {
     const find = vi.fn<BackgroundDeps['find']>(async () => ({ games: [], failures: [] }))
     await runCycle(
-      { lichess: 'alice', chesscom: 'bob', depth: 200 },
+      { lichess: 'alice', chesscom: 'bob', depth: 200, deep: false },
       deps({ find }),
       new AbortController().signal,
       () => {},

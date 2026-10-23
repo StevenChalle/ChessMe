@@ -19,6 +19,8 @@ export type BackgroundPhase =
   | 'elsewhere'
   | 'syncing'
   | 'analysing'
+  /** Every position at depth, once all the games are analysed (the deep option) */
+  | 'deepening'
   | 'up-to-date'
   /** The player uses Stockfish or the platforms */
   | 'busy'
@@ -54,6 +56,14 @@ export type BackgroundDeps = {
   ) => Promise<void>
   /** The player's saved criteria: the deep pass depends on them */
   criteria: () => ReviewCriteria
+  /** The games (movesHash) with positions not evaluated deeply yet */
+  toDeepen: (games: ReviewGame[]) => Promise<Set<string>>
+  /** Evaluates deeply every position of these games that is not yet */
+  deepen: (
+    games: ReviewGame[],
+    signal: AbortSignal,
+    onProgress: (share: number) => void,
+  ) => Promise<void>
   /** An activity of the player, in this tab or another one */
   isPlayerActive: () => Promise<boolean>
   isActiveHere: () => boolean
@@ -80,6 +90,8 @@ export type TabChannel = {
 
 /** Games analysed in one go: small, so that the progress moves and an abort wastes little. */
 export const BATCH = 5
+/** Games deepened in one go: every position at depth takes a while. */
+export const DEEP_BATCH = 2
 /** Quiet time after the player's last activity before starting again */
 export const IDLE_MS = 3000
 /** How often another tab's activities are checked */
@@ -102,7 +114,8 @@ const gameKey = (game: ReviewGame) => movesHash(game.sanMoves, game.initialFen)
 
 /**
  * One pass: fetch the latest games (the game store only asks for new ones), then analyse those
- * not analysed yet, newest first, a few at a time. Rejects as soon as the signal aborts.
+ * not analysed yet, newest first, a few at a time; with the deep option, then evaluate every
+ * position of every game at depth, newest first again. Rejects as soon as the signal aborts.
  */
 export async function runCycle(
   profile: MainProfile,
@@ -136,6 +149,22 @@ export async function runCycle(
     )
     done += batch.length
     report({ phase: 'analysing', done, total })
+  }
+
+  if (profile.deep) {
+    const shallow = await deps.toDeepen(games)
+    const toDeepen = games.filter((game) => shallow.has(gameKey(game)))
+    let deepened = total - toDeepen.length
+    report({ phase: 'deepening', done: deepened, total })
+    for (let index = 0; index < toDeepen.length; index += DEEP_BATCH) {
+      signal.throwIfAborted()
+      const batch = toDeepen.slice(index, index + DEEP_BATCH)
+      await deps.deepen(batch, signal, (share) =>
+        report({ phase: 'deepening', done: deepened, total, current: share * batch.length }),
+      )
+      deepened += batch.length
+      report({ phase: 'deepening', done: deepened, total })
+    }
   }
   return { rateLimited }
 }

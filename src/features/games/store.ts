@@ -234,14 +234,40 @@ export async function gameStoreStats(): Promise<{ accounts: number; games: numbe
   }
 }
 
-/** Empties the store (the analysis cache stays). */
-export async function clearGameStore(): Promise<boolean> {
+/** The accounts whose games are stored, with how many, most games first. */
+export async function storedAccounts(): Promise<{ account: string; games: number }[]> {
   try {
     const db = database()
-    await db.transaction('rw', db.accountGames, db.accountSync, async () => {
-      await db.accountGames.clear()
-      await db.accountSync.clear()
-    })
+    const accounts = await db.accountSync.toCollection().primaryKeys()
+    const counted = await Promise.all(
+      accounts.map(async (account) => ({
+        account,
+        games: await db.accountGames
+          .where('[account+playedAt]')
+          .between([account, Dexie.minKey], [account, Dexie.maxKey])
+          .count(),
+      })),
+    )
+    return counted.filter(({ games }) => games > 0).toSorted((a, b) => b.games - a.games)
+  } catch {
+    return []
+  }
+}
+
+/** Empties the store but for the accounts of `keep` (the analysis cache stays). */
+export async function clearGameStore(keep: string[] = []): Promise<boolean> {
+  try {
+    const db = database()
+    if (keep.length === 0) {
+      await db.transaction('rw', db.accountGames, db.accountSync, async () => {
+        await db.accountGames.clear()
+        await db.accountSync.clear()
+      })
+      return true
+    }
+    for (const account of await db.accountSync.toCollection().primaryKeys()) {
+      if (!keep.includes(account)) await deleteAccount(db, account)
+    }
     return true
   } catch {
     return false

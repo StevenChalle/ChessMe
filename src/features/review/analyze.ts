@@ -7,6 +7,7 @@ import type { ApiSource } from '@/lib/http'
 import {
   analysisCache,
   cacheWriter,
+  movesHash,
   positionKey,
   type AnalysisRecipe,
   type CacheEntry,
@@ -324,6 +325,71 @@ export async function analyzeGames(
 
   await cache.saveGames(games, RECIPE)
   return finish(works, criteria)
+}
+
+/**
+ * The games (movesHash) with positions the engine only looked at quickly, or not at all: those
+ * deepenPositions would work on.
+ */
+export async function gamesToDeepen(
+  games: ReviewGame[],
+  cache: EvaluationCache = analysisCache,
+): Promise<Set<string>> {
+  const works = games.map(prepare)
+  await fillFromCache(works, cache)
+  return new Set(
+    works
+      .filter((work) => missing(work).length > 0 || shallow(work))
+      .map((work) => movesHash(work.game.sanMoves, work.game.initialFen)),
+  )
+}
+
+/**
+ * Evaluates deeply every position of `games` the engine only looked at quickly (or not at all),
+ * each position once even if several games share it, and keeps the results in the cache: the
+ * background analysis's deep option. `onProgress`: the share done, 0 to 1. Aborting the signal
+ * stops the engines; what is evaluated stays.
+ */
+export async function deepenPositions(
+  games: ReviewGame[],
+  {
+    signal,
+    onProgress,
+    poolSize = defaultPoolSize(),
+    cache = analysisCache,
+  }: {
+    signal: AbortSignal
+    onProgress: (share: number) => void
+    poolSize?: number
+    cache?: EvaluationCache
+  },
+): Promise<void> {
+  const works = games.map(prepare)
+  await fillFromCache(works, cache)
+  signal.throwIfAborted()
+  const positions = new Map<string, GamePosition>()
+  for (const work of works) {
+    const shallowIndexes = [...work.byEngine].filter((index) => !work.deep.has(index))
+    for (const index of [...missing(work), ...shallowIndexes]) {
+      const position = work.positions[index]!
+      positions.set(positionKey(position.fen), position)
+    }
+  }
+  if (positions.size === 0) return
+  const pool = await EnginePool.start(Math.min(poolSize, positions.size), signal)
+  const writer = cacheWriter(cache)
+  let done = 0
+  try {
+    await pool.run([...positions.values()], async (engine, position) => {
+      const { entry } = await evaluate(engine, position, DEEP_NODES)
+      writer.add(entry)
+      done++
+      onProgress(done / positions.size)
+    })
+  } finally {
+    pool.terminate()
+    await writer.flush()
+  }
 }
 
 /** Positions of a game that only had a quick look. */

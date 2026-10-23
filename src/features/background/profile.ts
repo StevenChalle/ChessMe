@@ -16,6 +16,11 @@ export type MainProfile = {
   chesscom?: string
   /** The latest games followed, all platforms together */
   depth: Depth
+  /**
+   * Then evaluate every position deeply, not only around the suspicious moves (on by default):
+   * once the first analysis of all the games is over.
+   */
+  deep: boolean
 }
 
 const STORAGE_KEY = 'craftyourchess:main-profile'
@@ -38,7 +43,12 @@ export function parseMainProfile(raw: string | null): MainProfile | undefined {
     const chesscom = username(data.chesscom)
     if (!lichess && !chesscom) return undefined
     const depth = DEPTHS.find((item) => item === data.depth) ?? defaultDepth()
-    return { ...(lichess && { lichess }), ...(chesscom && { chesscom }), depth }
+    return {
+      ...(lichess && { lichess }),
+      ...(chesscom && { chesscom }),
+      depth,
+      deep: data.deep !== false,
+    }
   } catch {
     return undefined
   }

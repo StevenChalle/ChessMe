@@ -1,5 +1,5 @@
 import { Settings } from 'lucide-react'
-import type { ReactNode } from 'react'
+import { useState, type ReactNode } from 'react'
 import '@/components/board/boardStyles.css'
 import {
   BOARD_COLORS,
@@ -15,6 +15,7 @@ import {
 import { Button } from '@/components/ui/button'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { MainProfileSettings } from '@/features/background/components/MainProfileSettings'
+import { ClearGamesDialog } from '@/features/games/components/ClearGamesDialog'
 import { CacheSettings } from '@/features/review/components/CacheSettings'
 import { useConfirm } from '@/hooks/useConfirm'
 import { cn } from '@/lib/utils'
@@ -76,6 +77,7 @@ export function SettingsMenu() {
   const style = useBoardStyle()
   const currentLocale = getLocale()
   const { confirm, dialog } = useConfirm()
+  const [clearingGames, setClearingGames] = useState(false)
 
   return (
     <>
@@ -187,11 +189,12 @@ export function SettingsMenu() {
           </Group>
 
           <Group title={m.settings_cache()}>
-            <CacheSettings confirm={confirm} />
+            <CacheSettings confirm={confirm} onClearGames={() => setClearingGames(true)} />
           </Group>
         </PopoverContent>
       </Popover>
       {dialog}
+      <ClearGamesDialog open={clearingGames} onOpenChange={setClearingGames} />
     </>
   )
 }

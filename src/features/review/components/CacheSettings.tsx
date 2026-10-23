@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import type { ConfirmOptions } from '@/components/ConfirmDialog'
 import { Button } from '@/components/ui/button'
-import { clearGameStore, gameStoreStats } from '@/features/games/store'
+import { gameStoreStats } from '@/features/games/store'
 import { formatGameCount, formatNumber } from '@/lib/format'
 import { m } from '@/paraglide/messages'
 import { analysisCacheStats, clearAnalysisCache } from '../cache'
@@ -23,8 +23,11 @@ const loadStats = async (): Promise<Stats> => ({
  */
 export function CacheSettings({
   confirm,
+  onClearGames,
 }: {
   confirm: (options: ConfirmOptions) => Promise<boolean>
+  /** Opens the dialog choosing which players' games to keep (outside the popover too) */
+  onClearGames: () => void
 }) {
   const [stats, setStats] = useState<Stats | 'loading'>('loading')
 
@@ -63,17 +66,7 @@ export function CacheSettings({
         label={m.settings_cache_games()}
         value={formatGameCount(games.games)}
         empty={games.games === 0}
-        onClear={() =>
-          void clear(
-            {
-              title: m.settings_cache_games_confirm_title(),
-              description: m.settings_cache_games_confirm_body(),
-              confirmLabel: m.settings_cache_confirm_action(),
-              cancelLabel: m.confirm_cancel(),
-            },
-            clearGameStore,
-          )
-        }
+        onClear={onClearGames}
       />
       <Row
         label={m.settings_cache_analyses()}

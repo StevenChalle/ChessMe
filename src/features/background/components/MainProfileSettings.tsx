@@ -1,6 +1,9 @@
-import { useState, type FormEvent } from 'react'
+import { RefreshCw, UserMinus } from 'lucide-react'
+import { useId, useState, type FormEvent } from 'react'
 import { Button } from '@/components/ui/button'
-import { deviceProfile, estimateSeconds } from '@/features/review/estimate'
+import { Checkbox } from '@/components/ui/checkbox'
+import { Label } from '@/components/ui/label'
+import { deepenSeconds, deviceProfile, estimateSeconds } from '@/features/review/estimate'
 import type { ReviewGame } from '@/features/review/games'
 import { loadReviewSettings } from '@/features/review/settings'
 import { fetchProfile } from '@/lib/chesscom/client'
@@ -21,11 +24,13 @@ const TYPICAL_GAME = { sanMoves: Array.from({ length: 80 }, () => '') } as Pick<
   'sanMoves' | 'serverCps'
 >
 
-/** Engine time to analyse `depth` games on this device, the first time. */
-function depthEstimate(depth: Depth): string {
+/** Engine time to analyse `depth` games on this device, the first time; then every position at depth with `deep`. */
+function depthEstimate(depth: Depth, deep: boolean): string {
   const games = Array.from({ length: depth }, () => TYPICAL_GAME)
   const { criteria } = loadReviewSettings(['lichess', 'chesscom'])
-  return formatEstimate(estimateSeconds(games, criteria, deviceProfile(detectDevice())))
+  const first = estimateSeconds(games, criteria, deviceProfile(detectDevice()))
+  const positions = depth * TYPICAL_GAME.sanMoves.length
+  return formatEstimate(first + (deep ? deepenSeconds(positions) : 0))
 }
 
 type Check = 'idle' | 'checking' | 'saved' | { unknown: ('lichess' | 'chesscom')[] } | 'failed'
@@ -39,7 +44,9 @@ export function MainProfileSettings() {
   const [lichess, setLichess] = useState(profile?.lichess ?? '')
   const [chesscom, setChesscom] = useState(profile?.chesscom ?? '')
   const [depth, setDepth] = useState<Depth>(profile?.depth ?? defaultDepth())
+  const [deep, setDeep] = useState(profile?.deep ?? true)
   const [check, setCheck] = useState<Check>('idle')
+  const deepId = useId()
 
   const save = async (event: FormEvent) => {
     event.preventDefault()
@@ -63,6 +70,7 @@ export function MainProfileSettings() {
         ...(lichessUser && { lichess: lichessUser.username }),
         ...(names.chesscom && { chesscom: names.chesscom }),
         depth,
+        deep,
       })
       if (lichessUser) setLichess(lichessUser.username)
       setCheck('saved')
@@ -82,7 +90,9 @@ export function MainProfileSettings() {
 
   return (
     <form className="space-y-3 text-sm" onSubmit={(event) => void save(event)}>
-      <p className="text-xs text-muted-foreground">{m.settings_main_hint()}</p>
+      <p className="text-xs text-muted-foreground">
+        {m.settings_main_hint({ count: formatNumber(depth) })}
+      </p>
       <div className="space-y-2">
         <input
           className={cn(INPUT_CLASS, unknown.includes('lichess') && 'border-loss')}
@@ -104,7 +114,7 @@ export function MainProfileSettings() {
         />
       </div>
       <fieldset className="space-y-1.5">
-        <legend className="pb-1.5 text-xs text-muted-foreground">{m.settings_main_depth()}</legend>
+        <legend className="sr-only">{m.settings_main_depth()}</legend>
         <div className="grid grid-cols-2 gap-2">
           {DEPTHS.map((item) => (
             <button
@@ -118,11 +128,25 @@ export function MainProfileSettings() {
               )}
             >
               <span className="block tabular-nums">{formatNumber(item)}</span>
-              <span className="block text-xs text-muted-foreground">{depthEstimate(item)}</span>
+              <span className="block text-xs text-muted-foreground">
+                {depthEstimate(item, deep)}
+              </span>
             </button>
           ))}
         </div>
       </fieldset>
+      <div className="flex items-start gap-2">
+        <Checkbox
+          id={deepId}
+          checked={deep}
+          onCheckedChange={(value) => setDeep(value === true)}
+          className="mt-0.5 border-border-strong"
+        />
+        <Label htmlFor={deepId} className="block space-y-0.5 font-normal">
+          <span className="block text-text-strong">{m.settings_main_deep()}</span>
+          <span className="block text-xs text-muted-foreground">{m.settings_main_deep_hint()}</span>
+        </Label>
+      </div>
       {unknown.length > 0 && <p className="text-xs text-loss">{m.settings_main_unknown()}</p>}
       {check === 'failed' && <p className="text-xs text-loss">{m.settings_main_failed()}</p>}
       {check === 'saved' && (
@@ -136,10 +160,15 @@ export function MainProfileSettings() {
           size="sm"
           disabled={check === 'checking' || (!lichess.trim() && !chesscom.trim())}
         >
+          <RefreshCw
+            data-icon="inline-start"
+            className={cn(check === 'checking' && 'animate-spin')}
+          />
           {check === 'checking' ? m.settings_main_checking() : m.settings_main_save()}
         </Button>
         {profile && (
           <Button type="button" variant="outline" size="sm" onClick={remove}>
+            <UserMinus data-icon="inline-start" />
             {m.settings_main_remove()}
           </Button>
         )}

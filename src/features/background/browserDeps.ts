@@ -1,5 +1,5 @@
 import { gameStore } from '@/features/games/store'
-import { analyzeGames, RECIPE } from '@/features/review/analyze'
+import { analyzeGames, deepenPositions, gamesToDeepen, RECIPE } from '@/features/review/analyze'
 import { analysedGames, movesHash } from '@/features/review/cache'
 import { BACKGROUND_FETCHERS, findGames } from '@/features/review/fetch'
 import { loadReviewSettings } from '@/features/review/settings'
@@ -28,6 +28,8 @@ export function browserDeps(): BackgroundDeps {
       })
     },
     criteria: () => loadReviewSettings(['lichess', 'chesscom']).criteria,
+    toDeepen: (games) => gamesToDeepen(games),
+    deepen: (games, signal, onProgress) => deepenPositions(games, { signal, onProgress }),
     isPlayerActive,
     isActiveHere,
     onActivityChange,

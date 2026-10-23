@@ -2,7 +2,15 @@ import Dexie from 'dexie'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { AppDatabase, DB_NAME, type StoredGame } from '@/lib/db'
 import type { LichessGame } from '@/lib/lichess/types'
-import { accountKey, createGameStore, GameStoreError, storedSummary, toStoredGame } from './store'
+import {
+  accountKey,
+  clearGameStore,
+  createGameStore,
+  GameStoreError,
+  storedAccounts,
+  storedSummary,
+  toStoredGame,
+} from './store'
 
 const DAY = 86_400_000
 
@@ -107,5 +115,32 @@ describe('createGameStore', () => {
       throw new Error('no IndexedDB')
     })
     await expect(broken.loadSync('lichess:alice')).rejects.toBeInstanceOf(GameStoreError)
+  })
+})
+
+describe('storedAccounts and clearGameStore', () => {
+  it('lists the accounts by games, and clears all but those kept', async () => {
+    // These two use the app's database, as the settings do.
+    db.close()
+    const { database } = await import('@/lib/db')
+    const app = database()
+    const games = createGameStore(() => app)
+    await games.put([stored('a1', 1), stored('a2', 2)])
+    await games.put(
+      ['b1', 'b2', 'b3'].map((id, index) =>
+        toStoredGame('lichess', 'Bob', lichessGame(id, index))!,
+      ),
+    )
+    await games.touch('lichess:alice')
+    await games.touch('lichess:bob')
+    expect(await storedAccounts()).toEqual([
+      { account: 'lichess:bob', games: 3 },
+      { account: 'lichess:alice', games: 2 },
+    ])
+    await clearGameStore(['lichess:alice'])
+    expect(await storedAccounts()).toEqual([{ account: 'lichess:alice', games: 2 }])
+    await clearGameStore()
+    expect(await storedAccounts()).toEqual([])
+    db = new AppDatabase()
   })
 })

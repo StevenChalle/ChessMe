@@ -1,8 +1,8 @@
 import type { Color } from 'chessops'
-import { useId, useMemo, useState } from 'react'
+import { useMemo, useState } from 'react'
 import { Button } from '@/components/ui/button'
+import { CheckListItem, CHECK_LIST_CLASS } from '@/components/CheckListItem'
 import { CHIP_CLASS } from '@/components/chip'
-import { Checkbox } from '@/components/ui/checkbox'
 import {
   Dialog,
   DialogContent,
@@ -11,7 +11,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
-import { Label } from '@/components/ui/label'
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group'
 import { formatDate, formatGameCount, formatNumber } from '@/lib/format'
 import { m } from '@/paraglide/messages'
@@ -133,12 +132,12 @@ export function ImportDialog({
           <section className="space-y-2">
             <h3 className="text-sm font-medium text-text-strong">{m.import_who()}</h3>
             <p className="text-xs text-muted-foreground">{m.import_who_hint()}</p>
-            <ul className="max-h-36 [scrollbar-width:thin] [scrollbar-color:var(--cyc-raised)_transparent] space-y-0.5 overflow-y-auto overscroll-contain rounded-md border border-border p-1">
+            <ul className={CHECK_LIST_CLASS}>
               {listed.map(({ name, games }) => (
-                <NameOption
+                <CheckListItem
                   key={name}
-                  name={name}
-                  games={games}
+                  label={name}
+                  count={formatGameCount(games)}
                   checked={chosen.includes(name)}
                   onChange={(on) => toggleName(name, on)}
                 />
@@ -205,33 +204,5 @@ export function ImportDialog({
         </DialogFooter>
       </DialogContent>
     </Dialog>
-  )
-}
-
-function NameOption({
-  name,
-  games,
-  checked,
-  onChange,
-}: {
-  name: string
-  games: number
-  checked: boolean
-  onChange: (checked: boolean) => void
-}) {
-  const id = useId()
-  return (
-    <li className="flex items-center gap-2 rounded-sm px-2 py-1.5 hover:bg-muted">
-      <Checkbox
-        id={id}
-        checked={checked}
-        onCheckedChange={(value) => onChange(value === true)}
-        className="border-border-strong"
-      />
-      <Label htmlFor={id} className="flex flex-1 items-center justify-between gap-3 font-normal">
-        <span className="truncate text-text-strong">{name}</span>
-        <span className="text-xs text-muted-foreground tabular-nums">{formatGameCount(games)}</span>
-      </Label>
-    </li>
   )
 }

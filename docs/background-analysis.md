@@ -8,6 +8,7 @@ Quand le joueur a choisi ses comptes principaux, l'app récupère et analyse ell
 
 - **Ses comptes principaux** : un pseudo Lichess, un pseudo Chess.com, ou les deux. Vérifiés à l'enregistrement (un compte inexistant est refusé).
 - **Combien de parties suivre** : 50, 200, 500 ou 1000, **les N dernières toutes plateformes confondues** (comme la recherche « N dernières parties »). Par défaut 500 sur ordinateur, 50 sur téléphone. Chaque option affiche une estimation du calcul pour cet appareil (`estimate.ts`).
+- **Analyse approfondie** (cochée par défaut) : une fois la première analyse de toutes les parties finie, évaluer chaque position à 1 M de nœuds, pas seulement autour des coups suspects. Les positions déjà profondes sont sautées, une position commune à plusieurs parties n'est calculée qu'une fois. L'estimation de chaque option compte alors cette passe (environ 6 fois plus long).
 - Enregistré dans le `localStorage` (`craftyourchess:main-profile`), déclaré sur `/legal`, effacé par `clearLocalData()`.
 
 Sans comptes principaux, rien ne tourne : choisir ses comptes vaut consentement.
@@ -18,7 +19,8 @@ Une boucle, lancée au chargement de n'importe quelle page :
 
 1. **Synchroniser** : les N dernières parties des comptes principaux par le magasin des parties (`findGames` avec le magasin), donc seulement les nouvelles après la première fois.
 2. **Analyser** celles qui ne le sont pas encore, de la plus récente à la plus ancienne, par lots de 5 parties (la barre avance aussi pendant un lot) (`analyzeGames`, mêmes deux passes, critères enregistrés du joueur). Une partie compte comme analysée quand le cache des analyses a son entrée `games` avec la version d'analyse et le moteur actuels : un changement de moteur ou d'`ANALYSIS_VERSION` relance donc naturellement l'analyse des N parties.
-3. **À jour** : attendre, puis recommencer toutes les 10 minutes et quand la page redevient visible (une nouvelle partie jouée entre-temps).
+3. **Approfondir** (option cochée) : les positions de ces parties encore évaluées rapidement, de la partie la plus récente à la plus ancienne, par lots de 2 parties (`deepenPositions`).
+4. **À jour** : attendre, puis recommencer toutes les 10 minutes et quand la page redevient visible (une nouvelle partie jouée entre-temps).
 
 **La fenêtre glisse** : chaque nouvelle partie y entre, la plus ancienne en sort. Elle reste dans le magasin et le cache, mais n'est plus suivie. Une partie plus ancienne que le joueur cherche à la main est gardée comme toute autre, jamais mise à jour automatiquement. Les comptes principaux ne sont jamais évincés du magasin des parties.
 

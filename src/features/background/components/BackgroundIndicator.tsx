@@ -13,6 +13,7 @@ const ICONS: Record<BackgroundPhase, typeof Pause> = {
   elsewhere: AppWindow,
   syncing: LoaderCircle,
   analysing: LoaderCircle,
+  deepening: LoaderCircle,
   'up-to-date': CircleCheck,
   busy: Pause,
   paused: Pause,
@@ -32,6 +33,8 @@ function statusText({ phase, done = 0, total = 0 }: BackgroundState): string {
       return m.background_syncing()
     case 'analysing':
       return m.background_analysing({ done: formatNumber(done), total: formatNumber(total) })
+    case 'deepening':
+      return m.background_deepening({ done: formatNumber(done), total: formatNumber(total) })
     case 'up-to-date':
       return m.background_up_to_date({ games: formatGameCount(total) })
     case 'busy':
@@ -54,7 +57,8 @@ export function BackgroundIndicator() {
   if (!background) return null
   const { state, pause, resume } = background
   const Icon = ICONS[state.phase]
-  const spinning = state.phase === 'syncing' || state.phase === 'analysing'
+  const spinning =
+    state.phase === 'syncing' || state.phase === 'analysing' || state.phase === 'deepening'
   const showCount = state.total !== undefined && state.total > 0 && state.phase !== 'up-to-date'
 
   return (
