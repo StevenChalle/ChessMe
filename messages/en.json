@@ -579,5 +579,8 @@
   "settings_main_deep": "Deep analysis",
   "settings_main_deep_hint": "Then every position at high depth, not only the suspicious moves.",
   "background_deepening": "Deep analysis of your games: {done} / {total}",
-  "settings_cache_games_keep": "Keep the games of:"
+  "settings_cache_games_keep": "Keep the games of:",
+  "settings_main_saved_games": "{games} saved",
+  "settings_main_progress": "latest {done} / {total} analysed",
+  "settings_main_progress_deepened": "latest {done} / {total} deep-analysed"
 }

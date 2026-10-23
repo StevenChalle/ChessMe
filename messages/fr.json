@@ -579,5 +579,8 @@
   "settings_main_deep": "Analyse approfondie",
   "settings_main_deep_hint": "Ensuite chaque position en profondeur, pas seulement les coups suspects.",
   "background_deepening": "Analyse approfondie de vos parties : {done} / {total}",
-  "settings_cache_games_keep": "Garder les parties de :"
+  "settings_cache_games_keep": "Garder les parties de :",
+  "settings_main_saved_games": "{games} enregistrées",
+  "settings_main_progress": "dernières {done} / {total} analysées",
+  "settings_main_progress_deepened": "dernières {done} / {total} approfondies"
 }

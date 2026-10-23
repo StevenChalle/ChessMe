@@ -1,19 +1,29 @@
 import { RefreshCw, UserMinus } from 'lucide-react'
-import { useId, useState, type FormEvent } from 'react'
+import { useEffect, useId, useState, type FormEvent } from 'react'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Label } from '@/components/ui/label'
+import { accountKey, storedAccounts } from '@/features/games/store'
 import { deepenSeconds, deviceProfile, estimateSeconds } from '@/features/review/estimate'
 import type { ReviewGame } from '@/features/review/games'
 import { loadReviewSettings } from '@/features/review/settings'
 import { fetchProfile } from '@/lib/chesscom/client'
 import { detectDevice } from '@/lib/device'
-import { formatEstimate, formatNumber } from '@/lib/format'
+import { formatEstimate, formatGameCount, formatNumber } from '@/lib/format'
 import { orNullIfNotFound } from '@/lib/http'
 import { fetchUser } from '@/lib/lichess/client'
 import { cn } from '@/lib/utils'
 import { m } from '@/paraglide/messages'
-import { defaultDepth, DEPTHS, setMainProfile, useMainProfile, type Depth } from '../profile'
+import { useBackground } from '../backgroundContext'
+import {
+  defaultDepth,
+  DEPTHS,
+  mainAccounts,
+  setMainProfile,
+  useMainProfile,
+  type Depth,
+  type MainProfile,
+} from '../profile'
 
 const INPUT_CLASS =
   'h-control w-full rounded-sm border border-input bg-field px-3 text-sm text-text-strong outline-none placeholder:text-muted-foreground focus-visible:border-primary focus-visible:ring-1 focus-visible:ring-primary focus-visible:outline-none'
@@ -31,6 +41,53 @@ function depthEstimate(depth: Depth, deep: boolean): string {
   const first = estimateSeconds(games, criteria, deviceProfile(detectDevice()))
   const positions = depth * TYPICAL_GAME.sanMoves.length
   return formatEstimate(first + (deep ? deepenSeconds(positions) : 0))
+}
+
+/**
+ * What the browser holds for the main accounts: every game saved so far (the window of the latest
+ * games slides, the older ones stay), and how far the latest ones are analysed. Counted again as
+ * the background analysis moves.
+ */
+function MainProfileStatus({ profile }: { profile: MainProfile }) {
+  const background = useBackground()
+  const [saved, setSaved] = useState<number | undefined>(undefined)
+  const keys = mainAccounts(profile).map(({ source, username }) => accountKey(source, username))
+  const done = background?.state.done
+  const phase = background?.state.phase
+
+  useEffect(() => {
+    let current = true
+    void storedAccounts().then((accounts) => {
+      if (!current) return
+      setSaved(
+        accounts
+          .filter(({ account }) => keys.includes(account))
+          .reduce((sum, { games }) => sum + games, 0),
+      )
+    })
+    return () => {
+      current = false
+    }
+    // Counted again when the accounts change or the analysis moves.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [keys.join(), done, phase])
+
+  if (saved === undefined) return null
+  const { total } = background?.state ?? {}
+  const progress =
+    total !== undefined && total > 0 && done !== undefined
+      ? (phase === 'deepening' ? m.settings_main_progress_deepened : m.settings_main_progress)({
+          done: formatNumber(done),
+          total: formatNumber(total),
+        })
+      : undefined
+  return (
+    <p className="text-xs text-text-strong tabular-nums">
+      {[m.settings_main_saved_games({ games: formatGameCount(saved) }), progress]
+        .filter(Boolean)
+        .join(' · ')}
+    </p>
+  )
 }
 
 type Check = 'idle' | 'checking' | 'saved' | { unknown: ('lichess' | 'chesscom')[] } | 'failed'
@@ -93,6 +150,7 @@ export function MainProfileSettings() {
       <p className="text-xs text-muted-foreground">
         {m.settings_main_hint({ count: formatNumber(depth) })}
       </p>
+      {profile && <MainProfileStatus profile={profile} />}
       <div className="space-y-2">
         <input
           className={cn(INPUT_CLASS, unknown.includes('lichess') && 'border-loss')}

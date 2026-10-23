@@ -22,7 +22,7 @@ Une boucle, lancée au chargement de n'importe quelle page :
 3. **Approfondir** (option cochée) : les positions de ces parties encore évaluées rapidement, de la partie la plus récente à la plus ancienne, par lots de 2 parties (`deepenPositions`).
 4. **À jour** : attendre, puis recommencer toutes les 10 minutes et quand la page redevient visible (une nouvelle partie jouée entre-temps).
 
-**La fenêtre glisse** : chaque nouvelle partie y entre, la plus ancienne en sort. Elle reste dans le magasin et le cache, mais n'est plus suivie. Une partie plus ancienne que le joueur cherche à la main est gardée comme toute autre, jamais mise à jour automatiquement. Les comptes principaux ne sont jamais évincés du magasin des parties.
+**La fenêtre glisse** : chaque nouvelle partie y entre, la plus ancienne en sort. Elle reste dans le magasin et le cache, mais n'est plus suivie. Les parties gardées s'accumulent donc (500 suivies, peut-être 3 000 enregistrées après des mois, environ 20 Ko chacune avec ses analyses) : les réglages montrent ce total pour les comptes principaux, avec l'avancement des dernières (« 1 027 parties enregistrées · dernières 235 / 500 analysées »). Une partie plus ancienne que le joueur cherche à la main est gardée comme toute autre, jamais mise à jour automatiquement. Les comptes principaux ne sont jamais évincés du magasin des parties.
 
 ## Priorité au joueur
 
