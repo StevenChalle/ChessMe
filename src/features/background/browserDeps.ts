@@ -4,7 +4,7 @@ import { analysedGames, movesHash } from '@/features/review/cache'
 import { BACKGROUND_FETCHERS, findGames } from '@/features/review/fetch'
 import { loadReviewSettings } from '@/features/review/settings'
 import { isActiveHere, isPlayerActive, onActivityChange } from '@/lib/activity'
-import type { BackgroundDeps } from './runner'
+import type { BackgroundDeps, Heartbeat, TabChannel } from './runner'
 
 /** The background analysis in the browser: the game store, the analysis cache, real engines. */
 export function browserDeps(): BackgroundDeps {
@@ -44,5 +44,22 @@ export function browserDeps(): BackgroundDeps {
         )
       }),
     locks: typeof navigator === 'undefined' ? undefined : navigator.locks,
+    channel: tabChannel(),
+    isVisible: () => document.visibilityState === 'visible',
+    now: Date.now,
+  }
+}
+
+/** The working tab's heartbeat, between the app's tabs (nothing stored). */
+function tabChannel(): TabChannel | undefined {
+  if (typeof BroadcastChannel === 'undefined') return undefined
+  const channel = new BroadcastChannel('craftyourchess:background')
+  return {
+    post: (heartbeat) => channel.postMessage(heartbeat),
+    listen: (listener) => {
+      const onMessage = (event: MessageEvent<Heartbeat>) => listener(event.data)
+      channel.addEventListener('message', onMessage)
+      return () => channel.removeEventListener('message', onMessage)
+    },
   }
 }

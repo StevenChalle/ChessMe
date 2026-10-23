@@ -19,7 +19,19 @@ export class EnginePool {
 
   static async start(size: number, signal?: AbortSignal): Promise<EnginePool> {
     signal?.throwIfAborted()
-    const started = await Promise.allSettled(Array.from({ length: size }, () => Stockfish.start()))
+    const starting = Promise.allSettled(Array.from({ length: size }, () => Stockfish.start()))
+    // Aborting does not wait for engines that are slow to start: they stop once they have.
+    const aborted = new Promise<'aborted'>((resolve) =>
+      signal?.addEventListener('abort', () => resolve('aborted'), { once: true }),
+    )
+    const first = await Promise.race([starting, aborted])
+    if (first === 'aborted') {
+      void starting.then((results) => {
+        for (const result of results) if (result.status === 'fulfilled') result.value.terminate()
+      })
+      signal!.throwIfAborted()
+    }
+    const started = first as PromiseSettledResult<Stockfish>[]
     const engines = started.flatMap((result) =>
       result.status === 'fulfilled' ? [result.value] : [],
     )

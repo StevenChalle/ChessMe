@@ -62,6 +62,20 @@ export type BackgroundDeps = {
   sleep: (ms: number, signal: AbortSignal) => Promise<void>
   /** The Web Locks manager, to let a single tab work; none: this tab works */
   locks?: LockManager
+  /** Messages between the app's tabs: the working tab's heartbeat */
+  channel?: TabChannel
+  /** The page is shown */
+  isVisible: () => boolean
+  now: () => number
+}
+
+/** The working tab says it is alive, whether it is shown, and how far it is (for the others to show). */
+export type Heartbeat = { visible: boolean; done?: number; total?: number }
+
+export type TabChannel = {
+  post: (heartbeat: Heartbeat) => void
+  /** Heartbeats of the other tabs */
+  listen: (listener: (heartbeat: Heartbeat) => void) => () => void
 }
 
 /** Games analysed in one go: small, so that the progress moves and an abort wastes little. */
@@ -74,6 +88,13 @@ export const POLL_MS = 2000
 export const RECHECK_MS = 10 * 60_000
 /** After a 429 or a failure */
 export const RETRY_MS = 60_000
+/** How often the working tab says it is alive */
+export const HEARTBEAT_MS = 5000
+/**
+ * A working tab silent this long is stuck (a browser freezes a hidden tab that uses the CPU, and
+ * it keeps its lock): a shown tab takes the work back.
+ */
+export const STALE_MS = 15_000
 
 const LOCK = 'craftyourchess:background'
 
@@ -128,6 +149,8 @@ export class BackgroundRunner {
   /** The pass under way, aborted when the player needs the engines or pauses */
   private current: AbortController | undefined
   private stopper: AbortController | undefined
+  /** This tab holds the lock and works */
+  private working = false
   private readonly profile: MainProfile
   private readonly deps: BackgroundDeps
 
@@ -143,17 +166,91 @@ export class BackgroundRunner {
     return () => this.listeners.delete(listener)
   }
 
-  /** Runs until stop(), in a single tab at a time when Web Locks exist. */
+  /**
+   * Runs until stop(), in a single tab at a time when Web Locks exist: the tab holding the lock
+   * works, the others wait for it, unless the working tab is hidden or silent and this one is
+   * shown (it takes the lock back).
+   */
   start(): void {
     const stop = new AbortController()
     this.stopper = stop
     const { locks } = this.deps
-    if (!locks) {
-      void this.loop(stop.signal)
-      return
+    if (locks) this.waitForLock(locks, stop.signal)
+    else void this.loop(stop.signal)
+  }
+
+  private waitForLock(locks: LockManager, stop: AbortSignal): void {
+    if (stop.aborted) return
+    this.set({ done: this.state.done, total: this.state.total, phase: 'elsewhere' })
+    const waiting = new AbortController()
+    const since = this.deps.now()
+    let heard: (Heartbeat & { at: number }) | undefined
+    const unlisten = this.deps.channel?.listen((heartbeat) => {
+      heard = { ...heartbeat, at: this.deps.now() }
+      // The working tab's progress, shown here too.
+      if (heartbeat.total !== undefined) {
+        this.set({ phase: 'elsewhere', done: heartbeat.done, total: heartbeat.total })
+      }
+    })
+    const check = setInterval(() => {
+      if (!this.deps.isVisible()) return
+      const silent = this.deps.now() - (heard?.at ?? since) > STALE_MS
+      if (silent || heard?.visible === false) {
+        waiting.abort()
+        this.takeLock(locks, stop, { steal: true })
+      }
+    }, POLL_MS)
+    const cleanup = () => {
+      clearInterval(check)
+      unlisten?.()
+      stop.removeEventListener('abort', cleanup)
+      waiting.abort()
     }
-    this.set({ phase: 'elsewhere' })
-    locks.request(LOCK, { signal: stop.signal }, () => this.loop(stop.signal)).catch(() => {})
+    stop.addEventListener('abort', cleanup, { once: true })
+    waiting.signal.addEventListener('abort', cleanup, { once: true })
+    // Granted: no more watching (this tab does not hear its own heartbeat).
+    this.takeLock(locks, stop, { signal: waiting.signal }, cleanup)
+  }
+
+  /**
+   * Asks for the lock, then works while holding it. If another tab takes it back, the request
+   * rejects: this tab stops working, and waits again.
+   */
+  private takeLock(
+    locks: LockManager,
+    stop: AbortSignal,
+    options: LockOptions,
+    onGranted?: () => void,
+  ): void {
+    const holding = new AbortController()
+    locks
+      .request(LOCK, options, async () => {
+        // Given up on (stopped, or the lock taken another way): an abort right after the request
+        // can reach the browser too late to cancel it, so it may still be granted. Release it.
+        if (stop.aborted || options.signal?.aborted || this.working) return
+        onGranted?.()
+        await this.work(stop, holding.signal)
+        if (!stop.aborted && holding.signal.aborted) this.waitForLock(locks, stop)
+      })
+      .catch(() => holding.abort())
+  }
+
+  /** The loop, with a heartbeat for the waiting tabs. */
+  private async work(stop: AbortSignal, holding: AbortSignal): Promise<void> {
+    this.working = true
+    this.beat()
+    const heartbeat = setInterval(() => this.beat(), HEARTBEAT_MS)
+    try {
+      await this.loop(AbortSignal.any([stop, holding]))
+    } finally {
+      clearInterval(heartbeat)
+      this.working = false
+    }
+  }
+
+  private beat(): void {
+    const { done, total } = this.state
+    this.deps.channel?.post({ visible: this.deps.isVisible(), done, total })
   }
 
   stop(): void {
@@ -180,8 +277,11 @@ export class BackgroundRunner {
   }
 
   private set(state: BackgroundState) {
+    const progressed = state.done !== this.state.done || state.total !== this.state.total
     this.state = state
     for (const listener of this.listeners) listener()
+    // The waiting tabs follow the progress without waiting for the next heartbeat.
+    if (this.working && progressed) this.beat()
   }
 
   /** Sleeps `ms` (forever if undefined), or until woken or stopped. */

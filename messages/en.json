@@ -574,5 +574,6 @@
   "settings_main_saved": "Saved: the analysis of your games starts.",
   "settings_main_unknown": "Account not found.",
   "settings_main_failed": "Could not check the accounts. Try again.",
-  "legal_privacy_local_main": "your main accounts and how many of their latest games to keep analysed;"
+  "legal_privacy_local_main": "your main accounts and how many of their latest games to keep analysed;",
+  "background_elsewhere_progress": "Running in another tab of the app: {done} / {total}"
 }

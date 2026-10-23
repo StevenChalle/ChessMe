@@ -36,7 +36,10 @@ Les exports Lichess et les archives Chess.com s'annoncent dans leurs clients (`l
 
 ## Plusieurs onglets
 
-- **Un seul onglet fait le travail de fond** : il tient un verrou (`navigator.locks`, `craftyourchess:background`). Les autres attendent qu'il se libère (onglet fermé).
+- **Un seul onglet fait le travail de fond** : il tient un verrou (`navigator.locks`, `craftyourchess:background`). Les autres attendent qu'il se libère.
+- **L'onglet qu'on regarde travaille.** L'onglet qui travaille donne signe de vie toutes les 5 s (`BroadcastChannel`, rien n'est stocké), avec son avancement et s'il est affiché. Un onglet affiché qui attend reprend le verrou (`steal`) si l'onglet qui travaille est caché ou muet depuis 15 s. C'est indispensable : Chrome gèle un onglet caché qui use le processeur, et un onglet gelé garde son verrou sans rien faire (constaté le 2026-10-23, tous les autres onglets attendaient). L'onglet dépossédé s'arrête et se remet à attendre.
+- **Les onglets qui attendent montrent l'avancement** de celui qui travaille (« En cours dans un autre onglet : 165 / 500 »).
+- Une demande de verrou annulée juste après avoir été faite peut arriver trop tard au navigateur et rester en file : une fois accordée, elle est rendue aussitôt (sinon l'onglet se volerait le verrou à lui-même toutes les 15 s).
 - **Les activités du joueur se voient d'un onglet à l'autre** : chacune tient aussi un verrou partagé (`craftyourchess:foreground`), que l'onglet du fond consulte toutes les deux secondes. Un verrou se libère tout seul quand son onglet se ferme.
 - Sans `navigator.locks` (navigateurs anciens) : chaque onglet ne voit que ses propres activités.
 - Choisir ou retirer ses comptes dans un onglet est suivi par les autres (événement `storage`) : leur travail de fond démarre ou s'arrête aussitôt.

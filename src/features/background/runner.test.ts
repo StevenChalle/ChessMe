@@ -6,12 +6,16 @@ import { ApiError } from '@/lib/http'
 import type { MainProfile } from './profile'
 import {
   BackgroundRunner,
+  HEARTBEAT_MS,
   IDLE_MS,
   POLL_MS,
   RECHECK_MS,
   runCycle,
+  STALE_MS,
   type BackgroundDeps,
   type BackgroundState,
+  type Heartbeat,
+  type TabChannel,
 } from './runner'
 
 const profile: MainProfile = { lichess: 'alice', depth: 50 }
@@ -64,7 +68,83 @@ function deps(overrides: Partial<BackgroundDeps> = {}): BackgroundDeps {
           resolve()
         })
       }),
+    isVisible: () => true,
+    now: () => Date.now(),
     ...overrides,
+  }
+}
+
+/**
+ * Web Locks with a single exclusive lock: waiting in turn, `signal` to give up, `steal`. With
+ * `lateAborts`, giving up does not take a request out of the queue (Chrome, right after asking).
+ */
+function fakeLocks({ lateAborts = false } = {}) {
+  let held: object | undefined
+  const queue: { grant: () => void }[] = []
+  const next = () => queue.shift()?.grant()
+  const abortError = () => new DOMException('Aborted', 'AbortError')
+  return {
+    get held() {
+      return held !== undefined
+    },
+    get waiting() {
+      return queue.length
+    },
+    request: (_name: string, options: LockOptions, callback: () => Promise<unknown>) =>
+      new Promise((resolve, reject) => {
+        const me = { reject }
+        const entry = {
+          grant: () => {
+            held = me
+            Promise.resolve()
+              .then(callback)
+              .then((value) => {
+                if (held === me) {
+                  held = undefined
+                  next()
+                }
+                resolve(value)
+              }, reject)
+          },
+        }
+        if (options.steal) {
+          const previous = held as typeof me | undefined
+          held = undefined
+          previous?.reject(abortError())
+          entry.grant()
+        } else if (held) {
+          queue.push(entry)
+          if (!lateAborts)
+            options.signal?.addEventListener('abort', () => {
+              const index = queue.indexOf(entry)
+              if (index >= 0) {
+                queue.splice(index, 1)
+                reject(abortError())
+              }
+            })
+        } else {
+          entry.grant()
+        }
+      }),
+  }
+}
+
+/** Heartbeats between tabs: each one hears the others. */
+function fakeChannels() {
+  const tabs = new Set<(heartbeat: Heartbeat) => void>()
+  return () => {
+    let mine: ((heartbeat: Heartbeat) => void) | undefined
+    const channel: TabChannel = {
+      post: (heartbeat) => {
+        for (const listener of tabs) if (listener !== mine) listener(heartbeat)
+      },
+      listen: (listener) => {
+        mine = listener
+        tabs.add(listener)
+        return () => tabs.delete(listener)
+      },
+    }
+    return channel
   }
 }
 
@@ -171,6 +251,101 @@ describe('BackgroundRunner', () => {
     runner.wakeUp()
     await vi.advanceTimersByTimeAsync(10)
     expect(find).toHaveBeenCalledTimes(3)
+    runner.stop()
+  })
+})
+
+describe('BackgroundRunner across tabs', () => {
+  const quietFind = () => vi.fn<BackgroundDeps['find']>(async () => ({ games: [], failures: [] }))
+
+  it('takes the work back from a stuck tab that keeps the lock', async () => {
+    const locks = fakeLocks()
+    // A frozen tab: holds the lock, never says anything.
+    locks
+      .request('craftyourchess:background', {}, () => new Promise(() => {}))
+      // Rejected when the work is taken back.
+      .catch(() => {})
+    const find = quietFind()
+    const runner = new BackgroundRunner(
+      profile,
+      deps({ find, locks: locks as unknown as LockManager }),
+    )
+    runner.start()
+    await vi.advanceTimersByTimeAsync(STALE_MS - POLL_MS)
+    expect(runner.getState().phase).toBe('elsewhere')
+    expect(find).not.toHaveBeenCalled()
+    await vi.advanceTimersByTimeAsync(2 * POLL_MS)
+    expect(find).toHaveBeenCalledTimes(1)
+    runner.stop()
+  })
+
+  it('leaves the work to a shown tab that is alive, and takes it from a hidden one', async () => {
+    const locks = fakeLocks() as unknown as LockManager
+    const channel = fakeChannels()
+    let firstShown = true
+    const firstFind = quietFind()
+    const first = new BackgroundRunner(
+      profile,
+      deps({ find: firstFind, locks, channel: channel(), isVisible: () => firstShown }),
+    )
+    first.start()
+    await vi.advanceTimersByTimeAsync(10)
+    expect(firstFind).toHaveBeenCalledTimes(1)
+
+    const secondFind = quietFind()
+    const second = new BackgroundRunner(
+      profile,
+      deps({ find: secondFind, locks, channel: channel() }),
+    )
+    second.start()
+    await vi.advanceTimersByTimeAsync(3 * STALE_MS)
+    expect(second.getState().phase).toBe('elsewhere')
+    expect(secondFind).not.toHaveBeenCalled()
+
+    // The waiting tab shows the working tab's progress.
+    expect(second.getState()).toMatchObject({ phase: 'elsewhere', done: 0, total: 0 })
+
+    // The first tab is hidden now: its next heartbeat says so, and the shown one takes over.
+    firstShown = false
+    await vi.advanceTimersByTimeAsync(HEARTBEAT_MS + POLL_MS)
+    expect(secondFind).toHaveBeenCalledTimes(1)
+    expect(first.getState().phase).toBe('elsewhere')
+    // The first tab waits again, with a single request.
+    expect((locks as unknown as { waiting: number }).waiting).toBe(1)
+    first.stop()
+    second.stop()
+  })
+
+  it('does nothing with a request granted after it was given up', async () => {
+    // As in Chrome when the abort comes right after the request: it stays queued.
+    const locks = fakeLocks({ lateAborts: true })
+    void locks.request('craftyourchess:background', {}, () => new Promise(() => {})).catch(() => {})
+    const find = quietFind()
+    const runner = new BackgroundRunner(
+      profile,
+      deps({ find, locks: locks as unknown as LockManager }),
+    )
+    runner.start()
+    // The stuck holder is taken over; the first request is given up but stays queued.
+    await vi.advanceTimersByTimeAsync(STALE_MS + 2 * POLL_MS)
+    expect(find).toHaveBeenCalledTimes(1)
+
+    // A third tab takes the lock for a moment: the runner waits again, behind its old request.
+    let release: () => void = () => {}
+    void locks.request(
+      'craftyourchess:background',
+      { steal: true },
+      () => new Promise<void>((resolve) => (release = resolve)),
+    )
+    await vi.advanceTimersByTimeAsync(10)
+    find.mockClear()
+    release()
+    await vi.advanceTimersByTimeAsync(10)
+    // The old request is granted first and released at once: a single loop runs, and the tab
+    // does not keep taking the lock from itself.
+    await vi.advanceTimersByTimeAsync(3 * STALE_MS)
+    expect(find).toHaveBeenCalledTimes(1)
+    expect(runner.getState().phase).not.toBe('elsewhere')
     runner.stop()
   })
 })

@@ -25,7 +25,9 @@ function statusText({ phase, done = 0, total = 0 }: BackgroundState): string {
     case 'starting':
       return m.background_starting()
     case 'elsewhere':
-      return m.background_elsewhere()
+      return total > 0
+        ? m.background_elsewhere_progress({ done: formatNumber(done), total: formatNumber(total) })
+        : m.background_elsewhere()
     case 'syncing':
       return m.background_syncing()
     case 'analysing':

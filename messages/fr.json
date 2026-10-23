@@ -574,5 +574,6 @@
   "settings_main_saved": "Enregistré : l'analyse de vos parties commence.",
   "settings_main_unknown": "Compte introuvable.",
   "settings_main_failed": "Impossible de vérifier les comptes. Réessayez.",
-  "legal_privacy_local_main": "vos comptes principaux et combien de leurs dernières parties garder analysées ;"
+  "legal_privacy_local_main": "vos comptes principaux et combien de leurs dernières parties garder analysées ;",
+  "background_elsewhere_progress": "En cours dans un autre onglet de l'app : {done} / {total}"
 }
