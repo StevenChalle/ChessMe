@@ -59,18 +59,11 @@ function isWorking({ phase, done, total }: BackgroundState): boolean {
   )
 }
 
-/** Said in the panel too: why nothing moves, or where it happens. */
-const EXPLAINED: ReadonlySet<BackgroundPhase> = new Set([
-  'elsewhere',
-  'busy',
-  'rate-limited',
-  'failed',
-])
-
 /**
  * In the header, when there are favorites: an icon only (working, up to date, paused, failed),
  * the details on click: each favorite with a bar of how far their games are, the number of games
- * followed on the right, and a button to pause for the session (docs/background-analysis.md).
+ * followed on the right, the state in words with the same icon, and a button to pause for the
+ * session (docs/background-analysis.md).
  */
 export function BackgroundIndicator() {
   const background = useBackground()
@@ -79,6 +72,11 @@ export function BackgroundIndicator() {
   const { state, pause, resume } = background
   const working = isWorking(state)
   const Icon = working ? LoaderCircle : ICONS[state.phase]
+  const iconClass = cn(
+    working && 'animate-spin text-primary',
+    state.phase === 'up-to-date' && 'text-win',
+    state.phase === 'failed' && 'text-loss',
+  )
   // In the settings' order, with their current options; before a first report, all loading.
   const rows = favorites.players.map((player) => {
     const name = playerName(player)
@@ -102,22 +100,10 @@ export function BackgroundIndicator() {
           title={statusText(state)}
           className="text-muted-foreground hover:text-text-strong"
         >
-          <Icon
-            className={cn(
-              working && 'animate-spin text-primary',
-              state.phase === 'up-to-date' && 'text-win',
-              state.phase === 'failed' && 'text-loss',
-            )}
-          />
+          <Icon className={iconClass} />
         </Button>
       </PopoverTrigger>
       <PopoverContent align="end" className="w-80 space-y-3 text-sm">
-        <span className="sr-only" role="status">
-          {statusText(state)}
-        </span>
-        {EXPLAINED.has(state.phase) && (
-          <p className="text-xs text-muted-foreground">{statusText(state)}</p>
-        )}
         <ul className="space-y-2.5">
           {rows.map(({ name, accounts, max, share, loading }) => (
             <li key={name} className="flex items-center gap-2">
@@ -141,6 +127,10 @@ export function BackgroundIndicator() {
             </li>
           ))}
         </ul>
+        <p role="status" className="flex items-start gap-2 text-xs text-muted-foreground">
+          <Icon aria-hidden className={cn('mt-px size-3.5 shrink-0', iconClass)} />
+          {statusText(state)}
+        </p>
         {state.phase === 'paused' ? (
           <Button variant="outline" size="sm" onClick={resume}>
             <Play data-icon="inline-start" />
