@@ -113,9 +113,10 @@ const LOCK = 'craftyourchess:background'
 const gameKey = (game: ReviewGame) => movesHash(game.sanMoves, game.initialFen)
 
 /**
- * One pass: fetch each favorite's latest games (the game store only asks for new ones), then analyse those
- * not analysed yet, newest first, a few at a time; with the deep option, then evaluate every
- * position of every game at depth, newest first again. Rejects as soon as the signal aborts.
+ * One pass: fetch each favorite's latest games, as many as their options say (the game store only
+ * asks for new ones), then analyse those not analysed yet, newest first, a few at a time; then
+ * evaluate every position at depth of the games of the favorites with the deep option, newest
+ * first again. Rejects as soon as the signal aborts.
  */
 export async function runCycle(
   favorites: Favorites,
@@ -125,21 +126,25 @@ export async function runCycle(
 ): Promise<{ rateLimited: boolean }> {
   report({ phase: 'syncing' })
   // Each favorite's latest games, one player after the other, all together then: once each,
-  // a game between two favorites being theirs both.
+  // a game between two favorites being theirs both (deepened if one of them wants it).
   const byKey = new Map<string, ReviewGame>()
+  const deepKeys = new Set<string>()
   let rateLimited = false
   for (const player of favorites.players) {
     const accounts = playerAccounts(player)
     const selection: GameSelection = {
       ...defaultSelection(accounts.map((account) => account.source)),
-      scope: { kind: 'latest', count: favorites.depth },
+      scope: { kind: 'latest', count: player.depth },
     }
     const found = await deps.find(accounts, selection, signal)
     signal.throwIfAborted()
     rateLimited ||= found.failures.some(
       ({ error }) => error instanceof ApiError && error.status === 429,
     )
-    for (const game of found.games) byKey.set(`${game.source}:${game.id}`, game)
+    for (const game of found.games) {
+      byKey.set(`${game.source}:${game.id}`, game)
+      if (player.deep) deepKeys.add(`${game.source}:${game.id}`)
+    }
   }
   const total = byKey.size
   // A game without moves has nothing to analyse.
@@ -158,19 +163,27 @@ export async function runCycle(
     report({ phase: 'analysing', done, total })
   }
 
-  if (favorites.deep) {
-    const shallow = await deps.toDeepen(games)
-    const toDeepen = games.filter((game) => shallow.has(gameKey(game)))
-    let deepened = total - toDeepen.length
-    report({ phase: 'deepening', done: deepened, total })
+  const deepGames = games.filter((game) => deepKeys.has(`${game.source}:${game.id}`))
+  if (deepGames.length > 0) {
+    const shallow = await deps.toDeepen(deepGames)
+    const toDeepen = deepGames.filter((game) => shallow.has(gameKey(game)))
+    // Out of the games to deepen only: the others never will be.
+    const deepTotal = deepGames.length
+    let deepened = deepTotal - toDeepen.length
+    report({ phase: 'deepening', done: deepened, total: deepTotal })
     for (let index = 0; index < toDeepen.length; index += DEEP_BATCH) {
       signal.throwIfAborted()
       const batch = toDeepen.slice(index, index + DEEP_BATCH)
       await deps.deepen(batch, signal, (share) =>
-        report({ phase: 'deepening', done: deepened, total, current: share * batch.length }),
+        report({
+          phase: 'deepening',
+          done: deepened,
+          total: deepTotal,
+          current: share * batch.length,
+        }),
       )
       deepened += batch.length
-      report({ phase: 'deepening', done: deepened, total })
+      report({ phase: 'deepening', done: deepened, total: deepTotal })
     }
   }
   return { rateLimited }

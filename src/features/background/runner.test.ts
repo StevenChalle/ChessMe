@@ -18,7 +18,8 @@ import {
   type TabChannel,
 } from './runner'
 
-const profile: Favorites = { players: [{ lichess: 'alice' }], depth: 50, deep: false }
+const alice = { lichess: 'alice', depth: 50, deep: false }
+const profile: Favorites = { players: [alice] }
 
 const game = (id: string) =>
   ({ source: 'lichess', id, sanMoves: ['e4', id], playedAt: new Date(0) }) as unknown as ReviewGame
@@ -188,7 +189,7 @@ describe('runCycle', () => {
     const order: string[] = []
     const states: BackgroundState[] = []
     const cycle = runCycle(
-      { ...profile, deep: true },
+      { players: [{ ...alice, deep: true }] },
       deps({
         analyze: async (batch) => {
           order.push(`analyse ${batch.length}`)
@@ -214,9 +215,10 @@ describe('runCycle', () => {
     const find = vi.fn<BackgroundDeps['find']>(async () => ({ games: [], failures: [] }))
     await runCycle(
       {
-        players: [{ lichess: 'alice', chesscom: 'alice_cc' }, { chesscom: 'bob' }],
-        depth: 200,
-        deep: false,
+        players: [
+          { lichess: 'alice', chesscom: 'alice_cc', depth: 200, deep: false },
+          { chesscom: 'bob', depth: 50, deep: false },
+        ],
       },
       deps({ find }),
       new AbortController().signal,
@@ -227,6 +229,7 @@ describe('runCycle', () => {
     expect(accounts.map((account) => account.username)).toEqual(['alice', 'alice_cc'])
     expect(selection.scope).toEqual({ kind: 'latest', count: 200 })
     expect(find.mock.calls[1]![0].map((account) => account.username)).toEqual(['bob'])
+    expect(find.mock.calls[1]![1].scope).toEqual({ kind: 'latest', count: 50 })
   })
 
   it('counts a game between two favorites once', async () => {
@@ -238,7 +241,7 @@ describe('runCycle', () => {
     const analyze = vi.fn<BackgroundDeps['analyze']>(async () => {})
     const states: BackgroundState[] = []
     const cycle = runCycle(
-      { players: [{ lichess: 'alice' }, { lichess: 'bob' }], depth: 50, deep: false },
+      { players: [alice, { ...alice, lichess: 'bob' }] },
       deps({ find, analyze, analysed: async () => new Set() }),
       new AbortController().signal,
       (state) => states.push(state),
@@ -247,6 +250,30 @@ describe('runCycle', () => {
     await cycle
     expect(analyze.mock.calls[0]![0].map((g) => g.id)).toEqual(['shared', 'a1', 'b1'])
     expect(states.at(-1)).toMatchObject({ phase: 'analysing', done: 3, total: 3 })
+  })
+
+  it('deepens only the games of the favorites with the deep option, shared ones included', async () => {
+    const shared = game('shared')
+    const find = vi.fn<BackgroundDeps['find']>(async (accounts) => ({
+      games: accounts[0]!.username === 'alice' ? [shared, game('a1')] : [shared, game('b1')],
+      failures: [],
+    }))
+    const deepen = vi.fn<BackgroundDeps['deepen']>(async () => {})
+    const states: BackgroundState[] = []
+    const cycle = runCycle(
+      { players: [alice, { ...alice, lichess: 'bob', deep: true }] },
+      deps({
+        find,
+        deepen,
+        toDeepen: async (all) => new Set(all.map((g) => movesHash(g.sanMoves))),
+      }),
+      new AbortController().signal,
+      (state) => states.push(state),
+    )
+    await vi.runAllTimersAsync()
+    await cycle
+    expect(deepen.mock.calls.flatMap(([batch]) => batch.map((g) => g.id))).toEqual(['shared', 'b1'])
+    expect(states.at(-1)).toEqual({ phase: 'deepening', done: 2, total: 2 })
   })
 
   it('says when Lichess limits the requests', async () => {

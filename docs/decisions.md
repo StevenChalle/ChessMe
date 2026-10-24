@@ -678,3 +678,13 @@ Un seul compte principal par plateforme ne permettait de suivre qu'un joueur. On
 - **Fond** : la boucle synchronise chaque favori à la suite, puis analyse toutes leurs parties sans doublon (une partie entre deux favoris compte une fois). Les comptes des favoris ne sont jamais évincés en entier du magasin.
 - **Migration** : les comptes principaux enregistrés deviennent le premier favori, une fois (`craftyourchess:main-profile` → `craftyourchess:favorites`).
 - **Correctif** trouvé au passage : « Supprimer mes données locales » pendant une analyse de fond laissait la base se recréer aussitôt. Les favoris en mémoire sont maintenant oubliés (événement `LOCAL_DATA_CLEARED`), et la base refuse de se rouvrir avant le rechargement de la page.
+
+## 2026-10-24 : des options par favori
+
+Le nombre de parties suivies et l'analyse approfondie étaient communs à tous les favoris. Chaque favori a désormais les siens : on peut suivre ses propres comptes en profondeur et un joueur fort sur ses 50 dernières parties.
+
+- **Un favori = une série d'options** : un joueur aux deux comptes les partage, un joueur à un seul compte a les siennes. Un nouveau favori part des valeurs par défaut de l'appareil, réglables dès la fenêtre d'ajout.
+- **Réglages en accordéon** : un favori déplié à la fois, le dernier ajouté déplié à l'ouverture, un résumé des options sur chaque ligne.
+- **Partie commune à deux favoris** : analysée si l'un la veut, approfondie si l'un a l'option. La progression de l'approfondissement ne compte que les parties à approfondir.
+- **Migration** : les anciennes options communes sont recopiées sur chaque favori.
+- **Limite assumée** : le travail total n'est plus borné par un seul nombre (5 favoris à 1000 parties = 5000 parties). La limite de stockage de l'appareil s'applique toujours ; au-delà, de vieilles analyses sont recyclées et refaites. À surveiller.

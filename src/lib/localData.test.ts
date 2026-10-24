@@ -26,7 +26,7 @@ describe('migrateLegacyKeys', () => {
 
 describe('clearLocalData', () => {
   it('forgets the favorites kept in memory, and the database for the rest of the page', async () => {
-    setFavorites({ players: [{ lichess: 'alice' }], depth: 500, deep: true })
+    setFavorites({ players: [{ lichess: 'alice', depth: 500, deep: true }] })
     expect(await clearLocalData()).toBe(true)
     expect(getFavorites()).toBeUndefined()
     expect(localStorage.length).toBe(0)

@@ -1,28 +1,24 @@
-import { X } from 'lucide-react'
-import { useId, useState } from 'react'
-import { InfoTip } from '@/components/InfoTip'
-import { Checkbox } from '@/components/ui/checkbox'
-import { Label } from '@/components/ui/label'
-import { Slider } from '@/components/ui/slider'
+import { ChevronRight, X } from 'lucide-react'
+import { Accordion } from 'radix-ui'
 import { SourceDot } from '@/features/player/components/SourceBadge'
 import { SOURCE_LABELS } from '@/features/player/summary'
 import type { ReviewAccount } from '@/features/review/fetch'
 import { formatList, formatNumber } from '@/lib/format'
-import { cn } from '@/lib/utils'
 import { m } from '@/paraglide/messages'
 import {
-  depthRange,
   playerAccounts,
   playerName,
   setFavorites,
   useFavorites,
-  type Favorites,
+  withOptions,
+  type FavoriteOptions,
 } from '../favorites'
+import { FavoriteOptionsFields } from './FavoriteOptionsFields'
 
 /**
- * The favorite players (added from their profile, removed with their cross), how many of their
- * latest games to keep analysed, and the deep option (docs/background-analysis.md). Changes apply
- * at once.
+ * The favorite players (added from their profile, removed with their cross), each folding open on
+ * their own options, one at a time; the last one added is open at first, so the options are easy
+ * to find (docs/background-analysis.md). Changes apply at once.
  */
 export function FavoritesSettings({
   onRemove,
@@ -39,45 +35,39 @@ export function FavoritesSettings({
       </div>
     )
   }
-  return <FavoritesChoices favorites={favorites} onRemove={onRemove} />
-}
-
-function FavoritesChoices({
-  favorites,
-  onRemove,
-}: {
-  favorites: Favorites
-  onRemove: (accounts: ReviewAccount[]) => void
-}) {
-  const range = depthRange()
-  // While dragging: shown at once, applied on release (a new depth restarts the analysis).
-  const [dragged, setDragged] = useState<number | undefined>(undefined)
-  const depth = dragged ?? favorites.depth
-  const sliderId = useId()
-  const deepId = useId()
-  const position = (value: number) => ((value - range.min) / (range.max - range.min)) * 100
-  const apply = (value: number) => {
-    setDragged(undefined)
-    if (value !== favorites.depth) setFavorites({ ...favorites, depth: value })
-  }
+  const keyOf = (index: number) => playerName(favorites.players[index]!).toLowerCase()
 
   return (
-    <div className="space-y-3 text-sm">
-      <ul className="space-y-0.5">
-        {favorites.players.map((player) => {
-          const accounts = playerAccounts(player)
-          const name = playerName(player)
-          const platforms = formatList(accounts.map(({ source }) => SOURCE_LABELS[source]))
-          return (
-            <li key={name.toLowerCase()} className="flex items-center gap-2">
-              {/* The platforms as dots: the same name on both sites is one row. */}
-              <span title={platforms} className="flex w-5 shrink-0 gap-1">
-                {accounts.map(({ source }) => (
-                  <SourceDot key={source} source={source} />
-                ))}
-                <span className="sr-only">{platforms}</span>
-              </span>
-              <span className="min-w-0 flex-1 truncate font-medium text-text-strong">{name}</span>
+    <Accordion.Root
+      type="single"
+      collapsible
+      defaultValue={keyOf(favorites.players.length - 1)}
+      className="-mx-2 space-y-0.5 text-sm"
+    >
+      {favorites.players.map((player, index) => {
+        const accounts = playerAccounts(player)
+        const name = playerName(player)
+        const platforms = formatList(accounts.map(({ source }) => SOURCE_LABELS[source]))
+        return (
+          <Accordion.Item key={keyOf(index)} value={keyOf(index)} className="group/favorite">
+            <Accordion.Header className="flex items-center gap-1 rounded-sm pr-1 hover:bg-muted/60">
+              <Accordion.Trigger className="flex min-w-0 flex-1 cursor-pointer items-center gap-2 py-1 pl-2 text-left">
+                <ChevronRight
+                  aria-hidden
+                  className="size-3.5 shrink-0 text-muted-foreground transition-transform duration-200 group-data-[state=open]/favorite:rotate-90"
+                />
+                {/* The platforms as dots: the same name on both sites is one row. */}
+                <span title={platforms} className="flex w-5 shrink-0 gap-1">
+                  {accounts.map(({ source }) => (
+                    <SourceDot key={source} source={source} />
+                  ))}
+                  <span className="sr-only">{platforms}</span>
+                </span>
+                <span className="min-w-0 truncate font-medium text-text-strong">{name}</span>
+                <span className="ml-auto shrink-0 text-xs text-muted-foreground">
+                  {optionsSummary(player)}
+                </span>
+              </Accordion.Trigger>
               <button
                 type="button"
                 aria-label={m.favorite_remove_named({ player: name })}
@@ -87,64 +77,24 @@ function FavoritesChoices({
               >
                 <X className="size-3.5" />
               </button>
-            </li>
-          )
-        })}
-      </ul>
-
-      <div className="space-y-2">
-        <div className="flex items-baseline justify-between gap-3">
-          <Label htmlFor={sliderId} className="text-xs font-normal text-muted-foreground">
-            {m.favorites_depth()}
-          </Label>
-          <span className="num font-medium text-text-strong">{formatNumber(depth)}</span>
-        </div>
-        <Slider
-          id={sliderId}
-          aria-label={m.favorites_depth()}
-          min={range.min}
-          max={range.max}
-          step={range.step}
-          value={[depth]}
-          onValueChange={([value]) => setDragged(value)}
-          onValueCommit={([value]) => value !== undefined && apply(value)}
-        />
-        {/* The usual choices, as landmarks: a click goes straight to one. */}
-        <div className="relative h-4 text-[0.7rem]">
-          {range.marks.map((mark) => (
-            <button
-              key={mark}
-              type="button"
-              onClick={() => apply(mark)}
-              className={cn(
-                'num absolute top-0 rounded-sm px-0.5 leading-none hover:text-text-strong',
-                mark === range.min
-                  ? '-translate-x-0.5'
-                  : mark === range.max
-                    ? 'translate-x-[calc(-100%+2px)]'
-                    : '-translate-x-1/2',
-                mark === depth ? 'font-semibold text-primary' : 'text-muted-foreground',
-              )}
-              style={{ left: `${position(mark)}%` }}
-            >
-              {formatNumber(mark)}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      <div className="flex items-center gap-2">
-        <Checkbox
-          id={deepId}
-          checked={favorites.deep}
-          onCheckedChange={(value) => setFavorites({ ...favorites, deep: value === true })}
-          className="border-border-strong"
-        />
-        <Label htmlFor={deepId} className="font-normal text-text-strong">
-          {m.favorites_deep()}
-        </Label>
-        <InfoTip text={m.favorites_deep_hint()} />
-      </div>
-    </div>
+            </Accordion.Header>
+            <Accordion.Content className="overflow-hidden data-[state=closed]:animate-accordion-up data-[state=open]:animate-accordion-down">
+              <div className="pt-2 pr-2 pb-3 pl-7.5">
+                <FavoriteOptionsFields
+                  options={player}
+                  onChange={(options) => setFavorites(withOptions(favorites, index, options))}
+                />
+              </div>
+            </Accordion.Content>
+          </Accordion.Item>
+        )
+      })}
+    </Accordion.Root>
   )
+}
+
+/** A favorite's options in a few words: "500 games · deep". */
+function optionsSummary({ depth, deep }: FavoriteOptions): string {
+  const count = formatNumber(depth)
+  return deep ? m.favorite_summary_deep({ count }) : m.favorite_summary({ count })
 }

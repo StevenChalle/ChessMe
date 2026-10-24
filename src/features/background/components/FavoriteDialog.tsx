@@ -16,17 +16,19 @@ import { SourceDot } from '@/features/player/components/SourceBadge'
 import { SOURCE_LABELS } from '@/features/player/summary'
 import type { ReviewAccount } from '@/features/review/fetch'
 import type { ApiSource } from '@/lib/http'
-import { formatNumber } from '@/lib/format'
 import { m } from '@/paraglide/messages'
 import { announceFavorite, announceUnfavorite } from '../announce'
 import {
-  defaultDepth,
+  defaultOptions,
+  favoriteIndex,
   getFavorites,
   setFavorites,
   useFavorites,
   withFavorite,
   withoutFavorite,
+  type FavoriteOptions,
 } from '../favorites'
+import { FavoriteOptionsFields } from './FavoriteOptionsFields'
 
 /**
  * The accounts concerned: a dot, the platform and the username each. With `selected`, a checkbox
@@ -79,8 +81,9 @@ function AccountRows({
 }
 
 /**
- * Confirms adding a player to the favorites, or removing them (with the option to delete their
- * saved games): the same dialog from a profile's star and from the settings' cross.
+ * Confirms adding a player to the favorites, with their options, or removing them (with the
+ * option to delete their saved games): the same dialog from a profile's star and from the
+ * settings' cross.
  */
 export function FavoriteDialog({
   mode,
@@ -95,6 +98,10 @@ export function FavoriteDialog({
 }) {
   const favorites = useFavorites()
   const [deleteGames, setDeleteGames] = useState(false)
+  // Until changed: those of the favorite these accounts would join, else the defaults.
+  const [chosen, setChosen] = useState<FavoriteOptions | undefined>(undefined)
+  const options =
+    chosen ?? favorites?.players[favoriteIndex(favorites, accounts)] ?? defaultOptions()
   // The platforms kept when removing a player with both: all removed by default.
   const [kept, setKept] = useState<ReadonlySet<ApiSource>>(new Set())
   const deleteId = useId()
@@ -105,6 +112,7 @@ export function FavoriteDialog({
   const close = () => {
     setDeleteGames(false)
     setKept(new Set())
+    setChosen(undefined)
     onOpenChange(false)
   }
 
@@ -117,10 +125,11 @@ export function FavoriteDialog({
 
   const confirm = async () => {
     const deleting = deleteGames
+    const { depth, deep } = options
     close()
     const current = getFavorites()
     if (!removing) {
-      setFavorites(withFavorite(current, accounts))
+      setFavorites(withFavorite(current, accounts, { depth, deep }))
       announceFavorite(accounts)
       return
     }
@@ -141,9 +150,7 @@ export function FavoriteDialog({
             {removing ? m.favorite_remove_title() : m.favorite_add_title()}
           </DialogTitle>
           <DialogDescription className="lg:whitespace-nowrap">
-            {removing
-              ? m.favorite_remove_body()
-              : m.favorite_add_body({ count: formatNumber(favorites?.depth ?? defaultDepth()) })}
+            {removing ? m.favorite_remove_body() : m.favorite_add_body()}
           </DialogDescription>
         </DialogHeader>
         {choosing ? (
@@ -155,6 +162,7 @@ export function FavoriteDialog({
         ) : (
           <AccountRows accounts={accounts} />
         )}
+        {!removing && <FavoriteOptionsFields options={options} onChange={setChosen} />}
         {removing && (
           <div className="flex items-center gap-2">
             <Checkbox

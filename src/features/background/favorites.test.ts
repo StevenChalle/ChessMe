@@ -3,6 +3,8 @@ import {
   defaultDepth,
   depthRange,
   favoriteAccounts,
+  defaultOptions,
+  favoriteIndex,
   getFavorites,
   isFavorite,
   isValidDepth,
@@ -12,6 +14,7 @@ import {
   playerName,
   setFavorites,
   withFavorite,
+  withOptions,
   withoutFavorite,
 } from './favorites'
 
@@ -19,28 +22,44 @@ const lichess = (username: string) => ({ source: 'lichess' as const, username })
 const chesscom = (username: string) => ({ source: 'chesscom' as const, username })
 
 describe('parseFavorites', () => {
-  it('keeps the valid players, the depth and the deep option', () => {
+  it('keeps the valid players, each with their options', () => {
     expect(
       parseFavorites(
-        '{"players":[{"lichess":" alice "},{"chesscom":"bob"},{"nope":1}],"depth":200,"deep":false}',
+        '{"players":[{"lichess":" alice ","depth":200,"deep":false},{"chesscom":"bob","depth":1000},{"nope":1}]}',
       ),
-    ).toEqual({ players: [{ lichess: 'alice' }, { chesscom: 'bob' }], depth: 200, deep: false })
+    ).toEqual({
+      players: [
+        { lichess: 'alice', depth: 200, deep: false },
+        { chesscom: 'bob', depth: 1000, deep: true },
+      ],
+    })
+  })
+
+  it('gives each player the options once shared by all the favorites', () => {
+    expect(
+      parseFavorites(
+        '{"players":[{"lichess":"a"},{"chesscom":"b","depth":50}],"depth":200,"deep":false}',
+      ),
+    ).toEqual({
+      players: [
+        { lichess: 'a', depth: 200, deep: false },
+        { chesscom: 'b', depth: 50, deep: false },
+      ],
+    })
   })
 
   it('needs a player, and falls back to the default depth', () => {
     expect(parseFavorites('{"players":[],"depth":50}')).toBeUndefined()
     expect(parseFavorites('not json')).toBeUndefined()
-    expect(parseFavorites('{"players":[{"lichess":"a"}],"depth":7}')).toEqual({
-      players: [{ lichess: 'a' }],
-      depth: defaultDepth(),
-      deep: true,
+    expect(parseFavorites('{"players":[{"lichess":"a","depth":7}]}')).toEqual({
+      players: [{ lichess: 'a', depth: defaultDepth(), deep: true }],
     })
   })
 
   it('takes the main accounts saved before favorites as the first favorite', () => {
     expect(
       parseLegacyMainProfile('{"lichess":"alice","chesscom":"alice","depth":500,"deep":true}'),
-    ).toEqual({ players: [{ lichess: 'alice', chesscom: 'alice' }], depth: 500, deep: true })
+    ).toEqual({ players: [{ lichess: 'alice', chesscom: 'alice', depth: 500, deep: true }] })
     expect(parseLegacyMainProfile('{"depth":50}')).toBeUndefined()
   })
 })
@@ -66,8 +85,9 @@ describe('setFavorites', () => {
   beforeEach(() => localStorage.clear())
 
   it('saves the favorites and forgets them', () => {
-    setFavorites({ players: [{ chesscom: 'bob' }], depth: 1000, deep: false })
-    expect(getFavorites()).toEqual({ players: [{ chesscom: 'bob' }], depth: 1000, deep: false })
+    const favorites = { players: [{ chesscom: 'bob', depth: 1000, deep: false }] }
+    setFavorites(favorites)
+    expect(getFavorites()).toEqual(favorites)
     expect(localStorage.getItem('craftyourchess:favorites')).toContain('bob')
     setFavorites(undefined)
     expect(getFavorites()).toBeUndefined()
@@ -76,14 +96,16 @@ describe('setFavorites', () => {
 })
 
 describe('adding and removing favorites', () => {
+  const options = { depth: 200, deep: false }
   const favorites = {
-    players: [{ lichess: 'Alice', chesscom: 'alice_cc' }, { lichess: 'bob' }],
-    depth: 200,
-    deep: false,
+    players: [
+      { lichess: 'Alice', chesscom: 'alice_cc', ...options },
+      { lichess: 'bob', depth: 1000, deep: true },
+    ],
   }
 
   it('lists every account once', () => {
-    const twice = { ...favorites, players: [...favorites.players, { lichess: 'BOB' }] }
+    const twice = { players: [...favorites.players, { lichess: 'BOB', ...options }] }
     expect(favoriteAccounts(twice)).toEqual([
       lichess('Alice'),
       chesscom('alice_cc'),
@@ -98,35 +120,43 @@ describe('adding and removing favorites', () => {
     expect(isFavorite(undefined, [lichess('bob')])).toBe(false)
   })
 
-  it('adds a new player last, or completes the same player', () => {
+  it('adds a new player last, with the default options or those chosen', () => {
     expect(withFavorite(favorites, [lichess('carol')]).players.at(-1)).toEqual({
       lichess: 'carol',
+      ...defaultOptions(),
     })
-    // Bob seen with his Chess.com account too: still one player.
-    expect(withFavorite(favorites, [lichess('bob'), chesscom('bob_cc')]).players).toEqual([
-      { lichess: 'Alice', chesscom: 'alice_cc' },
-      { lichess: 'bob', chesscom: 'bob_cc' },
-    ])
-    // Another Lichess account with Alice's Chess.com one: a new player, not a merge.
-    expect(withFavorite(favorites, [lichess('eve'), chesscom('alice_cc')]).players).toHaveLength(3)
-    expect(withFavorite(undefined, [lichess('bob')])).toEqual({
-      players: [{ lichess: 'bob' }],
-      depth: defaultDepth(),
-      deep: true,
+    expect(withFavorite(undefined, [lichess('carol')], options)).toEqual({
+      players: [{ lichess: 'carol', ...options }],
     })
   })
 
+  it('completes the same player, with the options chosen', () => {
+    // Bob seen with his Chess.com account too: still one player.
+    expect(favoriteIndex(favorites, [lichess('bob'), chesscom('bob_cc')])).toBe(1)
+    expect(withFavorite(favorites, [lichess('bob'), chesscom('bob_cc')], options).players).toEqual([
+      favorites.players[0],
+      { lichess: 'bob', chesscom: 'bob_cc', ...options },
+    ])
+    // Another Lichess account with Alice's Chess.com one: a new player, not a merge.
+    expect(favoriteIndex(favorites, [lichess('eve'), chesscom('alice_cc')])).toBe(-1)
+    expect(withFavorite(favorites, [lichess('eve'), chesscom('alice_cc')]).players).toHaveLength(3)
+  })
+
+  it("changes one player's options only", () => {
+    expect(withOptions(favorites, 1, { deep: false }).players).toEqual([
+      favorites.players[0],
+      { lichess: 'bob', depth: 1000, deep: false },
+    ])
+  })
+
   it('removes accounts, then the players left with none, then the favorites', () => {
+    // The account kept keeps the player's options.
     expect(withoutFavorite(favorites, [chesscom('ALICE_CC')])?.players).toEqual([
-      { lichess: 'Alice' },
-      { lichess: 'bob' },
+      { lichess: 'Alice', ...options },
+      favorites.players[1],
     ])
-    expect(withoutFavorite(favorites, [lichess('bob')])?.players).toEqual([
-      { lichess: 'Alice', chesscom: 'alice_cc' },
-    ])
-    expect(withoutFavorite({ ...favorites, players: [{ lichess: 'bob' }] }, [lichess('bob')])).toBe(
-      undefined,
-    )
+    expect(withoutFavorite(favorites, [lichess('bob')])?.players).toEqual([favorites.players[0]])
+    expect(withoutFavorite({ players: [favorites.players[1]!] }, [lichess('bob')])).toBe(undefined)
   })
 
   it('names a player once when both accounts share the name', () => {
