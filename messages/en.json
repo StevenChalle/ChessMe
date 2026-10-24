@@ -582,7 +582,6 @@
   "favorite_add_body": "The latest {count} games of this player are analysed and saved automatically, while the app is open.",
   "favorite_add_action": "Add",
   "favorite_remove_title": "Remove from favorites?",
-  "favorite_remove_named_title": "Remove {player} from favorites?",
   "favorite_remove_named": "Remove {player} from favorites",
   "favorite_remove_body": "Their new games will no longer be analysed automatically. What is already saved stays.",
   "favorite_remove_delete": "Also delete their saved games",

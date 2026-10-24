@@ -1,25 +1,21 @@
-import { StarOff, X } from 'lucide-react'
+import { X } from 'lucide-react'
 import { useId, useState } from 'react'
-import type { ConfirmOptions } from '@/components/ConfirmDialog'
 import { InfoTip } from '@/components/InfoTip'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Label } from '@/components/ui/label'
 import { Slider } from '@/components/ui/slider'
 import { SourceDot } from '@/features/player/components/SourceBadge'
 import { SOURCE_LABELS } from '@/features/player/summary'
+import type { ReviewAccount } from '@/features/review/fetch'
 import { formatList, formatNumber } from '@/lib/format'
 import { cn } from '@/lib/utils'
 import { m } from '@/paraglide/messages'
-import { announceUnfavorite } from '../announce'
 import {
   depthRange,
-  getFavorites,
   playerAccounts,
   playerName,
   setFavorites,
   useFavorites,
-  withoutFavorite,
-  type FavoritePlayer,
   type Favorites,
 } from '../favorites'
 
@@ -29,10 +25,10 @@ import {
  * at once.
  */
 export function FavoritesSettings({
-  confirm,
+  onRemove,
 }: {
-  /** From outside the popover, whose content would unmount the dialog when it takes the focus */
-  confirm: (options: ConfirmOptions) => Promise<boolean>
+  /** Opens the removal dialog, outside the popover (whose content unmounts when it takes focus) */
+  onRemove: (accounts: ReviewAccount[]) => void
 }) {
   const favorites = useFavorites()
   if (!favorites) {
@@ -43,15 +39,15 @@ export function FavoritesSettings({
       </div>
     )
   }
-  return <FavoritesChoices favorites={favorites} confirm={confirm} />
+  return <FavoritesChoices favorites={favorites} onRemove={onRemove} />
 }
 
 function FavoritesChoices({
   favorites,
-  confirm,
+  onRemove,
 }: {
   favorites: Favorites
-  confirm: (options: ConfirmOptions) => Promise<boolean>
+  onRemove: (accounts: ReviewAccount[]) => void
 }) {
   const range = depthRange()
   // While dragging: shown at once, applied on release (a new depth restarts the analysis).
@@ -63,23 +59,6 @@ function FavoritesChoices({
   const apply = (value: number) => {
     setDragged(undefined)
     if (value !== favorites.depth) setFavorites({ ...favorites, depth: value })
-  }
-
-  // Asked first: the background analysis of this player stops (what is saved stays).
-  const remove = async (player: FavoritePlayer) => {
-    const name = playerName(player)
-    const confirmed = await confirm({
-      icon: StarOff,
-      title: m.favorite_remove_named_title({ player: name }),
-      description: m.favorite_remove_body(),
-      confirmLabel: m.favorite_remove_action(),
-      cancelLabel: m.confirm_cancel(),
-    })
-    const current = getFavorites()
-    if (!confirmed || !current) return
-    const accounts = playerAccounts(player)
-    setFavorites(withoutFavorite(current, accounts))
-    announceUnfavorite(accounts)
   }
 
   return (
@@ -103,7 +82,7 @@ function FavoritesChoices({
                 type="button"
                 aria-label={m.favorite_remove_named({ player: name })}
                 title={m.favorite_remove_named({ player: name })}
-                onClick={() => void remove(player)}
+                onClick={() => onRemove(accounts)}
                 className="rounded-sm p-0.5 text-muted-foreground/60 hover:bg-muted hover:text-text-strong"
               >
                 <X className="size-3.5" />

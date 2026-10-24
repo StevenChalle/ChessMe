@@ -7,7 +7,7 @@ import {
   Star,
   type LucideIcon,
 } from 'lucide-react'
-import type { ReactNode } from 'react'
+import { useState, type ReactNode } from 'react'
 import '@/components/board/boardStyles.css'
 import {
   BOARD_COLORS,
@@ -22,8 +22,9 @@ import {
 } from '@/components/board/boardStyle'
 import { Button } from '@/components/ui/button'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
+import { FavoriteDialog } from '@/features/background/components/FavoriteDialog'
 import { FavoritesSettings } from '@/features/background/components/FavoritesSettings'
-import { useConfirm } from '@/hooks/useConfirm'
+import type { ReviewAccount } from '@/features/review/fetch'
 import { cn } from '@/lib/utils'
 import { m } from '@/paraglide/messages'
 import { getLocale, locales, setLocale, type Locale } from '@/paraglide/runtime'
@@ -94,7 +95,7 @@ const sameStyle = (a: BoardStyle, b: BoardStyle) => a.board === b.board && a.pie
 export function SettingsMenu() {
   const style = useBoardStyle()
   const currentLocale = getLocale()
-  const { confirm, dialog } = useConfirm()
+  const [removing, setRemoving] = useState<ReviewAccount[] | undefined>(undefined)
 
   return (
     <>
@@ -205,11 +206,18 @@ export function SettingsMenu() {
           </Group>
 
           <Group icon={Star} title={m.settings_favorites()}>
-            <FavoritesSettings confirm={confirm} />
+            <FavoritesSettings onRemove={setRemoving} />
           </Group>
         </PopoverContent>
       </Popover>
-      {dialog}
+      {removing && (
+        <FavoriteDialog
+          mode="remove"
+          accounts={removing}
+          open
+          onOpenChange={(open) => !open && setRemoving(undefined)}
+        />
+      )}
     </>
   )
 }

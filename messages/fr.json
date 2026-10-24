@@ -582,7 +582,6 @@
   "favorite_add_body": "Les {count} dernières parties de ce joueur sont analysées et enregistrées automatiquement, pendant que l'app est ouverte.",
   "favorite_add_action": "Ajouter",
   "favorite_remove_title": "Retirer des favoris ?",
-  "favorite_remove_named_title": "Retirer {player} des favoris ?",
   "favorite_remove_named": "Retirer {player} des favoris",
   "favorite_remove_body": "Ses nouvelles parties ne seront plus analysées automatiquement. Ce qui est déjà enregistré reste.",
   "favorite_remove_delete": "Supprimer aussi ses parties enregistrées",
