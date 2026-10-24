@@ -665,4 +665,5 @@ Le menu des réglages devenait long et dense. Il reste plat (sans cartes), avec 
 
 - **Comptes principaux** réduits à l'essentiel : les comptes en lecture seule (pastille de la plateforme et pseudo), un curseur « Dernières parties synchronisées », la case « Analyse approfondie » avec une infobulle. Tout s'applique aussitôt : plus de champs, ni de boutons « Synchroniser » et « Retirer ». Les comptes se définissent depuis un profil.
 - **Données enregistrées** retirée : le détail (parties, analyses, vider) reviendra au clic sur l'indicateur de synchronisation.
-- Retirer ses comptes principaux n'est plus possible depuis les réglages ; à reprendre avec le détail de l'indicateur si besoin.
+- Une croix discrète après chaque compte principal arrête de le suivre (sans confirmation : on le redéfinit d'un clic depuis son profil) ; sans compte, « Non définis ».
+- Le nombre de parties suivies se règle de 50 en 50 (de 5 en 5 sur téléphone, pour garder 25), les anciennes options restant des repères cliquables sous le curseur. La section « Style » devient « Style d'échiquier ».

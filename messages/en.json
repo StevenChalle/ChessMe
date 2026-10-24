@@ -416,7 +416,7 @@
   "legal_privacy_local_board": "the look of the boards (colors and pieces);",
   "settings": "Settings",
   "settings_language": "Language",
-  "settings_style": "Style",
+  "settings_style": "Board style",
   "settings_board": "Board",
   "settings_pieces": "Pieces",
   "board_color_brown": "Brown",
@@ -587,5 +587,7 @@
   "toast_close": "Close",
   "toast_account_line": "{platform}: {username}",
   "set_main_confirm_body": "The latest games of your main accounts are automatically analysed and saved.",
-  "settings_main_empty": "Set them from a player's profile, with the button next to the name."
+  "settings_main_empty": "Choose them from a player's profile, with the button next to the name.",
+  "settings_main_unset": "Not set",
+  "settings_main_drop": "Stop following {account}"
 }

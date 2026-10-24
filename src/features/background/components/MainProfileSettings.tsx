@@ -1,3 +1,4 @@
+import { X } from 'lucide-react'
 import { useId, useState } from 'react'
 import { InfoTip } from '@/components/InfoTip'
 import { Checkbox } from '@/components/ui/checkbox'
@@ -6,41 +7,65 @@ import { Slider } from '@/components/ui/slider'
 import { SourceDot } from '@/features/player/components/SourceBadge'
 import { SOURCE_LABELS } from '@/features/player/summary'
 import { formatNumber } from '@/lib/format'
+import { cn } from '@/lib/utils'
 import { m } from '@/paraglide/messages'
 import {
-  depthsFor,
+  depthRange,
   mainAccounts,
   setMainProfile,
   useMainProfile,
+  withoutMainAccount,
   type MainProfile,
 } from '../profile'
 
 /**
- * The main accounts (set from a player's profile, not here), how many of their latest games to
- * keep analysed, and the deep option (docs/background-analysis.md). Changes apply at once.
+ * The main accounts (set from a player's profile, dropped with their cross), how many of their
+ * latest games to keep analysed, and the deep option (docs/background-analysis.md). Changes apply
+ * at once.
  */
 export function MainProfileSettings() {
   const profile = useMainProfile()
-  if (!profile) return <p className="text-xs text-muted-foreground">{m.settings_main_empty()}</p>
+  if (!profile) {
+    return (
+      <div className="space-y-0.5 text-sm">
+        <p className="text-text-strong">{m.settings_main_unset()}</p>
+        <p className="text-xs text-muted-foreground">{m.settings_main_empty()}</p>
+      </div>
+    )
+  }
   return <MainProfileChoices profile={profile} />
 }
 
 function MainProfileChoices({ profile }: { profile: MainProfile }) {
-  const depths = depthsFor()
+  const range = depthRange()
   // While dragging: shown at once, applied on release (a new depth restarts the analysis).
   const [dragged, setDragged] = useState<number | undefined>(undefined)
-  const index = dragged ?? Math.max(depths.indexOf(profile.depth), 0)
+  const depth = dragged ?? profile.depth
   const sliderId = useId()
   const deepId = useId()
+  const position = (value: number) => ((value - range.min) / (range.max - range.min)) * 100
+  const apply = (value: number) => {
+    setDragged(undefined)
+    if (value !== profile.depth) setMainProfile({ ...profile, depth: value })
+  }
 
   return (
     <div className="space-y-3 text-sm">
-      <ul className="space-y-1">
+      <ul className="space-y-0.5">
         {mainAccounts(profile).map(({ source, username }) => (
           <li key={source} className="flex items-center gap-2">
             <SourceDot source={source} />
             <span className="w-20 text-muted-foreground">{SOURCE_LABELS[source]}</span>
-            <span className="truncate font-medium text-text-strong">{username}</span>
+            <span className="min-w-0 flex-1 truncate font-medium text-text-strong">{username}</span>
+            <button
+              type="button"
+              aria-label={m.settings_main_drop({ account: username })}
+              title={m.settings_main_drop({ account: username })}
+              onClick={() => setMainProfile(withoutMainAccount(profile, source))}
+              className="rounded-sm p-0.5 text-muted-foreground/60 hover:bg-muted hover:text-text-strong"
+            >
+              <X className="size-3.5" />
+            </button>
           </li>
         ))}
       </ul>
@@ -50,23 +75,40 @@ function MainProfileChoices({ profile }: { profile: MainProfile }) {
           <Label htmlFor={sliderId} className="text-xs font-normal text-muted-foreground">
             {m.settings_main_depth()}
           </Label>
-          <span className="num font-medium text-text-strong">{formatNumber(depths[index]!)}</span>
+          <span className="num font-medium text-text-strong">{formatNumber(depth)}</span>
         </div>
         <Slider
           id={sliderId}
           aria-label={m.settings_main_depth()}
-          min={0}
-          max={depths.length - 1}
-          step={1}
-          value={[index]}
+          min={range.min}
+          max={range.max}
+          step={range.step}
+          value={[depth]}
           onValueChange={([value]) => setDragged(value)}
-          onValueCommit={([value]) => {
-            setDragged(undefined)
-            const depth = depths[value!]
-            if (depth !== undefined && depth !== profile.depth)
-              setMainProfile({ ...profile, depth })
-          }}
+          onValueCommit={([value]) => value !== undefined && apply(value)}
         />
+        {/* The usual choices, as landmarks: a click goes straight to one. */}
+        <div className="relative h-4 text-[0.7rem]">
+          {range.marks.map((mark) => (
+            <button
+              key={mark}
+              type="button"
+              onClick={() => apply(mark)}
+              className={cn(
+                'num absolute top-0 rounded-sm px-0.5 leading-none hover:text-text-strong',
+                mark === range.min
+                  ? '-translate-x-0.5'
+                  : mark === range.max
+                    ? 'translate-x-[calc(-100%+2px)]'
+                    : '-translate-x-1/2',
+                mark === depth ? 'font-semibold text-primary' : 'text-muted-foreground',
+              )}
+              style={{ left: `${position(mark)}%` }}
+            >
+              {formatNumber(mark)}
+            </button>
+          ))}
+        </div>
       </div>
 
       <div className="flex items-center gap-2">

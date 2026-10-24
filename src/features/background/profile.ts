@@ -8,15 +8,30 @@ import { detectDevice, type DeviceKind } from '@/lib/device'
  * page, cleared by clearLocalData(). Without accounts, nothing runs.
  */
 
-/** The latest games the player can choose to follow: a phone does far less engine work. */
-export const DEPTHS: Record<DeviceKind, readonly number[]> = {
-  desktop: [50, 200, 500, 1000],
-  mobile: [10, 25, 50, 150],
+/**
+ * How many latest games the player can follow: a range by steps, with a few landmarks shown under
+ * it. A phone does far less engine work.
+ */
+export type DepthRange = { min: number; max: number; step: number; marks: readonly number[] }
+
+export const DEPTH_RANGES: Record<DeviceKind, DepthRange> = {
+  desktop: { min: 50, max: 1000, step: 50, marks: [50, 200, 500, 1000] },
+  mobile: { min: 10, max: 150, step: 5, marks: [10, 25, 50, 150] },
 }
 export type Depth = number
 
-export function depthsFor(device: DeviceKind = detectDevice()): readonly number[] {
-  return DEPTHS[device]
+export function depthRange(device: DeviceKind = detectDevice()): DepthRange {
+  return DEPTH_RANGES[device]
+}
+
+/** A number of games this device offers: in its range, on a step. */
+export function isValidDepth(depth: unknown, range: DepthRange = depthRange()): depth is Depth {
+  return (
+    typeof depth === 'number' &&
+    depth >= range.min &&
+    depth <= range.max &&
+    (depth - range.min) % range.step === 0
+  )
 }
 
 export type MainProfile = {
@@ -50,7 +65,7 @@ export function parseMainProfile(raw: string | null): MainProfile | undefined {
     const lichess = username(data.lichess)
     const chesscom = username(data.chesscom)
     if (!lichess && !chesscom) return undefined
-    const depth = depthsFor().find((item) => item === data.depth) ?? defaultDepth()
+    const depth = isValidDepth(data.depth) ? data.depth : defaultDepth()
     return {
       ...(lichess && { lichess }),
       ...(chesscom && { chesscom }),
@@ -156,6 +171,16 @@ export function withMainAccounts(
     depth: profile?.depth ?? defaultDepth(),
     deep: profile?.deep ?? true,
   }
+}
+
+/** The profile without its main account on `source`; undefined when none is left. */
+export function withoutMainAccount(
+  profile: MainProfile,
+  source: ReviewAccount['source'],
+): MainProfile | undefined {
+  const rest: MainProfile = { ...profile }
+  delete rest[source]
+  return rest.lichess || rest.chesscom ? rest : undefined
 }
 
 /** The accounts to search, in the review's terms. */

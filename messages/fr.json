@@ -416,7 +416,7 @@
   "legal_privacy_local_board": "l'apparence des échiquiers (couleurs et pièces) ;",
   "settings": "Paramètres",
   "settings_language": "Langue",
-  "settings_style": "Style",
+  "settings_style": "Style d'échiquier",
   "settings_board": "Échiquier",
   "settings_pieces": "Pièces",
   "board_color_brown": "Marron",
@@ -587,5 +587,7 @@
   "toast_close": "Fermer",
   "toast_account_line": "{platform} : {username}",
   "set_main_confirm_body": "Les dernières parties de vos comptes principaux sont automatiquement analysées et enregistrées.",
-  "settings_main_empty": "À définir depuis le profil d'un joueur, avec le bouton à côté du nom."
+  "settings_main_empty": "À choisir depuis le profil d'un joueur, avec le bouton à côté du nom.",
+  "settings_main_unset": "Non définis",
+  "settings_main_drop": "Ne plus suivre {account}"
 }

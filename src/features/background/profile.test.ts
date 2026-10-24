@@ -2,13 +2,15 @@ import { beforeEach, describe, expect, it } from 'vitest'
 import {
   areMainAccounts,
   defaultDepth,
-  depthsFor,
+  depthRange,
+  isValidDepth,
   getMainProfile,
   mainAccounts,
   parseMainProfile,
   replacedAccounts,
   setMainProfile,
   withMainAccounts,
+  withoutMainAccount,
 } from './profile'
 
 describe('parseMainProfile', () => {
@@ -26,6 +28,7 @@ describe('parseMainProfile', () => {
     expect(parseMainProfile('{"depth":50}')).toBeUndefined()
     expect(parseMainProfile('not json')).toBeUndefined()
     expect(parseMainProfile('{"lichess":"alice","depth":7}')?.depth).toBe(defaultDepth())
+    expect(parseMainProfile('{"lichess":"alice","depth":350}')?.depth).toBe(350)
   })
 })
 
@@ -35,11 +38,9 @@ describe('defaultDepth', () => {
     expect(defaultDepth('mobile')).toBe(50)
   })
 
-  it('is one of the choices of each kind of device', () => {
-    expect(depthsFor('desktop')).toEqual([50, 200, 500, 1000])
-    expect(depthsFor('mobile')).toEqual([10, 25, 50, 150])
-    expect(depthsFor('desktop')).toContain(defaultDepth('desktop'))
-    expect(depthsFor('mobile')).toContain(defaultDepth('mobile'))
+  it('is a landmark of each kind of device', () => {
+    expect(depthRange('desktop').marks).toContain(defaultDepth('desktop'))
+    expect(depthRange('mobile').marks).toContain(defaultDepth('mobile'))
   })
 })
 
@@ -93,5 +94,25 @@ describe('making accounts the main ones', () => {
       depth: defaultDepth(),
       deep: true,
     })
+  })
+})
+
+describe('isValidDepth', () => {
+  it('takes any step of the range, landmarks or not', () => {
+    const desktop = depthRange('desktop')
+    expect([50, 350, 1000].every((depth) => isValidDepth(depth, desktop))).toBe(true)
+    expect([0, 75, 1050, '500'].some((depth) => isValidDepth(depth, desktop))).toBe(false)
+    const mobile = depthRange('mobile')
+    expect(depthRange('mobile').marks.every((mark) => isValidDepth(mark, mobile))).toBe(true)
+  })
+})
+
+describe('withoutMainAccount', () => {
+  it('drops one account, and the profile once none is left', () => {
+    const both = { lichess: 'alice', chesscom: 'bob', depth: 200, deep: true }
+    expect(withoutMainAccount(both, 'lichess')).toEqual({ chesscom: 'bob', depth: 200, deep: true })
+    expect(withoutMainAccount({ lichess: 'alice', depth: 200, deep: true }, 'lichess')).toBe(
+      undefined,
+    )
   })
 })
