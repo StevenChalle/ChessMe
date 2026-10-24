@@ -6,7 +6,8 @@ import { Label } from '@/components/ui/label'
 import { Slider } from '@/components/ui/slider'
 import { SourceDot } from '@/features/player/components/SourceBadge'
 import { SOURCE_LABELS } from '@/features/player/summary'
-import { formatNumber } from '@/lib/format'
+import { formatList, formatNumber } from '@/lib/format'
+import type { ApiSource } from '@/lib/http'
 import { cn } from '@/lib/utils'
 import { m } from '@/paraglide/messages'
 import {
@@ -36,6 +37,17 @@ export function MainProfileSettings() {
   return <MainProfileChoices profile={profile} />
 }
 
+/** The main accounts, one row per name: the same name on Lichess and Chess.com is one row. */
+function accountRows(profile: MainProfile): { username: string; sources: ApiSource[] }[] {
+  const rows: { username: string; sources: ApiSource[] }[] = []
+  for (const { source, username } of mainAccounts(profile)) {
+    const row = rows.find((item) => item.username.toLowerCase() === username.toLowerCase())
+    if (row) row.sources.push(source)
+    else rows.push({ username, sources: [source] })
+  }
+  return rows
+}
+
 function MainProfileChoices({ profile }: { profile: MainProfile }) {
   const range = depthRange()
   // While dragging: shown at once, applied on release (a new depth restarts the analysis).
@@ -52,22 +64,39 @@ function MainProfileChoices({ profile }: { profile: MainProfile }) {
   return (
     <div className="space-y-3 text-sm">
       <ul className="space-y-0.5">
-        {mainAccounts(profile).map(({ source, username }) => (
-          <li key={source} className="flex items-center gap-2">
-            <SourceDot source={source} />
-            <span className="w-20 text-muted-foreground">{SOURCE_LABELS[source]}</span>
-            <span className="min-w-0 flex-1 truncate font-medium text-text-strong">{username}</span>
-            <button
-              type="button"
-              aria-label={m.settings_main_drop({ account: username })}
-              title={m.settings_main_drop({ account: username })}
-              onClick={() => setMainProfile(withoutMainAccount(profile, source))}
-              className="rounded-sm p-0.5 text-muted-foreground/60 hover:bg-muted hover:text-text-strong"
-            >
-              <X className="size-3.5" />
-            </button>
-          </li>
-        ))}
+        {accountRows(profile).map(({ username, sources }) => {
+          const platforms = formatList(sources.map((source) => SOURCE_LABELS[source]))
+          return (
+            <li key={username.toLowerCase()} className="flex items-center gap-2">
+              {/* The platforms as dots: the same name on both sites is one row. */}
+              <span title={platforms} className="flex w-5 shrink-0 gap-1">
+                {sources.map((source) => (
+                  <SourceDot key={source} source={source} />
+                ))}
+                <span className="sr-only">{platforms}</span>
+              </span>
+              <span className="min-w-0 flex-1 truncate font-medium text-text-strong">
+                {username}
+              </span>
+              <button
+                type="button"
+                aria-label={m.settings_main_drop({ account: username })}
+                title={m.settings_main_drop({ account: username })}
+                onClick={() =>
+                  setMainProfile(
+                    sources.reduce<MainProfile | undefined>(
+                      (rest, source) => rest && withoutMainAccount(rest, source),
+                      profile,
+                    ),
+                  )
+                }
+                className="rounded-sm p-0.5 text-muted-foreground/60 hover:bg-muted hover:text-text-strong"
+              >
+                <X className="size-3.5" />
+              </button>
+            </li>
+          )
+        })}
       </ul>
 
       <div className="space-y-2">

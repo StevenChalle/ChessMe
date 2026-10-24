@@ -588,6 +588,6 @@
   "toast_account_line": "{platform}: {username}",
   "set_main_confirm_body": "The latest games of your main accounts are automatically analysed and saved.",
   "settings_main_empty": "Choose them from a player's profile, with the button next to the name.",
-  "settings_main_unset": "Not set",
+  "settings_main_unset": "None",
   "settings_main_drop": "Stop following {account}"
 }
