@@ -1,5 +1,8 @@
 import { deleteDatabase } from '@/lib/db'
 
+/** Sent on window when the local data is deleted: what keeps a copy in memory forgets it. */
+export const LOCAL_DATA_CLEARED = 'craftyourchess:local-data-cleared'
+
 /**
  * Deletes everything CraftYourChess keeps in this browser: localStorage (language choice, recent
  * searches, analysis settings, training options, board look) and the IndexedDB database
@@ -13,6 +16,8 @@ export async function clearLocalData(): Promise<boolean> {
   } catch {
     cleared = false
   }
+  // The favorites first: their background analysis stops instead of storing again.
+  window.dispatchEvent(new Event(LOCAL_DATA_CLEARED))
   try {
     await deleteDatabase()
   } catch {

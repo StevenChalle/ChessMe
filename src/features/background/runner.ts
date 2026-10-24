@@ -4,10 +4,10 @@ import type { FoundGames, ReviewAccount } from '@/features/review/fetch'
 import type { ReviewGame } from '@/features/review/games'
 import { defaultSelection, type GameSelection } from '@/features/review/selection'
 import { ApiError } from '@/lib/http'
-import { mainAccounts, type MainProfile } from './profile'
+import { playerAccounts, type Favorites } from './favorites'
 
 /**
- * Keeps the main accounts' latest games fetched and analysed while the app is open, on any page
+ * Keeps the favorite players' latest games fetched and analysed while the app is open, on any page
  * (docs/background-analysis.md). Gives way at once to the player's own uses of Stockfish and of
  * the platforms (lib/activity.ts): it aborts what it does, then starts again a few seconds after
  * the last one. Nothing is lost: evaluations are in the analysis cache, games in the game store.
@@ -113,30 +113,37 @@ const LOCK = 'craftyourchess:background'
 const gameKey = (game: ReviewGame) => movesHash(game.sanMoves, game.initialFen)
 
 /**
- * One pass: fetch the latest games (the game store only asks for new ones), then analyse those
+ * One pass: fetch each favorite's latest games (the game store only asks for new ones), then analyse those
  * not analysed yet, newest first, a few at a time; with the deep option, then evaluate every
  * position of every game at depth, newest first again. Rejects as soon as the signal aborts.
  */
 export async function runCycle(
-  profile: MainProfile,
+  favorites: Favorites,
   deps: BackgroundDeps,
   signal: AbortSignal,
   report: (state: BackgroundState) => void,
 ): Promise<{ rateLimited: boolean }> {
   report({ phase: 'syncing' })
-  const accounts = mainAccounts(profile)
-  const selection: GameSelection = {
-    ...defaultSelection(accounts.map((account) => account.source)),
-    scope: { kind: 'latest', count: profile.depth },
+  // Each favorite's latest games, one player after the other, all together then: once each,
+  // a game between two favorites being theirs both.
+  const byKey = new Map<string, ReviewGame>()
+  let rateLimited = false
+  for (const player of favorites.players) {
+    const accounts = playerAccounts(player)
+    const selection: GameSelection = {
+      ...defaultSelection(accounts.map((account) => account.source)),
+      scope: { kind: 'latest', count: favorites.depth },
+    }
+    const found = await deps.find(accounts, selection, signal)
+    signal.throwIfAborted()
+    rateLimited ||= found.failures.some(
+      ({ error }) => error instanceof ApiError && error.status === 429,
+    )
+    for (const game of found.games) byKey.set(`${game.source}:${game.id}`, game)
   }
-  const found = await deps.find(accounts, selection, signal)
-  signal.throwIfAborted()
-  const rateLimited = found.failures.some(
-    ({ error }) => error instanceof ApiError && error.status === 429,
-  )
-  const total = found.games.length
+  const total = byKey.size
   // A game without moves has nothing to analyse.
-  const games = found.games.filter((game) => game.sanMoves.length > 0)
+  const games = [...byKey.values()].filter((game) => game.sanMoves.length > 0)
   const analysed = await deps.analysed(games)
   const pending = games.filter((game) => !analysed.has(gameKey(game)))
   let done = total - pending.length
@@ -151,7 +158,7 @@ export async function runCycle(
     report({ phase: 'analysing', done, total })
   }
 
-  if (profile.deep) {
+  if (favorites.deep) {
     const shallow = await deps.toDeepen(games)
     const toDeepen = games.filter((game) => shallow.has(gameKey(game)))
     let deepened = total - toDeepen.length
@@ -180,11 +187,11 @@ export class BackgroundRunner {
   private stopper: AbortController | undefined
   /** This tab holds the lock and works */
   private working = false
-  private readonly profile: MainProfile
+  private readonly favorites: Favorites
   private readonly deps: BackgroundDeps
 
-  constructor(profile: MainProfile, deps: BackgroundDeps) {
-    this.profile = profile
+  constructor(favorites: Favorites, deps: BackgroundDeps) {
+    this.favorites = favorites
     this.deps = deps
   }
 
@@ -369,7 +376,7 @@ export class BackgroundRunner {
       }, POLL_MS)
       let next: { phase: BackgroundPhase; ms: number }
       try {
-        const { rateLimited } = await runCycle(this.profile, this.deps, run.signal, (state) =>
+        const { rateLimited } = await runCycle(this.favorites, this.deps, run.signal, (state) =>
           this.set(state),
         )
         next = rateLimited

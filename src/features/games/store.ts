@@ -1,5 +1,5 @@
 import Dexie from 'dexie'
-import { getMainProfile, mainAccounts } from '@/features/background/profile'
+import { favoriteAccounts, getFavorites } from '@/features/background/favorites'
 import { database, type AccountSync, type AppDatabase, type StoredGame } from '@/lib/db'
 import type { ChessComGame } from '@/lib/chesscom/types'
 import type { ApiSource } from '@/lib/http'
@@ -195,7 +195,7 @@ export function createGameStore(
   }: {
     now?: () => number
     maxGames?: number
-    /** Accounts never evicted: the player's main ones */
+    /** Accounts never evicted: the favorites' */
     kept?: () => string[]
   } = {},
 ): GameStore {
@@ -269,12 +269,12 @@ export function createGameStore(
   }
 }
 
-/** The browser's store, used by the analysis search. The main accounts are never evicted. */
+/** The browser's store, used by the analysis search. The favorites' accounts are never evicted. */
 export const gameStore = createGameStore(database, {
   kept: () => {
-    const profile = getMainProfile()
-    return profile
-      ? mainAccounts(profile).map(({ source, username }) => accountKey(source, username))
+    const favorites = getFavorites()
+    return favorites
+      ? favoriteAccounts(favorites).map(({ source, username }) => accountKey(source, username))
       : []
   },
 })

@@ -1,5 +1,7 @@
 import { beforeEach, describe, expect, it } from 'vitest'
-import { migrateLegacyKeys } from '@/lib/localData'
+import { getFavorites, setFavorites } from '@/features/background/favorites'
+import { database } from '@/lib/db'
+import { clearLocalData, migrateLegacyKeys } from '@/lib/localData'
 
 describe('migrateLegacyKeys', () => {
   beforeEach(() => localStorage.clear())
@@ -19,5 +21,16 @@ describe('migrateLegacyKeys', () => {
     migrateLegacyKeys()
     expect(localStorage.getItem('craftyourchess:review-settings')).toBe('new')
     expect(localStorage.getItem('chessme:review-settings')).toBeNull()
+  })
+})
+
+describe('clearLocalData', () => {
+  it('forgets the favorites kept in memory, and the database for the rest of the page', async () => {
+    setFavorites({ players: [{ lichess: 'alice' }], depth: 500, deep: true })
+    expect(await clearLocalData()).toBe(true)
+    expect(getFavorites()).toBeUndefined()
+    expect(localStorage.length).toBe(0)
+    // A background analysis finishing must not create it again.
+    expect(() => database()).toThrow('Local data deleted')
   })
 })

@@ -9,7 +9,7 @@ export type Background = {
 
 export const BackgroundContext = createContext<Background | undefined>(undefined)
 
-/** The background analysis, when main accounts are chosen (BackgroundProvider). */
+/** The background analysis, when there are favorites (BackgroundProvider). */
 export function useBackground(): Background | undefined {
   return useContext(BackgroundContext)
 }

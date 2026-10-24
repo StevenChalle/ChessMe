@@ -3,7 +3,7 @@ import { movesHash } from '@/features/review/cache'
 import { DEFAULT_CRITERIA } from '@/features/review/criteria'
 import type { ReviewGame } from '@/features/review/games'
 import { ApiError } from '@/lib/http'
-import type { MainProfile } from './profile'
+import type { Favorites } from './favorites'
 import {
   BackgroundRunner,
   HEARTBEAT_MS,
@@ -18,7 +18,7 @@ import {
   type TabChannel,
 } from './runner'
 
-const profile: MainProfile = { lichess: 'alice', depth: 50, deep: false }
+const profile: Favorites = { players: [{ lichess: 'alice' }], depth: 50, deep: false }
 
 const game = (id: string) =>
   ({ source: 'lichess', id, sanMoves: ['e4', id], playedAt: new Date(0) }) as unknown as ReviewGame
@@ -210,17 +210,43 @@ describe('runCycle', () => {
     expect(states).toContainEqual({ phase: 'deepening', done: 7, total: 12, current: 1 })
   })
 
-  it('asks for the latest games of every main account, all platforms together', async () => {
+  it("asks for each favorite's latest games, all their platforms together", async () => {
     const find = vi.fn<BackgroundDeps['find']>(async () => ({ games: [], failures: [] }))
     await runCycle(
-      { lichess: 'alice', chesscom: 'bob', depth: 200, deep: false },
+      {
+        players: [{ lichess: 'alice', chesscom: 'alice_cc' }, { chesscom: 'bob' }],
+        depth: 200,
+        deep: false,
+      },
       deps({ find }),
       new AbortController().signal,
       () => {},
     )
+    expect(find).toHaveBeenCalledTimes(2)
     const [accounts, selection] = find.mock.calls[0]!
-    expect(accounts.map((account) => account.source)).toEqual(['lichess', 'chesscom'])
+    expect(accounts.map((account) => account.username)).toEqual(['alice', 'alice_cc'])
     expect(selection.scope).toEqual({ kind: 'latest', count: 200 })
+    expect(find.mock.calls[1]![0].map((account) => account.username)).toEqual(['bob'])
+  })
+
+  it('counts a game between two favorites once', async () => {
+    const shared = game('shared')
+    const find = vi.fn<BackgroundDeps['find']>(async (accounts) => ({
+      games: accounts[0]!.username === 'alice' ? [shared, game('a1')] : [shared, game('b1')],
+      failures: [],
+    }))
+    const analyze = vi.fn<BackgroundDeps['analyze']>(async () => {})
+    const states: BackgroundState[] = []
+    const cycle = runCycle(
+      { players: [{ lichess: 'alice' }, { lichess: 'bob' }], depth: 50, deep: false },
+      deps({ find, analyze, analysed: async () => new Set() }),
+      new AbortController().signal,
+      (state) => states.push(state),
+    )
+    await vi.runAllTimersAsync()
+    await cycle
+    expect(analyze.mock.calls[0]![0].map((g) => g.id)).toEqual(['shared', 'a1', 'b1'])
+    expect(states.at(-1)).toMatchObject({ phase: 'analysing', done: 3, total: 3 })
   })
 
   it('says when Lichess limits the requests', async () => {

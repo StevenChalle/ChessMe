@@ -1,12 +1,20 @@
 import { SOURCE_LABELS } from '@/features/player/summary'
+import type { ReviewAccount } from '@/features/review/fetch'
 import { showToast } from '@/lib/toast'
 import { m } from '@/paraglide/messages'
-import { mainAccounts, type MainProfile } from './profile'
 
-/** A notification once main accounts are set: short, one item per platform. */
-export function announceMainAccounts(profile: MainProfile): void {
-  const accounts = mainAccounts(profile).map(({ source, username }) =>
+/** One item per account: "Lichess: alice". */
+const items = (accounts: ReviewAccount[]) =>
+  accounts.map(({ source, username }) =>
     m.toast_account_line({ platform: SOURCE_LABELS[source], username }),
   )
-  showToast(m.toast_main_accounts_set(), accounts)
+
+/** A notification once a player is added to the favorites. */
+export function announceFavorite(accounts: ReviewAccount[]): void {
+  showToast(m.toast_favorite_added(), items(accounts))
+}
+
+/** A notification once a player leaves the favorites. */
+export function announceUnfavorite(accounts: ReviewAccount[]): void {
+  showToast(m.toast_favorite_removed(), items(accounts))
 }

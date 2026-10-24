@@ -1,30 +1,31 @@
-# Analyse de fond des comptes principaux : conception
+# Analyse de fond des joueurs favoris : conception
 
-Quand le joueur a choisi ses comptes principaux, l'app récupère et analyse elle-même ses N dernières parties, sur n'importe quelle page, tant que Stockfish ne sert pas à autre chose. Ses analyses et ses entraînements deviennent alors instantanés. Décision résumée dans [decisions.md](decisions.md) (2026-10-23).
+Le joueur met en favori autant de joueurs qu'il veut (lui-même, des amis, des joueurs à suivre) : l'app récupère et analyse elle-même leurs N dernières parties, sur n'importe quelle page, tant que Stockfish ne sert pas à autre chose. Leurs analyses et leurs entraînements deviennent alors instantanés. Décision résumée dans [decisions.md](decisions.md) (2026-10-23, favoris le 2026-10-24).
 
-État : implémenté le 2026-10-23 (`features/background/`, `lib/activity.ts`). S'appuie sur le [magasin des parties](game-store.md) et le [cache des analyses](analysis-cache.md).
+État : implémenté (`features/background/`, `lib/activity.ts`). S'appuie sur le [magasin des parties](game-store.md) et le [cache des analyses](analysis-cache.md).
 
-## Ce que le joueur choisit (réglages)
+## Ce que le joueur choisit
 
-- **Ses comptes principaux** : un compte Lichess, un compte Chess.com, ou les deux, définis **depuis un profil** (ci-dessous). Les réglages les affichent seulement (pastilles des plateformes et pseudo, un même pseudo sur les deux sites sur une seule ligne) ; sans compte principal, « Aucun » et où les définir.
-- **Depuis un profil** : un bouton après le nom du joueur (« Définir comme comptes principaux ») fait des comptes affichés les comptes principaux **de leurs plateformes** (un profil Lichess ne remplace que le compte Lichess, le compte Chess.com reste), en gardant les autres choix : une grande icône sans cadre (personne avec un +). Quand ce sont déjà les comptes principaux, une personne cochée en vert, qui n'est plus un bouton. Toujours confirmé par une fenêtre qui montre, plateforme par plateforme, le compte principal avant et après : un compte remplacé apparaît barré en rouge, suivi du nouveau en vert ; un ajout est marqué « nouveau », un compte gardé « inchangé ». Quand un compte est remplacé, une case (décochée) permet de supprimer ses parties enregistrées ; les évaluations du cache restent, communes à tous.
-- **Combien de parties suivre** (« Dernières parties synchronisées », un curseur dans les réglages, appliqué au relâchement) : de 50 à 1000 de 50 en 50 sur ordinateur (500 par défaut), de 10 à 150 de 5 en 5 sur téléphone (50 par défaut). Les valeurs indicatives (50, 200, 500, 1000 ; 10, 25, 50, 150 sur téléphone) sont des repères cliquables sous le curseur. Ce sont **les N dernières toutes plateformes confondues** (comme la recherche « N dernières parties »).
-- **Analyse approfondie** (cochée par défaut) : une fois la première analyse de toutes les parties finie, évaluer chaque position à 1 M de nœuds, pas seulement autour des coups suspects (expliqué par une infobulle dans les réglages). Les positions déjà profondes sont sautées, une position commune à plusieurs parties n'est calculée qu'une fois.
-- Les réglages s'appliquent tout de suite, sans bouton. Une croix discrète au bout de chaque ligne arrête de suivre ses comptes, après confirmation (ce qui est enregistré reste).
-- Enregistré dans le `localStorage` (`craftyourchess:main-profile`), déclaré sur `/legal`, effacé par `clearLocalData()`.
+- **Les favoris** : une liste de joueurs. Un joueur est un compte Lichess, un compte Chess.com, ou les deux : les comptes affichés sur un profil (`favorites.ts`).
+- **Depuis un profil** : une étoile après le nom du joueur, grise s'il n'est pas en favori (« Ajouter aux favoris »), dorée et pleine s'il l'est (« Retirer des favoris »). Toujours confirmé par une fenêtre (icône étoile, comptes concernés). Ajouter complète un favori qui partage déjà un de ces comptes sans en avoir un autre sur la même plateforme (le même joueur, vu d'abord d'une seule plateforme), sinon crée un nouveau favori ; une notification le confirme. Retirer propose une case (décochée) pour supprimer leurs parties enregistrées ; les évaluations du cache restent, communes à tous.
+- **Réglages, section « Favoris »** : un favori par ligne (pastilles des plateformes, pseudo, ou les deux pseudos s'ils diffèrent), une croix discrète pour le retirer après confirmation ; sans favori, « Aucun » et où en ajouter.
+- **Combien de parties suivre, par joueur** (« Dernières parties synchronisées par joueur », un curseur appliqué au relâchement) : de 50 à 1000 de 50 en 50 sur ordinateur (500 par défaut), de 10 à 150 de 5 en 5 sur téléphone (50 par défaut). Les valeurs indicatives (50, 200, 500, 1000 ; 10, 25, 50, 150 sur téléphone) sont des repères cliquables. Ce sont **les N dernières de chaque joueur, toutes ses plateformes confondues**.
+- **Analyse approfondie** (cochée par défaut) : une fois la première analyse de toutes les parties finie, évaluer chaque position à 1 M de nœuds, pas seulement autour des coups suspects (infobulle dans les réglages). Les positions déjà profondes sont sautées, une position commune à plusieurs parties n'est calculée qu'une fois.
+- Les réglages s'appliquent tout de suite, sans bouton.
+- Enregistré dans le `localStorage` (`craftyourchess:favorites`), déclaré sur `/legal`, effacé par `clearLocalData()`. Les comptes principaux enregistrés avant (`craftyourchess:main-profile`) deviennent le premier favori, une fois.
 
-Sans comptes principaux, rien ne tourne : choisir ses comptes vaut consentement.
+Sans favori, rien ne tourne : ajouter un joueur vaut consentement.
 
 ## Ce que fait l'app
 
 Une boucle, lancée au chargement de n'importe quelle page :
 
-1. **Synchroniser** : les N dernières parties des comptes principaux par le magasin des parties (`findGames` avec le magasin), donc seulement les nouvelles après la première fois.
+1. **Synchroniser** : les N dernières parties de chaque favori, l'un après l'autre, par le magasin des parties (`findGames` avec le magasin), donc seulement les nouvelles après la première fois. Une partie entre deux favoris ne compte qu'une fois.
 2. **Analyser** celles qui ne le sont pas encore, de la plus récente à la plus ancienne, par lots de 5 parties (la barre avance aussi pendant un lot) (`analyzeGames`, mêmes deux passes, critères enregistrés du joueur). Une partie compte comme analysée quand le cache des analyses a son entrée `games` avec la version d'analyse et le moteur actuels : un changement de moteur ou d'`ANALYSIS_VERSION` relance donc naturellement l'analyse des N parties.
 3. **Approfondir** (option cochée) : les positions de ces parties encore évaluées rapidement, de la partie la plus récente à la plus ancienne, par lots de 2 parties (`deepenPositions`).
 4. **À jour** : attendre, puis recommencer toutes les 10 minutes et quand la page redevient visible (une nouvelle partie jouée entre-temps).
 
-**La fenêtre glisse** : chaque nouvelle partie y entre, la plus ancienne en sort. Elle reste dans le magasin et le cache, mais n'est plus suivie. Les parties gardées s'accumulent donc (500 suivies, peut-être 3 000 enregistrées après des mois, environ 20 Ko chacune avec ses analyses) : les réglages montrent ce total pour les comptes principaux, avec l'avancement des dernières (« 1 027 parties enregistrées · dernières 235 / 500 analysées »). Une partie plus ancienne que le joueur cherche à la main est gardée comme toute autre, jamais mise à jour automatiquement. Les comptes principaux ne sont jamais évincés du magasin des parties.
+**La fenêtre glisse** : chaque nouvelle partie y entre, la plus ancienne en sort. Elle reste dans le magasin et le cache, mais n'est plus suivie. Les parties gardées s'accumulent donc (500 suivies par joueur, peut-être 3 000 enregistrées après des mois, environ 20 Ko chacune avec ses analyses) ; les plafonds de stockage recyclent les plus anciennes. Une partie plus ancienne que le joueur cherche à la main est gardée comme toute autre, jamais mise à jour automatiquement. Les comptes des favoris ne sont jamais évincés en entier du magasin des parties (seules leurs plus anciennes parties sont recyclées au-delà du plafond).
 
 ## Priorité au joueur
 
@@ -50,7 +51,7 @@ Les exports Lichess et les archives Chess.com s'annoncent dans leurs clients (`l
 
 ## Ce qu'on voit
 
-Un indicateur dans l'en-tête, à côté de la roue dentée, seulement quand des comptes principaux sont choisis : une icône et « 120 / 500 ». Au clic : l'état en clair (« Analyse de vos parties : 120 / 500 », « En pause : Stockfish est utilisé ailleurs », « À jour », « Lichess demande d'attendre une minute »), un bouton **Pause / Reprendre** (pour la session), et un lien vers les réglages.
+Un indicateur dans l'en-tête, à côté de la roue dentée, seulement quand il y a des favoris : une icône et « 120 / 500 ». Au clic : l'état en clair (« Analyse des parties de vos favoris : 120 / 500 », « En pause : Stockfish est utilisé ailleurs », « À jour », « Lichess demande d'attendre une minute »), un bouton **Pause / Reprendre** (pour la session), et un lien vers les réglages.
 
 ## Les limites
 

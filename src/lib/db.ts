@@ -96,15 +96,23 @@ export class AppDatabase extends Dexie {
 }
 
 let instance: AppDatabase | undefined
+/** Deleted by the player: not opened again before the page reloads */
+let deleted = false
 
-/** Opened on first use only: pages that never need it do not touch IndexedDB. */
+/**
+ * Opened on first use only: pages that never need it do not touch IndexedDB. Throws once the
+ * local data was deleted: a background analysis still finishing must not create it again (the
+ * cache and the game store fail silently).
+ */
 export function database(): AppDatabase {
+  if (deleted) throw new Error('Local data deleted: reload the page to store again')
   instance ??= new AppDatabase()
   return instance
 }
 
-/** Deletes the whole database. Rejects if IndexedDB is unavailable. */
+/** Deletes the whole database, for the rest of this page's life. Rejects if IndexedDB is unavailable. */
 export async function deleteDatabase(): Promise<void> {
+  deleted = true
   instance?.close()
   instance = undefined
   await Dexie.delete(DB_NAME)

@@ -1,4 +1,4 @@
-import { UserMinus, X } from 'lucide-react'
+import { StarOff, X } from 'lucide-react'
 import { useId, useState } from 'react'
 import type { ConfirmOptions } from '@/components/ConfirmDialog'
 import { InfoTip } from '@/components/InfoTip'
@@ -8,113 +8,102 @@ import { Slider } from '@/components/ui/slider'
 import { SourceDot } from '@/features/player/components/SourceBadge'
 import { SOURCE_LABELS } from '@/features/player/summary'
 import { formatList, formatNumber } from '@/lib/format'
-import type { ApiSource } from '@/lib/http'
 import { cn } from '@/lib/utils'
 import { m } from '@/paraglide/messages'
+import { announceUnfavorite } from '../announce'
 import {
   depthRange,
-  getMainProfile,
-  mainAccounts,
-  setMainProfile,
-  useMainProfile,
-  withoutMainAccount,
-  type MainProfile,
-} from '../profile'
+  getFavorites,
+  playerAccounts,
+  playerName,
+  setFavorites,
+  useFavorites,
+  withoutFavorite,
+  type FavoritePlayer,
+  type Favorites,
+} from '../favorites'
 
 /**
- * The main accounts (set from a player's profile, dropped with their cross), how many of their
+ * The favorite players (added from their profile, removed with their cross), how many of their
  * latest games to keep analysed, and the deep option (docs/background-analysis.md). Changes apply
  * at once.
  */
-export function MainProfileSettings({
+export function FavoritesSettings({
   confirm,
 }: {
   /** From outside the popover, whose content would unmount the dialog when it takes the focus */
   confirm: (options: ConfirmOptions) => Promise<boolean>
 }) {
-  const profile = useMainProfile()
-  if (!profile) {
+  const favorites = useFavorites()
+  if (!favorites) {
     return (
       <div className="space-y-0.5 text-sm">
-        <p className="text-text-strong">{m.settings_main_unset()}</p>
-        <p className="text-xs text-muted-foreground">{m.settings_main_empty()}</p>
+        <p className="text-text-strong">{m.favorites_none()}</p>
+        <p className="text-xs text-muted-foreground">{m.favorites_empty()}</p>
       </div>
     )
   }
-  return <MainProfileChoices profile={profile} confirm={confirm} />
+  return <FavoritesChoices favorites={favorites} confirm={confirm} />
 }
 
-/** The main accounts, one row per name: the same name on Lichess and Chess.com is one row. */
-function accountRows(profile: MainProfile): { username: string; sources: ApiSource[] }[] {
-  const rows: { username: string; sources: ApiSource[] }[] = []
-  for (const { source, username } of mainAccounts(profile)) {
-    const row = rows.find((item) => item.username.toLowerCase() === username.toLowerCase())
-    if (row) row.sources.push(source)
-    else rows.push({ username, sources: [source] })
-  }
-  return rows
-}
-
-function MainProfileChoices({
-  profile,
+function FavoritesChoices({
+  favorites,
   confirm,
 }: {
-  profile: MainProfile
+  favorites: Favorites
   confirm: (options: ConfirmOptions) => Promise<boolean>
 }) {
   const range = depthRange()
   // While dragging: shown at once, applied on release (a new depth restarts the analysis).
   const [dragged, setDragged] = useState<number | undefined>(undefined)
-  const depth = dragged ?? profile.depth
+  const depth = dragged ?? favorites.depth
   const sliderId = useId()
   const deepId = useId()
-  // Asked first: the background analysis of these accounts stops (what is saved stays).
-  const stopFollowing = async (username: string, sources: ApiSource[]) => {
-    const confirmed = await confirm({
-      icon: UserMinus,
-      title: m.settings_main_drop_title({ account: username }),
-      description: m.settings_main_drop_body(),
-      confirmLabel: m.settings_main_drop_action(),
-      cancelLabel: m.confirm_cancel(),
-    })
-    if (!confirmed) return
-    const current = getMainProfile()
-    if (!current) return
-    setMainProfile(
-      sources.reduce<MainProfile | undefined>(
-        (rest, source) => rest && withoutMainAccount(rest, source),
-        current,
-      ),
-    )
-  }
   const position = (value: number) => ((value - range.min) / (range.max - range.min)) * 100
   const apply = (value: number) => {
     setDragged(undefined)
-    if (value !== profile.depth) setMainProfile({ ...profile, depth: value })
+    if (value !== favorites.depth) setFavorites({ ...favorites, depth: value })
+  }
+
+  // Asked first: the background analysis of this player stops (what is saved stays).
+  const remove = async (player: FavoritePlayer) => {
+    const name = playerName(player)
+    const confirmed = await confirm({
+      icon: StarOff,
+      title: m.favorite_remove_named_title({ player: name }),
+      description: m.favorite_remove_body(),
+      confirmLabel: m.favorite_remove_action(),
+      cancelLabel: m.confirm_cancel(),
+    })
+    const current = getFavorites()
+    if (!confirmed || !current) return
+    const accounts = playerAccounts(player)
+    setFavorites(withoutFavorite(current, accounts))
+    announceUnfavorite(accounts)
   }
 
   return (
     <div className="space-y-3 text-sm">
       <ul className="space-y-0.5">
-        {accountRows(profile).map(({ username, sources }) => {
-          const platforms = formatList(sources.map((source) => SOURCE_LABELS[source]))
+        {favorites.players.map((player) => {
+          const accounts = playerAccounts(player)
+          const name = playerName(player)
+          const platforms = formatList(accounts.map(({ source }) => SOURCE_LABELS[source]))
           return (
-            <li key={username.toLowerCase()} className="flex items-center gap-2">
+            <li key={name.toLowerCase()} className="flex items-center gap-2">
               {/* The platforms as dots: the same name on both sites is one row. */}
               <span title={platforms} className="flex w-5 shrink-0 gap-1">
-                {sources.map((source) => (
+                {accounts.map(({ source }) => (
                   <SourceDot key={source} source={source} />
                 ))}
                 <span className="sr-only">{platforms}</span>
               </span>
-              <span className="min-w-0 flex-1 truncate font-medium text-text-strong">
-                {username}
-              </span>
+              <span className="min-w-0 flex-1 truncate font-medium text-text-strong">{name}</span>
               <button
                 type="button"
-                aria-label={m.settings_main_drop({ account: username })}
-                title={m.settings_main_drop({ account: username })}
-                onClick={() => void stopFollowing(username, sources)}
+                aria-label={m.favorite_remove_named({ player: name })}
+                title={m.favorite_remove_named({ player: name })}
+                onClick={() => void remove(player)}
                 className="rounded-sm p-0.5 text-muted-foreground/60 hover:bg-muted hover:text-text-strong"
               >
                 <X className="size-3.5" />
@@ -127,13 +116,13 @@ function MainProfileChoices({
       <div className="space-y-2">
         <div className="flex items-baseline justify-between gap-3">
           <Label htmlFor={sliderId} className="text-xs font-normal text-muted-foreground">
-            {m.settings_main_depth()}
+            {m.favorites_depth()}
           </Label>
           <span className="num font-medium text-text-strong">{formatNumber(depth)}</span>
         </div>
         <Slider
           id={sliderId}
-          aria-label={m.settings_main_depth()}
+          aria-label={m.favorites_depth()}
           min={range.min}
           max={range.max}
           step={range.step}
@@ -168,14 +157,14 @@ function MainProfileChoices({
       <div className="flex items-center gap-2">
         <Checkbox
           id={deepId}
-          checked={profile.deep}
-          onCheckedChange={(value) => setMainProfile({ ...profile, deep: value === true })}
+          checked={favorites.deep}
+          onCheckedChange={(value) => setFavorites({ ...favorites, deep: value === true })}
           className="border-border-strong"
         />
         <Label htmlFor={deepId} className="font-normal text-text-strong">
-          {m.settings_main_deep()}
+          {m.favorites_deep()}
         </Label>
-        <InfoTip text={m.settings_main_deep_hint()} />
+        <InfoTip text={m.favorites_deep_hint()} />
       </div>
     </div>
   )

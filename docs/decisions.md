@@ -667,3 +667,14 @@ Le menu des réglages devenait long et dense. Il reste plat (sans cartes), avec 
 - **Données enregistrées** retirée : le détail (parties, analyses, vider) reviendra au clic sur l'indicateur de synchronisation.
 - Les comptes principaux s'affichent avec les seules pastilles des plateformes, un même pseudo sur les deux sites sur une ligne. Une croix discrète au bout de la ligne arrête de les suivre, après confirmation (ce qui est enregistré reste) ; sans compte, « Aucun ».
 - Le nombre de parties suivies se règle de 50 en 50 (de 5 en 5 sur téléphone, pour garder 25), les anciennes options restant des repères cliquables sous le curseur. La section « Style » devient « Style d'échiquier ».
+
+## 2026-10-24 : les comptes principaux deviennent des favoris
+
+Un seul compte principal par plateforme ne permettait de suivre qu'un joueur. On met désormais en favori autant de joueurs qu'on veut, dont l'app garde les dernières parties analysées en tâche de fond.
+
+- **Un favori est un joueur** : un compte Lichess, un compte Chess.com, ou les deux (les comptes d'un profil). Ajouter complète le favori qui partage déjà un de ces comptes sans conflit de plateforme, sinon en crée un nouveau.
+- **Étoile** après le nom du joueur, grise ou dorée et pleine, qui ajoute ou retire ; toujours confirmé (fenêtre avec icône étoile), notification ensuite. Retirer peut supprimer les parties enregistrées du joueur.
+- **Réglages, section « Favoris »** : un favori par ligne avec sa croix (après confirmation), le curseur du nombre de parties **par joueur**, l'analyse approfondie.
+- **Fond** : la boucle synchronise chaque favori à la suite, puis analyse toutes leurs parties sans doublon (une partie entre deux favoris compte une fois). Les comptes des favoris ne sont jamais évincés en entier du magasin.
+- **Migration** : les comptes principaux enregistrés deviennent le premier favori, une fois (`craftyourchess:main-profile` → `craftyourchess:favorites`).
+- **Correctif** trouvé au passage : « Supprimer mes données locales » pendant une analyse de fond laissait la base se recréer aussitôt. Les favoris en mémoire sont maintenant oubliés (événement `LOCAL_DATA_CLEARED`), et la base refuse de se rouvrir avant le rechargement de la page.

@@ -9,7 +9,7 @@ Application web (PWA installable) pour explorer les stats et les parties d'un jo
 - Feuille de route : [docs/roadmap.md](docs/roadmap.md)
 - Cache des analyses dans le navigateur (conception et règles) : [docs/analysis-cache.md](docs/analysis-cache.md)
 - Parties des comptes dans le navigateur, synchro incrémentale : [docs/game-store.md](docs/game-store.md)
-- Analyse de fond des comptes principaux : [docs/background-analysis.md](docs/background-analysis.md)
+- Analyse de fond des joueurs favoris : [docs/background-analysis.md](docs/background-analysis.md)
 - Checklists en cours, à supprimer une fois terminées : [docs/domain-craftyourchess.md](docs/domain-craftyourchess.md) (finitions du domaine), [docs/staging.md](docs/staging.md) (environnement de staging, reporté), [docs/logo-prompt.md](docs/logo-prompt.md) (prompt logo pour ChatGPT et Gemini), [docs/identity-brief.md](docs/identity-brief.md) (identité visuelle avec Claude Design)
 
 ## Commandes
@@ -50,7 +50,7 @@ src/
   features/review/    # analyse : criteria.ts, selection.ts, fetch.ts (recherche), estimate.ts, errors.ts (erreur, coup valide), analyze.ts (deux passes, approfondissement), cache.ts (évaluations gardées par position dans IndexedDB), library.ts (parties des comptes ou importées), themes.ts (thèmes des erreurs), phases.ts, settings.ts, session des onglets d'analyse (session.tsx), graphique d'évaluation (components/EvalChart.tsx)
   features/training/  # rejouer ses erreurs : session.ts (reducer), order.ts (ordre de jeu, options), settings.ts (options mémorisées), coach.ts (Stockfish), moves.ts (FEN/UCI), evaluation.ts
   features/import/    # import de parties PGN : pgn.ts (lecture, joueur, côté), store.ts (lot en mémoire), fenêtre d'import et onglet Parties d'un import
-  features/background/ # analyse de fond des comptes principaux : profile.ts (comptes, nombre de parties), runner.ts (boucle), indicateur de l'en-tête, réglages
+  features/background/ # analyse de fond des joueurs favoris : favorites.ts (favoris, nombre de parties), runner.ts (boucle), étoile du profil, indicateur de l'en-tête, réglages
   features/contact/   # formulaire de retours (FeedbackForm)
   lib/lichess/        # client HTTP, types, queryOptions de l'API Lichess
   lib/chesscom/       # idem pour l'API Chess.com

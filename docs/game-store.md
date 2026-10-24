@@ -108,8 +108,8 @@ Chess.com ne sert que des mois entiers, toutes cadences confondues : la couvertu
 
 - Environ **3 Ko par partie** (Lichess avec horloges et évaluations, Chess.com avec son PGN et ses horloges) : 10 000 parties ≈ 30 Mo.
 - **Plafond par appareil** (`lib/storageLimits.ts`) : 100 000 parties sur ordinateur (≈ 300 Mo), 15 000 sur téléphone (≈ 45 Mo). Au-delà, ou sur une `QuotaExceededError`, après chaque recherche, jusqu'à 90 % du plafond :
-  1. **des comptes entiers**, les moins récemment cherchés (`accountSync.usedAt`), jamais les comptes principaux ni celui en cours ;
-  2. puis **les parties les plus anciennes** des comptes restants (index `playedAt`, base en version 3), comptes principaux compris. Leurs périodes Lichess repartent après la plus récente partie retirée, et les mois Chess.com touchés sont oubliés : ce qu'on sait reste juste, et une recherche ancienne redemanderait simplement ces parties.
+  1. **des comptes entiers**, les moins récemment cherchés (`accountSync.usedAt`), jamais ceux des favoris ni celui en cours ;
+  2. puis **les parties les plus anciennes** des comptes restants (index `playedAt`, base en version 3), favoris compris. Leurs périodes Lichess repartent après la plus récente partie retirée, et les mois Chess.com touchés sont oubliés : ce qu'on sait reste juste, et une recherche ancienne redemanderait simplement ces parties.
 - Même règle que le cache d'analyses : une écriture refusée ne fait jamais échouer la recherche.
 
 ## Vie privée et effacement

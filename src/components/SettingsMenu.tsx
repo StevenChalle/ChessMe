@@ -4,7 +4,7 @@ import {
   Languages,
   Palette,
   Settings,
-  UserCheck,
+  Star,
   type LucideIcon,
 } from 'lucide-react'
 import type { ReactNode } from 'react'
@@ -22,7 +22,7 @@ import {
 } from '@/components/board/boardStyle'
 import { Button } from '@/components/ui/button'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
-import { MainProfileSettings } from '@/features/background/components/MainProfileSettings'
+import { FavoritesSettings } from '@/features/background/components/FavoritesSettings'
 import { useConfirm } from '@/hooks/useConfirm'
 import { cn } from '@/lib/utils'
 import { m } from '@/paraglide/messages'
@@ -88,7 +88,7 @@ const sameStyle = (a: BoardStyle, b: BoardStyle) => a.board === b.board && a.pie
 
 /**
  * The gear at the top right: language, how boards look (a whole style in one click, or colors
- * and pieces one by one) and the main accounts. The look is remembered (boardStyle.ts); changing
+ * and pieces one by one) and the favorite players. The look is remembered (boardStyle.ts); changing
  * the language reloads the page (Paraglide's model).
  */
 export function SettingsMenu() {
@@ -204,8 +204,8 @@ export function SettingsMenu() {
             </div>
           </Group>
 
-          <Group icon={UserCheck} title={m.settings_main()}>
-            <MainProfileSettings confirm={confirm} />
+          <Group icon={Star} title={m.settings_favorites()}>
+            <FavoritesSettings confirm={confirm} />
           </Group>
         </PopoverContent>
       </Popover>

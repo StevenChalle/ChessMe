@@ -18,7 +18,7 @@ import { parseGameRef } from '@/features/review/gameRef'
 import { accountsLibrary, importLibrary } from '@/features/review/library'
 import { ImportHeader } from '@/features/import/components/ImportHeader'
 import { useImportedGames } from '@/features/import/store'
-import { SetMainAccountsButton } from '@/features/background/components/SetMainAccountsButton'
+import { FavoriteButton } from '@/features/background/components/FavoriteButton'
 import { AnalysisSessionProvider } from '@/features/review/session'
 import { useAnalysisSession } from '@/features/review/sessionContext'
 import { TrainingView } from '@/features/training/components/TrainingView'
@@ -138,7 +138,7 @@ function AccountsLayout() {
         <PlayerHeader
           accounts={accounts}
           profileLink={usernames}
-          nameAction={<SetMainAccountsButton accounts={reviewable.accounts} />}
+          nameAction={<FavoriteButton accounts={reviewable.accounts} />}
           actions={reviewable.accounts.length > 0 && <ReviewButtons usernames={usernames} />}
         />
         <PlayerTabs usernames={usernames} canAnalyse={reviewable.accounts.length > 0} />

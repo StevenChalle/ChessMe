@@ -1,25 +1,25 @@
 import { useEffect, useState, useSyncExternalStore, type ReactNode } from 'react'
 import { BackgroundContext, type Background } from './backgroundContext'
 import { browserDeps } from './browserDeps'
-import { useMainProfile } from './profile'
+import { useFavorites } from './favorites'
 import { BackgroundRunner, type BackgroundState } from './runner'
 
 const IDLE_STATE: BackgroundState = { phase: 'starting' }
 const noop = () => () => {}
 
 /**
- * Runs the background analysis of the main accounts on every page (mounted at the root): a new
- * runner whenever the profile changes, none without one. Looks for new games when the page shows
+ * Runs the background analysis of the favorites on every page (mounted at the root): a new
+ * runner whenever the favorites change, none without any. Looks for new games when the page shows
  * again.
  */
 export function BackgroundProvider({ children }: { children: ReactNode }) {
-  const profile = useMainProfile()
+  const favorites = useFavorites()
   const [runner, setRunner] = useState<BackgroundRunner | undefined>(undefined)
-  const key = profile ? JSON.stringify(profile) : undefined
+  const key = favorites ? JSON.stringify(favorites) : undefined
 
   useEffect(() => {
-    if (!profile) return
-    const started = new BackgroundRunner(profile, browserDeps())
+    if (!favorites) return
+    const started = new BackgroundRunner(favorites, browserDeps())
     started.start()
     setRunner(started)
     const onVisible = () => {
@@ -31,7 +31,7 @@ export function BackgroundProvider({ children }: { children: ReactNode }) {
       started.stop()
       setRunner(undefined)
     }
-    // A new runner only when the profile's content changes.
+    // A new runner only when the favorites' content changes.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [key])
 
