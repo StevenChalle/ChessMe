@@ -23,6 +23,7 @@ import {
 import { Button } from '@/components/ui/button'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { MainProfileSettings } from '@/features/background/components/MainProfileSettings'
+import { useConfirm } from '@/hooks/useConfirm'
 import { cn } from '@/lib/utils'
 import { m } from '@/paraglide/messages'
 import { getLocale, locales, setLocale, type Locale } from '@/paraglide/runtime'
@@ -93,6 +94,7 @@ const sameStyle = (a: BoardStyle, b: BoardStyle) => a.board === b.board && a.pie
 export function SettingsMenu() {
   const style = useBoardStyle()
   const currentLocale = getLocale()
+  const { confirm, dialog } = useConfirm()
 
   return (
     <>
@@ -203,10 +205,11 @@ export function SettingsMenu() {
           </Group>
 
           <Group icon={UserCheck} title={m.settings_main()}>
-            <MainProfileSettings />
+            <MainProfileSettings confirm={confirm} />
           </Group>
         </PopoverContent>
       </Popover>
+      {dialog}
     </>
   )
 }

@@ -1,5 +1,6 @@
-import { X } from 'lucide-react'
+import { UserMinus, X } from 'lucide-react'
 import { useId, useState } from 'react'
+import type { ConfirmOptions } from '@/components/ConfirmDialog'
 import { InfoTip } from '@/components/InfoTip'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Label } from '@/components/ui/label'
@@ -12,6 +13,7 @@ import { cn } from '@/lib/utils'
 import { m } from '@/paraglide/messages'
 import {
   depthRange,
+  getMainProfile,
   mainAccounts,
   setMainProfile,
   useMainProfile,
@@ -24,7 +26,12 @@ import {
  * latest games to keep analysed, and the deep option (docs/background-analysis.md). Changes apply
  * at once.
  */
-export function MainProfileSettings() {
+export function MainProfileSettings({
+  confirm,
+}: {
+  /** From outside the popover, whose content would unmount the dialog when it takes the focus */
+  confirm: (options: ConfirmOptions) => Promise<boolean>
+}) {
   const profile = useMainProfile()
   if (!profile) {
     return (
@@ -34,7 +41,7 @@ export function MainProfileSettings() {
       </div>
     )
   }
-  return <MainProfileChoices profile={profile} />
+  return <MainProfileChoices profile={profile} confirm={confirm} />
 }
 
 /** The main accounts, one row per name: the same name on Lichess and Chess.com is one row. */
@@ -48,13 +55,38 @@ function accountRows(profile: MainProfile): { username: string; sources: ApiSour
   return rows
 }
 
-function MainProfileChoices({ profile }: { profile: MainProfile }) {
+function MainProfileChoices({
+  profile,
+  confirm,
+}: {
+  profile: MainProfile
+  confirm: (options: ConfirmOptions) => Promise<boolean>
+}) {
   const range = depthRange()
   // While dragging: shown at once, applied on release (a new depth restarts the analysis).
   const [dragged, setDragged] = useState<number | undefined>(undefined)
   const depth = dragged ?? profile.depth
   const sliderId = useId()
   const deepId = useId()
+  // Asked first: the background analysis of these accounts stops (what is saved stays).
+  const stopFollowing = async (username: string, sources: ApiSource[]) => {
+    const confirmed = await confirm({
+      icon: UserMinus,
+      title: m.settings_main_drop_title({ account: username }),
+      description: m.settings_main_drop_body(),
+      confirmLabel: m.settings_main_drop_action(),
+      cancelLabel: m.confirm_cancel(),
+    })
+    if (!confirmed) return
+    const current = getMainProfile()
+    if (!current) return
+    setMainProfile(
+      sources.reduce<MainProfile | undefined>(
+        (rest, source) => rest && withoutMainAccount(rest, source),
+        current,
+      ),
+    )
+  }
   const position = (value: number) => ((value - range.min) / (range.max - range.min)) * 100
   const apply = (value: number) => {
     setDragged(undefined)
@@ -82,14 +114,7 @@ function MainProfileChoices({ profile }: { profile: MainProfile }) {
                 type="button"
                 aria-label={m.settings_main_drop({ account: username })}
                 title={m.settings_main_drop({ account: username })}
-                onClick={() =>
-                  setMainProfile(
-                    sources.reduce<MainProfile | undefined>(
-                      (rest, source) => rest && withoutMainAccount(rest, source),
-                      profile,
-                    ),
-                  )
-                }
+                onClick={() => void stopFollowing(username, sources)}
                 className="rounded-sm p-0.5 text-muted-foreground/60 hover:bg-muted hover:text-text-strong"
               >
                 <X className="size-3.5" />

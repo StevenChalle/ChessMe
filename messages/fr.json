@@ -589,5 +589,8 @@
   "set_main_confirm_body": "Les dernières parties de vos comptes principaux sont automatiquement analysées et enregistrées.",
   "settings_main_empty": "À choisir depuis le profil d'un joueur, avec le bouton à côté du nom.",
   "settings_main_unset": "Aucun",
-  "settings_main_drop": "Ne plus suivre {account}"
+  "settings_main_drop": "Ne plus suivre {account}",
+  "settings_main_drop_title": "Ne plus suivre {account} ?",
+  "settings_main_drop_body": "Ses nouvelles parties ne seront plus analysées automatiquement. Ce qui est déjà enregistré reste.",
+  "settings_main_drop_action": "Ne plus suivre"
 }
