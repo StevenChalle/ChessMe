@@ -688,3 +688,11 @@ Le nombre de parties suivies et l'analyse approfondie étaient communs à tous l
 - **Partie commune à deux favoris** : analysée si l'un la veut, approfondie si l'un a l'option. La progression de l'approfondissement ne compte que les parties à approfondir.
 - **Migration** : les anciennes options communes sont recopiées sur chaque favori.
 - **Limite assumée** : le travail total n'est plus borné par un seul nombre (5 favoris à 1000 parties = 5000 parties). La limite de stockage de l'appareil s'applique toujours ; au-delà, de vieilles analyses sont recyclées et refaites. À surveiller.
+
+## 2026-10-24 : indicateur de fond réduit à une icône, détail par favori
+
+Le compteur « 120 / 500 » prenait trop de place dans l'en-tête, et un total commun ne disait pas où en était chaque favori depuis qu'ils ont leurs propres options.
+
+- **En-tête** : une icône seule (en cours, à jour, en pause, erreur). La loupe de recherche disparaît sur téléphone : l'en-tête débordait, et l'accueil a la recherche.
+- **Panneau** : une barre par favori et son nombre de parties suivies, rien d'autre que le bouton Pause, sauf une ligne quand il faut expliquer pourquoi rien n'avance.
+- **Progression par favori** : le runner la calcule à chaque lot (`PlayerProgress` dans l'état et le battement de cœur entre onglets). Les parties déjà approfondies sont cherchées avant l'analyse (l'analyse n'approfondit rien), pour que la barre soit juste dès le début.

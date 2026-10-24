@@ -1,7 +1,6 @@
 {
   "$schema": "https://inlang.com/schema/inlang-message-format",
   "not_found": "Page introuvable.",
-  "new_search": "Nouvelle recherche",
   "loading": "Chargement…",
   "home_title": "Tes parties sont tes meilleurs puzzles.",
   "home_intro": "Trouvons tes erreurs, et corrigeons-les.",
@@ -550,7 +549,6 @@
   "background_paused": "En pause.",
   "background_rate_limited": "Lichess demande d'attendre une minute : nouvel essai bientôt.",
   "background_failed": "Un problème est survenu : nouvel essai dans une minute.",
-  "background_hint": "Les dernières parties de vos joueurs favoris sont récupérées et analysées pendant que l'app est ouverte : leurs analyses et entraînements sont instantanés.",
   "background_pause": "Mettre en pause",
   "background_resume": "Reprendre",
   "legal_privacy_local_main": "vos joueurs favoris et combien de leurs dernières parties garder analysées ;",

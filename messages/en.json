@@ -1,7 +1,6 @@
 {
   "$schema": "https://inlang.com/schema/inlang-message-format",
   "not_found": "Page not found.",
-  "new_search": "New search",
   "loading": "Loading…",
   "home_title": "Your games are your best puzzles.",
   "home_intro": "Let's find your mistakes, and let's fix them.",
@@ -550,7 +549,6 @@
   "background_paused": "Paused.",
   "background_rate_limited": "Lichess asks to wait a minute: trying again soon.",
   "background_failed": "Something went wrong: trying again in a minute.",
-  "background_hint": "The latest games of your favorite players are fetched and analysed while the app is open, so that their analyses and trainings are instant.",
   "background_pause": "Pause",
   "background_resume": "Resume",
   "legal_privacy_local_main": "your favorite players and how many of their latest games to keep analysed;",

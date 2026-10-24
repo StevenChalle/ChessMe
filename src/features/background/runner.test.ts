@@ -182,7 +182,7 @@ describe('runCycle', () => {
       states
         .filter((state) => state.current === undefined)
         .map(({ phase, done }) => `${phase}:${done ?? ''}`),
-    ).toEqual(['syncing:', 'analysing:3', 'analysing:8', 'analysing:12'])
+    ).toEqual(['syncing:', 'syncing:', 'analysing:3', 'analysing:8', 'analysing:12'])
   })
 
   it('then evaluates every position deeply, once all the games are analysed', async () => {
@@ -207,8 +207,10 @@ describe('runCycle', () => {
     await vi.runAllTimersAsync()
     await cycle
     expect(order).toEqual(['analyse 5', 'analyse 4', 'deepen m7,m8', 'deepen m9,m10', 'deepen m11'])
-    expect(states.at(-1)).toEqual({ phase: 'deepening', done: 12, total: 12 })
-    expect(states).toContainEqual({ phase: 'deepening', done: 7, total: 12, current: 1 })
+    expect(states.at(-1)).toMatchObject({ phase: 'deepening', done: 12, total: 12 })
+    expect(states).toContainEqual(
+      expect.objectContaining({ phase: 'deepening', done: 7, total: 12, current: 1 }),
+    )
   })
 
   it("asks for each favorite's latest games, all their platforms together", async () => {
@@ -273,7 +275,44 @@ describe('runCycle', () => {
     await vi.runAllTimersAsync()
     await cycle
     expect(deepen.mock.calls.flatMap(([batch]) => batch.map((g) => g.id))).toEqual(['shared', 'b1'])
-    expect(states.at(-1)).toEqual({ phase: 'deepening', done: 2, total: 2 })
+    expect(states.at(-1)).toMatchObject({ phase: 'deepening', done: 2, total: 2 })
+  })
+
+  it('says how far each favorite is: loading until their games are fetched, then their share', async () => {
+    const bob = { ...alice, lichess: 'bob', depth: 200, deep: true }
+    const find = vi.fn<BackgroundDeps['find']>(async (accounts) => ({
+      games: accounts[0]!.username === 'alice' ? games.slice(0, 4) : games.slice(2, 6),
+      failures: [],
+    }))
+    const states: BackgroundState[] = []
+    const cycle = runCycle(
+      { players: [alice, bob] },
+      deps({
+        find,
+        // Bob's m4 and m5 were deepened before.
+        toDeepen: async (all) =>
+          new Set(
+            all.filter((g) => !['m4', 'm5'].includes(g.id)).map((g) => movesHash(g.sanMoves)),
+          ),
+      }),
+      new AbortController().signal,
+      (state) => states.push(state),
+      // Alice's share from the last pass shows until her games are fetched.
+      [{ name: 'alice', max: 50, share: 0.5, loading: false }],
+    )
+    await vi.runAllTimersAsync()
+    await cycle
+    const players = states.map((state) => state.players!)
+    expect(players[0]).toEqual([
+      { name: 'alice', max: 50, share: 0.5, loading: true },
+      { name: 'bob', max: 200, share: 0, loading: true },
+    ])
+    expect(players[1]!.map((player) => player.loading)).toEqual([false, true])
+    // Analysed: m0 to m2. Alice 3 of 4; Bob (analysed m2, deep m4 m5) (1 + 2) / 8.
+    expect(
+      states.find((state) => state.phase === 'analysing')!.players!.map((p) => p.share),
+    ).toEqual([0.75, 0.375])
+    expect(players.at(-1)!.map((player) => player.share)).toEqual([1, 1])
   })
 
   it('says when Lichess limits the requests', async () => {

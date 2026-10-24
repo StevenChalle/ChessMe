@@ -8,7 +8,6 @@ import {
   useSearch,
 } from '@tanstack/react-router'
 import { TanStackRouterDevtools } from '@tanstack/react-router-devtools'
-import { Search } from 'lucide-react'
 import { Footer } from '@/components/Footer'
 import { FeedbackButton } from '@/components/FeedbackLink'
 import { SettingsMenu } from '@/components/SettingsMenu'
@@ -73,26 +72,20 @@ function RootLayout() {
   )
 }
 
-/** Compact two-field search on wide screens, prefilled with the accounts currently shown. */
+/**
+ * Compact two-field search on wide screens, prefilled with the accounts currently shown. None on
+ * a phone: no room in the header (the home page has the search).
+ */
 function HeaderSearch() {
   const current = validatePlayerSearch(useSearch({ strict: false }))
   return (
-    <>
-      <AccountSearchForm
-        // Reset the fields whenever the linked accounts in the URL change.
-        key={`${current.lichess ?? ''}|${current.chesscom ?? ''}`}
-        initial={current}
-        variant="compact"
-        className="hidden md:flex"
-      />
-      <Link
-        to="/"
-        aria-label={m.new_search()}
-        className="text-muted-foreground hover:text-text-strong md:hidden"
-      >
-        <Search className="size-5" />
-      </Link>
-    </>
+    <AccountSearchForm
+      // Reset the fields whenever the linked accounts in the URL change.
+      key={`${current.lichess ?? ''}|${current.chesscom ?? ''}`}
+      initial={current}
+      variant="compact"
+      className="hidden md:flex"
+    />
   )
 }
 

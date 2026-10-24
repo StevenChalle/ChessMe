@@ -4,7 +4,7 @@ import type { FoundGames, ReviewAccount } from '@/features/review/fetch'
 import type { ReviewGame } from '@/features/review/games'
 import { defaultSelection, type GameSelection } from '@/features/review/selection'
 import { ApiError } from '@/lib/http'
-import { playerAccounts, type Favorites } from './favorites'
+import { playerAccounts, playerName, type Favorites } from './favorites'
 
 /**
  * Keeps the favorite players' latest games fetched and analysed while the app is open, on any page
@@ -36,6 +36,8 @@ export type BackgroundState = {
   total?: number
   /** How far the batch under way is, in games (a fraction of its size): moves the bar between batches */
   current?: number
+  /** How far each favorite is, once a pass has started */
+  players?: PlayerProgress[]
 }
 
 /** What the runner works with: injected, so that tests need neither engines nor network. */
@@ -80,7 +82,12 @@ export type BackgroundDeps = {
 }
 
 /** The working tab says it is alive, whether it is shown, and how far it is (for the others to show). */
-export type Heartbeat = { visible: boolean; done?: number; total?: number }
+export type Heartbeat = {
+  visible: boolean
+  done?: number
+  total?: number
+  players?: PlayerProgress[]
+}
 
 export type TabChannel = {
   post: (heartbeat: Heartbeat) => void
@@ -113,24 +120,58 @@ const LOCK = 'craftyourchess:background'
 const gameKey = (game: ReviewGame) => movesHash(game.sanMoves, game.initialFen)
 
 /**
+ * How far one favorite is: their games fetched (loading until then), and the share of the work
+ * done on them, analysis then deepening with the deep option.
+ */
+export type PlayerProgress = {
+  /** As named in the settings (playerName) */
+  name: string
+  /** Their latest games followed: the option */
+  max: number
+  /** 0 to 1 */
+  share: number
+  /** Their games are being fetched, or will be in this pass */
+  loading: boolean
+}
+
+/**
  * One pass: fetch each favorite's latest games, as many as their options say (the game store only
  * asks for new ones), then analyse those not analysed yet, newest first, a few at a time; then
  * evaluate every position at depth of the games of the favorites with the deep option, newest
- * first again. Rejects as soon as the signal aborts.
+ * first again. Rejects as soon as the signal aborts. Each report says how far each favorite is,
+ * starting from `previous` (the last pass) until their games are fetched again.
  */
 export async function runCycle(
   favorites: Favorites,
   deps: BackgroundDeps,
   signal: AbortSignal,
   report: (state: BackgroundState) => void,
+  previous: PlayerProgress[] = [],
 ): Promise<{ rateLimited: boolean }> {
-  report({ phase: 'syncing' })
+  const { players } = favorites
+  const names = players.map(playerName)
+  const shares = names.map((name) => previous.find((item) => item.name === name)?.share ?? 0)
+  const loading = players.map(() => true)
+  /** Each favorite's games (gameKey) */
+  const keysOf: string[][] = players.map(() => [])
+  const send = (state: BackgroundState) =>
+    report({
+      ...state,
+      players: players.map((player, index) => ({
+        name: names[index]!,
+        max: player.depth,
+        share: shares[index]!,
+        loading: loading[index]!,
+      })),
+    })
+
+  send({ phase: 'syncing' })
   // Each favorite's latest games, one player after the other, all together then: once each,
   // a game between two favorites being theirs both (deepened if one of them wants it).
   const byKey = new Map<string, ReviewGame>()
   const deepKeys = new Set<string>()
   let rateLimited = false
-  for (const player of favorites.players) {
+  for (const [index, player] of players.entries()) {
     const accounts = playerAccounts(player)
     const selection: GameSelection = {
       ...defaultSelection(accounts.map((account) => account.source)),
@@ -145,48 +186,88 @@ export async function runCycle(
       byKey.set(`${game.source}:${game.id}`, game)
       if (player.deep) deepKeys.add(`${game.source}:${game.id}`)
     }
+    // A game without moves has nothing to analyse.
+    keysOf[index] = found.games.filter((game) => game.sanMoves.length > 0).map(gameKey)
+    loading[index] = false
+    send({ phase: 'syncing' })
   }
   const total = byKey.size
-  // A game without moves has nothing to analyse.
   const games = [...byKey.values()].filter((game) => game.sanMoves.length > 0)
+  const deepGames = games.filter((game) => deepKeys.has(`${game.source}:${game.id}`))
   const analysed = await deps.analysed(games)
+  // Analysing does not deepen: known before, so each favorite's share is right from the start.
+  const shallow = deepGames.length > 0 ? await deps.toDeepen(deepGames) : new Set<string>()
+  const deepened = new Set(deepGames.map(gameKey).filter((key) => !shallow.has(key)))
+  const updateShares = () => {
+    for (const [index, player] of players.entries()) {
+      const keys = keysOf[index]!
+      const count = (set: Set<string>) => keys.filter((key) => set.has(key)).length
+      shares[index] =
+        keys.length === 0
+          ? 1
+          : player.deep
+            ? (count(analysed) + count(deepened)) / (2 * keys.length)
+            : count(analysed) / keys.length
+    }
+  }
+  updateShares()
+
   const pending = games.filter((game) => !analysed.has(gameKey(game)))
   let done = total - pending.length
-  report({ phase: 'analysing', done, total })
+  send({ phase: 'analysing', done, total })
   for (let index = 0; index < pending.length; index += BATCH) {
     signal.throwIfAborted()
     const batch = pending.slice(index, index + BATCH)
     await deps.analyze(batch, deps.criteria(), signal, (share) =>
-      report({ phase: 'analysing', done, total, current: share * batch.length }),
+      send({ phase: 'analysing', done, total, current: share * batch.length }),
     )
     done += batch.length
-    report({ phase: 'analysing', done, total })
+    for (const game of batch) analysed.add(gameKey(game))
+    updateShares()
+    send({ phase: 'analysing', done, total })
   }
 
-  const deepGames = games.filter((game) => deepKeys.has(`${game.source}:${game.id}`))
   if (deepGames.length > 0) {
-    const shallow = await deps.toDeepen(deepGames)
     const toDeepen = deepGames.filter((game) => shallow.has(gameKey(game)))
     // Out of the games to deepen only: the others never will be.
     const deepTotal = deepGames.length
-    let deepened = deepTotal - toDeepen.length
-    report({ phase: 'deepening', done: deepened, total: deepTotal })
+    let deepDone = deepTotal - toDeepen.length
+    send({ phase: 'deepening', done: deepDone, total: deepTotal })
     for (let index = 0; index < toDeepen.length; index += DEEP_BATCH) {
       signal.throwIfAborted()
       const batch = toDeepen.slice(index, index + DEEP_BATCH)
       await deps.deepen(batch, signal, (share) =>
-        report({
+        send({
           phase: 'deepening',
-          done: deepened,
+          done: deepDone,
           total: deepTotal,
           current: share * batch.length,
         }),
       )
-      deepened += batch.length
-      report({ phase: 'deepening', done: deepened, total: deepTotal })
+      deepDone += batch.length
+      for (const game of batch) deepened.add(gameKey(game))
+      updateShares()
+      send({ phase: 'deepening', done: deepDone, total: deepTotal })
     }
   }
   return { rateLimited }
+}
+
+/** The same progress for every favorite (a new report of it is not news for the other tabs). */
+function samePlayers(a: PlayerProgress[] = [], b: PlayerProgress[] = []): boolean {
+  return (
+    a.length === b.length &&
+    a.every((item, index) => {
+      const other = b[index]
+      return (
+        other !== undefined &&
+        item.name === other.name &&
+        item.max === other.max &&
+        item.share === other.share &&
+        item.loading === other.loading
+      )
+    })
+  )
 }
 
 export class BackgroundRunner {
@@ -230,15 +311,17 @@ export class BackgroundRunner {
 
   private waitForLock(locks: LockManager, stop: AbortSignal): void {
     if (stop.aborted) return
-    this.set({ done: this.state.done, total: this.state.total, phase: 'elsewhere' })
+    const { done, total, players } = this.state
+    this.set({ done, total, players, phase: 'elsewhere' })
     const waiting = new AbortController()
     const since = this.deps.now()
     let heard: (Heartbeat & { at: number }) | undefined
     const unlisten = this.deps.channel?.listen((heartbeat) => {
       heard = { ...heartbeat, at: this.deps.now() }
       // The working tab's progress, shown here too.
-      if (heartbeat.total !== undefined) {
-        this.set({ phase: 'elsewhere', done: heartbeat.done, total: heartbeat.total })
+      if (heartbeat.total !== undefined || heartbeat.players) {
+        const { done, total, players } = heartbeat
+        this.set({ phase: 'elsewhere', done, total, players })
       }
     })
     const check = setInterval(() => {
@@ -298,8 +381,8 @@ export class BackgroundRunner {
   }
 
   private beat(): void {
-    const { done, total } = this.state
-    this.deps.channel?.post({ visible: this.deps.isVisible(), done, total })
+    const { done, total, players } = this.state
+    this.deps.channel?.post({ visible: this.deps.isVisible(), done, total, players })
   }
 
   stop(): void {
@@ -326,7 +409,10 @@ export class BackgroundRunner {
   }
 
   private set(state: BackgroundState) {
-    const progressed = state.done !== this.state.done || state.total !== this.state.total
+    const progressed =
+      state.done !== this.state.done ||
+      state.total !== this.state.total ||
+      !samePlayers(state.players, this.state.players)
     this.state = state
     for (const listener of this.listeners) listener()
     // The waiting tabs follow the progress without waiting for the next heartbeat.
@@ -363,7 +449,11 @@ export class BackgroundRunner {
   }
 
   private async loop(stop: AbortSignal): Promise<void> {
-    const progress = () => ({ done: this.state.done, total: this.state.total })
+    const progress = () => ({
+      done: this.state.done,
+      total: this.state.total,
+      players: this.state.players,
+    })
     while (!stop.aborted) {
       if (this.paused) {
         this.set({ ...progress(), phase: 'paused' })
@@ -389,8 +479,12 @@ export class BackgroundRunner {
       }, POLL_MS)
       let next: { phase: BackgroundPhase; ms: number }
       try {
-        const { rateLimited } = await runCycle(this.favorites, this.deps, run.signal, (state) =>
-          this.set(state),
+        const { rateLimited } = await runCycle(
+          this.favorites,
+          this.deps,
+          run.signal,
+          (state) => this.set(state),
+          this.state.players,
         )
         next = rateLimited
           ? { phase: 'rate-limited', ms: RETRY_MS }

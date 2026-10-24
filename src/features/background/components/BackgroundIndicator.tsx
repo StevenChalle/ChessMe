@@ -1,23 +1,26 @@
-import { AppWindow, CircleCheck, Clock, LoaderCircle, Pause, TriangleAlert } from 'lucide-react'
+import { CircleCheck, LoaderCircle, Pause, Play, TriangleAlert } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { Progress } from '@/components/ui/progress'
 import { formatGameCount, formatNumber } from '@/lib/format'
 import { cn } from '@/lib/utils'
 import { m } from '@/paraglide/messages'
+import { SourceDot } from '@/features/player/components/SourceBadge'
 import { useBackground } from '../backgroundContext'
+import { playerAccounts, playerName, useFavorites } from '../favorites'
 import type { BackgroundPhase, BackgroundState } from '../runner'
 
+/** When not working: up to date, paused (by the player, or waiting), or failed. */
 const ICONS: Record<BackgroundPhase, typeof Pause> = {
   starting: LoaderCircle,
-  elsewhere: AppWindow,
+  elsewhere: CircleCheck,
   syncing: LoaderCircle,
   analysing: LoaderCircle,
   deepening: LoaderCircle,
   'up-to-date': CircleCheck,
   busy: Pause,
   paused: Pause,
-  'rate-limited': Clock,
+  'rate-limited': Pause,
   failed: TriangleAlert,
 }
 
@@ -48,58 +51,105 @@ function statusText({ phase, done = 0, total = 0 }: BackgroundState): string {
   }
 }
 
+/** Working, or another tab is: the icon spins and the bars of loading favorites move. */
+function isWorking({ phase, done, total }: BackgroundState): boolean {
+  if (phase === 'elsewhere') return total === undefined || (done ?? 0) < total
+  return (
+    phase === 'starting' || phase === 'syncing' || phase === 'analysing' || phase === 'deepening'
+  )
+}
+
+/** Said in the panel too: why nothing moves, or where it happens. */
+const EXPLAINED: ReadonlySet<BackgroundPhase> = new Set([
+  'elsewhere',
+  'busy',
+  'rate-limited',
+  'failed',
+])
+
 /**
- * In the header, when main accounts are chosen: how far the background analysis is, and a button
- * to pause it for the session (docs/background-analysis.md).
+ * In the header, when there are favorites: an icon only (working, up to date, paused, failed),
+ * the details on click: each favorite with a bar of how far their games are, the number of games
+ * followed on the right, and a button to pause for the session (docs/background-analysis.md).
  */
 export function BackgroundIndicator() {
   const background = useBackground()
-  if (!background) return null
+  const favorites = useFavorites()
+  if (!background || !favorites) return null
   const { state, pause, resume } = background
-  const Icon = ICONS[state.phase]
-  const spinning =
-    state.phase === 'syncing' || state.phase === 'analysing' || state.phase === 'deepening'
-  const showCount = state.total !== undefined && state.total > 0 && state.phase !== 'up-to-date'
+  const working = isWorking(state)
+  const Icon = working ? LoaderCircle : ICONS[state.phase]
+  // In the settings' order, with their current options; before a first report, all loading.
+  const rows = favorites.players.map((player) => {
+    const name = playerName(player)
+    const progress = state.players?.find((item) => item.name === name)
+    return {
+      name,
+      accounts: playerAccounts(player),
+      max: player.depth,
+      share: progress?.share ?? 0,
+      loading: working && (progress?.loading ?? true),
+    }
+  })
 
   return (
     <Popover>
       <PopoverTrigger asChild>
         <Button
           variant="ghost"
-          size="sm"
+          size="icon-sm"
           aria-label={m.background_title()}
           title={statusText(state)}
-          className="gap-1.5 px-2 text-muted-foreground hover:text-text-strong"
+          className="text-muted-foreground hover:text-text-strong"
         >
           <Icon
             className={cn(
-              spinning && 'animate-spin text-primary',
+              working && 'animate-spin text-primary',
               state.phase === 'up-to-date' && 'text-win',
+              state.phase === 'failed' && 'text-loss',
             )}
           />
-          {showCount && (
-            <span className="text-xs tabular-nums">
-              {formatNumber(state.done ?? 0)} / {formatNumber(state.total!)}
-            </span>
-          )}
         </Button>
       </PopoverTrigger>
-      <PopoverContent align="end" className="w-72 space-y-3 text-sm">
-        <p className="label-etabli">{m.background_title()}</p>
-        <p className="text-text-strong" role="status">
+      <PopoverContent align="end" className="w-80 space-y-3 text-sm">
+        <span className="sr-only" role="status">
           {statusText(state)}
-        </p>
-        {state.total !== undefined && state.total > 0 && (
-          <Progress value={(((state.done ?? 0) + (state.current ?? 0)) / state.total) * 100} />
+        </span>
+        {EXPLAINED.has(state.phase) && (
+          <p className="text-xs text-muted-foreground">{statusText(state)}</p>
         )}
-        <p className="text-xs text-muted-foreground">{m.background_hint()}</p>
+        <ul className="space-y-2.5">
+          {rows.map(({ name, accounts, max, share, loading }) => (
+            <li key={name} className="flex items-center gap-2">
+              <span className="flex w-5 shrink-0 gap-1">
+                {accounts.map(({ source }) => (
+                  <SourceDot key={source} source={source} />
+                ))}
+              </span>
+              <span className="w-24 truncate font-medium text-text-strong" title={name}>
+                {name}
+              </span>
+              <Progress
+                value={share * 100}
+                data-loading={loading || undefined}
+                aria-label={name}
+                className="flex-1"
+              />
+              <span className="num w-10 text-right text-xs text-muted-foreground">
+                {formatNumber(max)}
+              </span>
+            </li>
+          ))}
+        </ul>
         {state.phase === 'paused' ? (
           <Button variant="outline" size="sm" onClick={resume}>
+            <Play data-icon="inline-start" />
             {m.background_resume()}
           </Button>
         ) : (
           state.phase !== 'elsewhere' && (
             <Button variant="outline" size="sm" onClick={pause}>
+              <Pause data-icon="inline-start" />
               {m.background_pause()}
             </Button>
           )

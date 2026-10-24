@@ -311,6 +311,27 @@
     border-radius: 3px;
     background: var(--cyc-win);
   }
+  /* Still loading (data-loading): a light slides along the bar, whatever its value */
+  .progress-etabli[data-loading]::after {
+    content: '';
+    position: absolute;
+    inset: 0 auto 0 0;
+    width: 40%;
+    background: linear-gradient(
+      90deg,
+      transparent,
+      color-mix(in srgb, var(--cyc-text-strong) 35%, transparent),
+      transparent
+    );
+    animation: progress-loading 1.4s ease-in-out infinite;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .progress-etabli[data-loading]::after {
+      animation: none;
+      width: 100%;
+      opacity: 0.4;
+    }
+  }
 
   /* Tab links: muted, the active one (TanStack Router's data-status) strong over a solid 2px
      gold line */
@@ -350,5 +371,14 @@
     color: var(--cyc-on-title);
     background: var(--cyc-title);
     border-radius: var(--cyc-radius-sm);
+  }
+}
+
+@keyframes progress-loading {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(250%);
   }
 }

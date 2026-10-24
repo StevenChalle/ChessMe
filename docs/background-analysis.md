@@ -52,7 +52,9 @@ Les exports Lichess et les archives Chess.com s'annoncent dans leurs clients (`l
 
 ## Ce qu'on voit
 
-Un indicateur dans l'en-tête, à côté de la roue dentée, seulement quand il y a des favoris : une icône et « 120 / 500 ». Au clic : l'état en clair (« Analyse des parties de vos favoris : 120 / 500 », « En pause : Stockfish est utilisé ailleurs », « À jour », « Lichess demande d'attendre une minute »), un bouton **Pause / Reprendre** (pour la session), et un lien vers les réglages.
+Un indicateur dans l'en-tête, à côté de la roue dentée, seulement quand il y a des favoris : **une icône seule**, pour la place (surtout sur téléphone) : en cours (cercle qui tourne, aussi quand un autre onglet travaille), à jour (coche verte), en pause (par le joueur, Stockfish utilisé ailleurs, ou Lichess qui demande d'attendre), erreur (triangle rouge). L'état en clair est dans l'infobulle et pour les lecteurs d'écran.
+
+Au clic : **un favori par ligne** (pastilles, nom, barre, nombre de parties suivies à droite : 500, 100…), dans l'ordre des réglages. La barre dit où en sont ses parties : analyse, puis approfondissement s'il a l'option (la moitié chacun) ; une partie commune à deux favoris compte pour les deux. Tant que ses parties sont en cours de chargement, une lumière glisse sur la barre (fixe si l'utilisateur réduit les animations) ; avant, elle garde la valeur de la passe précédente. Une ligne d'explication seulement quand rien n'avance ou que ça se passe ailleurs (autre onglet, Stockfish utilisé, limite Lichess, erreur). Puis le bouton **Pause / Reprendre** (pour la session).
 
 ## Les limites
 
