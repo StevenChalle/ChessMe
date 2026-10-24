@@ -188,4 +188,21 @@ describe('storedAccounts and clearGameStore', () => {
     expect(await storedAccounts()).toEqual([])
     db = new AppDatabase()
   })
+
+  it('keeps a game between two accounts for the one not deleted', async () => {
+    db.close()
+    const { database } = await import('@/lib/db')
+    const app = database()
+    const games = createGameStore(() => app)
+    // The same game, played by Alice against Bob, saved for each of them.
+    await games.put([stored('shared', 1), stored('a1', 2)])
+    await games.put([toStoredGame('lichess', 'Bob', lichessGame('shared', 1))!])
+    await games.touch('lichess:alice')
+    await games.touch('lichess:bob')
+    await deleteStoredAccounts(['lichess:bob'])
+    expect(await storedAccounts()).toEqual([{ account: 'lichess:alice', games: 2 }])
+    expect(await app.accountGames.get(['lichess:alice', 'shared'])).toBeDefined()
+    await clearGameStore()
+    db = new AppDatabase()
+  })
 })

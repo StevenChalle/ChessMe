@@ -59,7 +59,7 @@ db.version(2).stores({
 })
 ```
 
-- `accountGames` : une ligne par compte et par partie. Quand deux comptes cherchés se sont affrontés, leur partie est enregistrée deux fois : c'est rare, sans gravité, et bien plus simple qu'une liste de comptes par partie (chaque compte garde ses propres périodes et s'évince seul).
+- `accountGames` : une ligne par compte et par partie. Quand deux comptes cherchés se sont affrontés, leur partie est enregistrée deux fois : c'est rare, sans gravité, et bien plus simple qu'une liste de comptes par partie (chaque compte garde ses propres périodes et s'évince seul). Supprimer les parties d'un compte (éviction, favori retiré) ne touche donc jamais celles d'un autre, même leurs parties communes.
 
 - Le **résumé** (`GameSummary`, vu du compte) est calculé à l'écriture : `matchesSelection` s'applique directement dessus, sans lire les coups (lire le PGN d'une partie Chess.com coûte cher). Seules les parties retenues sont normalisées.
 - `[account+playedAt]` sert aussi à tout supprimer pour un compte (éviction), et à lire les parties d'un compte de la plus récente à la plus ancienne, ou sur une période.
